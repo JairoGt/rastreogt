@@ -1,0 +1,158 @@
+{
+  "project_info": {
+    "project_number": "1097242350126",
+    "project_id": "apprastreogt",
+    "storage_bucket": "apprastreogt.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097242350126:android:15ed4c638238488705c5bf",
+        "android_client_info": {
+          "package_name": "com.example.appseguimiento"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1097242350126-96i8v8vtn3glmh8okabrk89smmpc0osa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.appseguimiento",
+            "certificate_hash": "0205b1e00f8ad783cd5540b1cfd2eae99035f842"
+          }
+        },
+        {
+          "client_id": "1097242350126-m6aldo6k934mpc86dqs27q33ulc4ncau.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.appseguimiento",
+            "certificate_hash": "5534ad670808522686c773adba07a9cd0109eed4"
+          }
+        },
+        {
+          "client_id": "1097242350126-olirphfliv5lpa4lav6iiksv5juefkt1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0E_HuShmvPAeynPlczVt1zscSgTzrhek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1097242350126-gduht8aqnsmahkr7tvc3nqeuin6gdjmj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1097242350126-1v183jnob1nmv35lvq2qoa09hb06je7s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rastreogt.RunnerTests"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097242350126:android:624dad1894bc219e05c5bf",
+        "android_client_info": {
+          "package_name": "com.misterjd.rastreogt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1097242350126-et98hkn5o0gp2c21fhfii8sgf29u6k73.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.misterjd.rastreogt",
+            "certificate_hash": "5534ad670808522686c773adba07a9cd0109eed4"
+          }
+        },
+        {
+          "client_id": "1097242350126-olirphfliv5lpa4lav6iiksv5juefkt1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0E_HuShmvPAeynPlczVt1zscSgTzrhek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1097242350126-gduht8aqnsmahkr7tvc3nqeuin6gdjmj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1097242350126-1v183jnob1nmv35lvq2qoa09hb06je7s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rastreogt.RunnerTests"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097242350126:android:425dfaac8d87d87605c5bf",
+        "android_client_info": {
+          "package_name": "misterjd.r"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1097242350126-facvd917m9qc5uvcnuevd20etvh6d3am.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "misterjd.r",
+            "certificate_hash": "5c1fa0a8de373f4a8be2175d1a248aba9ee2a180"
+          }
+        },
+        {
+          "client_id": "1097242350126-rd7ev97ma24ldh59ltsf70t4on76jhvb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "misterjd.r",
+            "certificate_hash": "0205b1e00f8ad783cd5540b1cfd2eae99035f842"
+          }
+        },
+        {
+          "client_id": "1097242350126-olirphfliv5lpa4lav6iiksv5juefkt1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0E_HuShmvPAeynPlczVt1zscSgTzrhek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1097242350126-gduht8aqnsmahkr7tvc3nqeuin6gdjmj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1097242350126-1v183jnob1nmv35lvq2qoa09hb06je7s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rastreogt.RunnerTests"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
