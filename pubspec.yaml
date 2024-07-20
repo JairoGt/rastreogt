@@ -47,10 +47,12 @@ dependencies:
   printing: ^5.13.1
   convex_bottom_bar: ^3.2.0
   pdf: ^3.11.0
+  timelines: ^0.1.0
   lottie: ^3.1.2
   path_provider: ^2.1.3
   provider: ^6.1.2
   shared_preferences: ^2.2.3
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:

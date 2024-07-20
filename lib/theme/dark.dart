@@ -8,7 +8,7 @@ class ThemeDark {
       primaryColor:Colors.grey[900]!,
       scaffoldBackgroundColor: const Color(0xFF121212),
       colorScheme: const ColorScheme.dark(
-        primary: Color.fromARGB(255, 90, 110, 255),
+        primary: Color.fromARGB(255, 44, 51, 99),
         inversePrimary: Color.fromARGB(255, 61, 63, 77),
         secondary: Color(0xFF1F1F1F),
         surface: Color(0xFF1F1F1F),

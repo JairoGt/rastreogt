@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
+import 'package:rastreogt/providers/themeNoti.dart';
 
 class OtrosNegociosPage extends StatelessWidget {
   final String userEmail;
@@ -15,6 +17,7 @@ class OtrosNegociosPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+       final themeNotifier = Provider.of<ThemeNotifier>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Otros Negocios'),
@@ -22,10 +25,13 @@ class OtrosNegociosPage extends StatelessWidget {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
+            decoration:  BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color.fromARGB(255, 114, 130, 255), Colors.white],
-                begin: Alignment.centerLeft,
+                colors: themeNotifier.currentTheme.brightness == Brightness.dark
+              ? [Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
+                      :
+                  [Color.fromARGB(255, 114, 130, 255), Colors.white],
+                begin: Alignment.center,
                 end: Alignment.bottomCenter,
               ),
             ),

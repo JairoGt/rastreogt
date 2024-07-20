@@ -1,18 +1,40 @@
+import 'dart:ui';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rastreogt/auth/auth_service.dart';
 import 'package:rastreogt/auth/login/loginGoogle.dart';
 import 'package:rastreogt/auth/signup/signUp.dart';
 
 
-class Login extends StatelessWidget {
-  Login({super.key});
+class Login extends StatefulWidget {
+  const Login({super.key});
 
+  @override
+  State<Login> createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-    final GoogleAuthService _googleAuthService = GoogleAuthService();
 
+  final TextEditingController _passwordController = TextEditingController();
+
+    final GoogleAuthService _googleAuthService = GoogleAuthService();
+  bool _isLoading = false;
+
+  void _showLoading() {
+    setState(() {
+      _isLoading = true;
+    });
+  }
+
+  void _hideLoading() {
+    setState(() {
+      _isLoading = false;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,44 +48,71 @@ class Login extends StatelessWidget {
         toolbarHeight: 100,
         
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-         padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Center(
-                child: Text(
-                  'Hola de nuevo!',
-                  style: GoogleFonts.aDLaMDisplay(
-                    textStyle: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 32
-                    )
+      body: Stack(
+        children: [
+        SafeArea(
+          child: SingleChildScrollView(
+           padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Center(
+                  child: Text(
+                    'Hola de nuevo!',
+                    style: GoogleFonts.aDLaMDisplay(
+                      textStyle: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 32
+                      )
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 80,),
+                 _emailAddress(),
+                 const SizedBox(height: 20,),
+                 _password(),
+                 const SizedBox(height: 50,),
+                 _signin(context),
+                  const SizedBox(height: 20,),
+                  ElevatedButton(
+        
+            onPressed: () async {
+              _showLoading();
+              await _googleAuthService.signInWithGoogle(context);
+              _hideLoading();
+            },
+            child: const Text('Iniciar con Google'),
+          ),
+         
+              ],
+              
+            ),
+          ),
+        ),
+          if (_isLoading)
+         Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  color: Color.fromARGB(255, 255, 255, 255).withOpacity(0.5), // Añade un color de fondo semitransparente
+                  child: Center(
+                    child: Lottie.asset(
+                      'assets/lotties/loading.json',
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 80,),
-               _emailAddress(),
-               const SizedBox(height: 20,),
-               _password(),
-               const SizedBox(height: 50,),
-               _signin(context),
-                const SizedBox(height: 20,),
-                ElevatedButton(
-          onPressed: () async {
-            await _googleAuthService.signInWithGoogle(context);
-          },
-          child: const Text('Iniciar con Google'),
-        ),
-            ],
-          ),
-        ),
+            ),
+     ]
       ),
+      
     );
   }
-  
+
   Widget _emailAddress() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -144,11 +193,13 @@ class Login extends StatelessWidget {
         elevation: 0,
       ),
       onPressed: () async {
+        _showLoading();
         await AuthService().signin(
           email: _emailController.text,
           password: _passwordController.text,
           context: context
         );
+        _hideLoading();
       },
       child: const Text("Ingresar", style: TextStyle(
         color: Colors.white,

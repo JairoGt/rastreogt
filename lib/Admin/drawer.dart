@@ -56,6 +56,7 @@ Future<void> cerrarSesion() async {
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      backgroundColor: Theme.of(context).colorScheme.primary,
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
@@ -64,11 +65,11 @@ Future<void> cerrarSesion() async {
               UserAccountsDrawerHeader(
                 accountName: Text(
                  user?.displayName?? nombreUsuario,
-                  style: GoogleFonts.roboto(fontSize: 20),
+                  style: GoogleFonts.roboto(fontSize: 20, color: Theme.of(context).colorScheme.onSecondary),
                 ),
                 accountEmail: Text(
                   user?.email ?? nombreUsuario,
-                  style: GoogleFonts.roboto(fontSize: 15),
+                  style: GoogleFonts.roboto(fontSize: 15, color: Theme.of(context).colorScheme.onSecondary),
                 ),
                 currentAccountPicture: CircleAvatar(
                   backgroundImage: NetworkImage(user?.photoURL ?? imagenPerfil),
@@ -146,7 +147,7 @@ Future<void> cerrarSesion() async {
             } else {
               // Muestra un indicador de carga mientras se cierra la sesión
               return const Scaffold(
-                backgroundColor: Colors.white,
+               // backgroundColor: Color.fromARGB(125, 255, 255, 255),
                 body: Center(
                   child: CircularProgressIndicator(),
                 ),

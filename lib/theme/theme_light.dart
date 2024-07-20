@@ -9,7 +9,7 @@ class ThemeLight {
       primaryColor: const Color.fromARGB(255, 114, 130, 255),
       scaffoldBackgroundColor: Colors.white,
       colorScheme: const ColorScheme.light(
-        primary: Color.fromARGB(255, 114, 130, 255),
+        primary: Color.fromARGB(255, 96, 97, 179),
         inversePrimary: Color.fromARGB(255, 90, 110, 255),
         secondary: Colors.white,
   //et: Colors.grey[200]!,

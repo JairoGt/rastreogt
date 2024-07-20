@@ -15,23 +15,40 @@ class AdminPage extends StatefulWidget {
   _AdminPageState createState() => _AdminPageState();
 }
 
-class _AdminPageState extends State<AdminPage> {
+class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMixin {
   String nombreUsuario = 'Mister';
   String nombreNegocio = 'Mi Negocio';
   String negoid = '';
   String nickname = '';
    String currentNegocioId = '';
+   int _repeatCount = 0;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   User? user = FirebaseAuth.instance.currentUser;
-
+   late AnimationController _controller;
   @override
   void initState() {
     super.initState();
     obtenerNombreUsuario();
     obtenerNego();
     obtenerNegoid();
+      _controller = AnimationController(vsync: this);
+     _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _repeatCount++;
+        if (_repeatCount < 3) {
+          _controller.forward(from: 0.0);
+        } else {
+          _controller.stop();
+        }
+      }
+    });
   }
-
+ @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
   void _updateNegocio(String newNegocioId) {
     setState(() {
       currentNegocioId = newNegocioId;
@@ -186,20 +203,25 @@ class _AdminPageState extends State<AdminPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                ? [Color.fromARGB(255, 95, 107, 143), Color.fromARGB(255, 171, 170, 197)]
+              ? [Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
                       :
                   [Color.fromARGB(255, 114, 130, 255), Colors.white],
-                  begin: Alignment.centerLeft,
+                  begin: Alignment.center,
                   end: Alignment.bottomCenter,
                 ),
               ),
             ),
             Lottie.asset(
-                      'assets/lotties/estelas.json', 
-                      fit: BoxFit.cover,
-                      animate: true,
-                      repeat: false
-                      ),
+          'assets/lotties/estelas.json',
+          controller: _controller,
+          fit: BoxFit.cover,
+          animate: true,
+          onLoaded: (composition) {
+            _controller
+              ..duration = composition.duration
+              ..forward();
+          },
+        ),
             SafeArea(
               child: Column(
                 children: [

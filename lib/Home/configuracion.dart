@@ -29,7 +29,7 @@ class ConfiguracionAll extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                      ? [Color.fromARGB(255, 95, 107, 143), Color.fromARGB(255, 171, 170, 197)]
+                      ? [Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
                       :
                   [Color.fromARGB(255, 114, 130, 255), Colors.white],
                   begin: Alignment.centerLeft,
