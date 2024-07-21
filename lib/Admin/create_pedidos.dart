@@ -65,7 +65,7 @@ String token = '';
     super.initState();
     mostrarContenido();
     mostrarNegoid();
-    obtenerToken();
+   
     
     // Initialize the animation controller with a duration of one second
     _animationController = AnimationController(
@@ -90,6 +90,7 @@ String token = '';
       
     });
   }
+
   Future<void> dataNickname(String nickname) async {
     final String? email = await getEmailFromNickname(nickname);
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -120,7 +121,7 @@ String token = '';
     });
   }
 
-
+  
   @override
   void dispose() {
 // Dispose the animation controller when the screen is disposed
@@ -423,92 +424,70 @@ void _mostrarMensajePedidoCreado(String idPedido) {
         );
   showDialog(context: context, builder: (context) => dialog);
 }
-Future<String?> obtenerToken() async {
-  try {
-    // Esperar a que el Future se complete y obtener el token
-    String? token = await FirebaseMessaging.instance.getToken();
-    return token;
-  } catch (e) {
-     ("Error al obtener el token: $e");
-    return null;
-  }
-}
 
 
-  // Crea el pedido.
-  void _crearPedido() async {
-    // Obtener los datos del pedido del usuario.
-     // Asegúrate de que las listas nombres y precios estén llenas
+void _crearPedido() async {
+  // Obtener los datos del pedido del usuario.
   List<String> nombres = _productoControllers.map((controller) => controller.text).toList();
   List<double> precios = _precioControllers.map((controller) => double.tryParse(controller.text) ?? 0.0).toList();
 
-   // final precioTotal = double.parse(_precioTotalController.text);
-    //final direccion = TextEditingController(text: direccion);
-final random = Random();
+  final random = Random();
+  final idPedido = random.nextInt(3000) + 1; // Genera un número entre 1 y 3000
+  final idPedidoFormateado = idPedido.toString().padLeft(3, '0'); // Asegura que tenga 3 dígitos
+  final idPedidoSJP = '$contenido$idPedidoFormateado';
 
-final idPedido = random.nextInt(3000) + 1; // Genera un número entre 1 y 3000
+  // Crear el pedido en Cloud Firestore.
+  FirebaseFirestore.instance.collection('pedidos').doc(idPedidoSJP).set({});
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  CollectionReference users = firestore.collection('pedidos');
+  DocumentReference userDocument = users.doc(idPedidoSJP);
+  Map<String, dynamic> data = {
+    'direccion': direccion,
+    'estadoid': 1,
+    'idMotorista': '0',
+    'idcliente': '0',
+    'idpedidos': idPedidoSJP,
+    'fechaCreacion': Timestamp.fromDate(now),
+    'fechadespacho': Timestamp.fromDate(now),
+    'fechaCamino': Timestamp.fromDate(now),
+    'fechaEntrega': Timestamp.fromDate(now),
+    'negoname': contenido,
+    'nickname': _nicknameController.text,
+    'nego': negoid,
+  };
 
-final idPedidoFormateado = idPedido.toString().padLeft(3, '0'); // Asegura que tenga 3 dígitos
+  await userDocument.set(data);
 
-final idPedidoSJP = '$contenido$idPedidoFormateado';
+  CollectionReference userData = userDocument.collection('Productos');
 
-    // Crear el pedido en Cloud Firestore.
-    FirebaseFirestore.instance.collection('pedidos').doc(idPedidoSJP).set({});
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference users = firestore.collection('pedidos');
-    DocumentReference userDocument = users.doc(idPedidoSJP);
-    Map<String, dynamic> data = {
-      'direccion': direccion,
-      'estadoid': 1,
-      'idMotorista': '0',
-      'idcliente': '0',
-      'idpedidos': idPedidoSJP,
-      'fechaCreacion': Timestamp.fromDate(now),
-      'fechadespacho': Timestamp.fromDate(now),
-      'fechaCamino': Timestamp.fromDate(now),
-      'fechaEntrega': Timestamp.fromDate(now),
-      'negoname': contenido,
-     'nickname': _nicknameController.text,
-      'nego': negoid,
-    };
+  // Inicializa el mapa para almacenar los datos del pedido
+  Map<String, dynamic> pInfoData = {};
 
-    await userDocument.set(data);
-
-    CollectionReference userData = userDocument.collection('Productos');
-DocumentReference pInfoDocument = userData.doc(idPedidoSJP);
-
-// Inicializa el mapa para almacenar los datos del pedido
-Map<String, dynamic> pInfoData = {};
-
-// Agrega los productos y precios al mapa con claves dinámicas
-for (int i = 0; i < nombres.length; i++) {
-  pInfoData['producto${i + 1}'] = nombres[i];
-  pInfoData['precio${i + 1}'] = precios[i];
-}
-
-
-// Agrega la suma total y otros campos necesarios al mapa
-pInfoData['precioTotal'] = _sumaTotal;
-pInfoData['telefono'] = 0;
-pInfoData['ubicacion'] = ubicacion;
-pInfoData['token'] = token;
-
-
-
-// Guarda el mapa en Firestore
-await pInfoDocument.set(pInfoData);
-
-// Mostrar el mensaje emergente con el número de pedido generado.
-    _mostrarMensajePedidoCreado(idPedidoSJP);
-
-// Mostrar un mensaje de confirmación.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pedido creado correctamente'),
-      ),
-    );
+  // Agrega los productos y precios al mapa con claves dinámicas
+  for (int i = 0; i < nombres.length; i++) {
+    pInfoData['producto${i + 1}'] = nombres[i];
+    pInfoData['precio${i + 1}'] = precios[i];
   }
 
+  // Agrega la suma total y otros campos necesarios al mapa
+  pInfoData['precioTotal'] = _sumaTotal;
+  pInfoData['telefono'] = 0;
+  pInfoData['ubicacion'] = ubicacion;
+  pInfoData['token'] = token;
+
+  // Guarda el mapa en Firestore
+  await userData.add(pInfoData);
+
+  // Mostrar el mensaje emergente con el número de pedido generado.
+  _mostrarMensajePedidoCreado(idPedidoSJP);
+
+  // Mostrar un mensaje de confirmación.
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Pedido creado correctamente'),
+    ),
+  );
+}
   void _navegarAPedidosCreados() {
     // Limpiar los campos de generar pedido.
     _nombresController.clear();

@@ -3,6 +3,16 @@
         android:label="rastreogt"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <service
+        android:name="com.google.firebase.messaging.FirebaseMessagingService"
+        >
+        <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+        </intent-filter>
+    </service>
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="default_channel_id"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

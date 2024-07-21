@@ -1,7 +1,8 @@
+// ignore: file_names
 import 'dart:math';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ String generateName(String email) {
   int randomNumber = Random().nextInt(90) + 10;
   return "$firstThreeLetters$randomNumber";
 }
+
 class GoogleAuthService {
   Future<UserCredential?> signInWithGoogle(BuildContext context) async {
     // Initialize GoogleSignIn
@@ -49,84 +51,93 @@ class GoogleAuthService {
     // Try to get the document for the current user
     DocumentSnapshot snapshot = await userDocument.get();
 
-    if (snapshot.exists) {
-      var role = snapshot['role'];
-      if (role == 'admin') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: AdminPage(),
-              
-            ),
-          ),
-        );
-      } else if (role == 'moto') {
-       
-       
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: MotoPage(),
-           
-            ),
-          ),
-        );
-      } else if (role == 'client') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: ClientPage(),
-              
-            ),
-          ),
-        );
-        
-      }
-    } else {
-      // If the document does not exist, create it with the role of 'client'
-      String generatedName = generateName(email);
-      userDocument.set({
-          'name': userCredential.user!.displayName,
+ if (snapshot.exists) {
+  var role = snapshot['role'];
+  String? token = await FirebaseMessaging.instance.getToken();
+
+  // Verifica si el token ha cambiado o no existe
+  if (snapshot['token'] != token) {
+    // Actualiza el token en la base de datos
+    userDocument.update({'token': token});
+  }
+
+  if (role == 'admin') {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => const AnimatedSwitcher(
+          duration: Duration(milliseconds: 200),
+          child: AdminPage(),
+        ),
+      ),
+    );
+  } else if (role == 'moto') {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => const AnimatedSwitcher(
+          duration: Duration(milliseconds: 200),
+          child: MotoPage(),
+        ),
+      ),
+    );
+  } else if (role == 'client') {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => const AnimatedSwitcher(
+          duration: Duration(milliseconds: 200),
+          child: ClientPage(),
+        ),
+      ),
+    );
+  }
+} else {
+  // Si la colección 'users' no tiene un documento con el email del usuario, crea uno
+  String generatedName = generateName(email);
+  String? token = await FirebaseMessaging.instance.getToken();
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    token = newToken;
+  });
+
+  userDocument.set({
+    'name': userCredential.user!.displayName,
     'email': email.trim(),
     'idmoto': '0',
     'estadoid': 0,
     'role': 'client',
     'negoname': 'df',
-    'nickname':generatedName,
-    'nego': 'df'
-      });
-// Crear una subcolección 'userData' y un documento 'pInfo' dentro de ella
-CollectionReference userData = userDocument.collection('userData');
-DocumentReference pInfoDocument = userData.doc('pInfo');
-Map<String, dynamic> pInfoData = {
-'direccion': '',
-'estadoid': 0,
-'name':generatedName,
-'telefono': 0,
-'ubicacion': '',
-'token':''
-// Agrega más campos según sea necesario
-};
+    'nickname': generatedName,
+    'nego': 'df',
+    'token': token,
+  });
 
-await pInfoDocument.set(pInfoData);
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => const AnimatedSwitcher(
-            duration: Duration(milliseconds: 200),
-            child: //ClientScreen(),
-            ScaffoldMessenger(child: 
-              SnackBar(content: Text('Cliente Screen')))
-          ),
+  // Crear una subcolección 'userData' y un documento 'pInfo' dentro de ella
+  CollectionReference userData = userDocument.collection('userData');
+  DocumentReference pInfoDocument = userData.doc('pInfo');
+  Map<String, dynamic> pInfoData = {
+    'direccion': '',
+    'estadoid': 0,
+    'name': generatedName,
+    'telefono': 0,
+    'ubicacion': '',
+ 
+    // Agrega más campos según sea necesario
+  };
+
+  await pInfoDocument.set(pInfoData);
+  Navigator.push(
+    context,
+    CupertinoPageRoute(
+      builder: (_) => const AnimatedSwitcher(
+        duration: Duration(milliseconds: 200),
+        child: ScaffoldMessenger(
+          child: SnackBar(content: Text('Cliente Screen')),
         ),
-      );
-    }
+      ),
+    ),
+  );
+}
   
     return userCredential;
   }

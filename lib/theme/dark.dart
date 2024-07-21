@@ -36,7 +36,10 @@ class ThemeDark {
         color: Color.fromARGB(135, 47, 47, 67),
       ),
       inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
+        labelStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: Color.fromARGB(255, 100, 104, 133),style: BorderStyle.solid),
+        ),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Color.fromARGB(255, 100, 104, 133)),
         ),

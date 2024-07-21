@@ -1,34 +1,42 @@
-import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:rastreogt/Home/timeline.dart';
 import 'package:rastreogt/providers/themeNoti.dart';
-import 'package:timelines/timelines.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:lottie/lottie.dart';
-
-const kTileHeight = 30.0;
-const completeColor = Color(0xff0a0a0a); // Negro
-const inProgressColor = Color(0xff00ff00); // Verde brillante
-const todoColor = Color(0xffd1d2d7); // Gris claro
 
 class ProcessTimelinePage extends StatefulWidget {
+  final String idPedidos;
+  ProcessTimelinePage({required this.idPedidos});
   @override
   _ProcessTimelinePageState createState() => _ProcessTimelinePageState();
 }
 
 class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
   int _processIndex = 0;
-  final TextEditingController _idController = TextEditingController();
+  String _trackingNumber = '';
+  User? user = FirebaseAuth.instance.currentUser;
+  TextEditingController _controller = TextEditingController();
   Map<String, dynamic>? _orderDetails;
-  List<String> _processes = ['Process 1', 'Process 2', 'Process 3', 'Process 4']; // Define the processes list
+
+  final List<String> _processes = [
+    'Creado',
+    'Preparando',
+    'En Camino',
+    'Entregado'
+  ]; // Define the processes list
 
   void _searchAndUpdateTimeline() async {
-    String id = _idController.text;
+    String id = _controller.text;
     if (id.isEmpty) return;
 
-    DocumentSnapshot docSnapshot = await FirebaseFirestore.instance.collection('pedidos').doc(id).get();
+    DocumentSnapshot docSnapshot =
+        await FirebaseFirestore.instance.collection('pedidos').doc(id).get();
 
     if (docSnapshot.exists) {
       Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
@@ -44,11 +52,50 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
     }
   }
 
+    void _onTrackingNumberChanged() {
+    setState(() {
+     
+      _trackingNumber = _controller.text
+          .toUpperCase()
+          .trim()
+          .replaceAll(' ', '');
+    });
+  }
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.idPedidos);
+   _controller.addListener(_onTrackingNumberChanged);
+    _searchAndUpdateTimeline();
+    // Aquí puedes agregar la lógica para buscar el pedido usando el idPedido
+    _trackingNumber = widget.idPedidos;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Process Timeline')),
+      appBar: AppBar(
+        title: Text(
+          'Process Timeline',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: _searchAndUpdateTimeline,
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           Container(
@@ -75,25 +122,37 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
-                  controller: _idController,
+                  controller: _controller,
                   decoration: InputDecoration(
                     labelText: 'Enter ID',
+                    labelStyle: GoogleFonts.poppins(),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search),
                       onPressed: _searchAndUpdateTimeline,
                     ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
                   ),
                 ),
               ),
-              SizedBox(height: 10), // Adds space between the search field and timeline
-              ProcessTimeline(processIndex: _processIndex),
-              SizedBox(height: 20), // Adds space between the timeline and order details
+              const SizedBox(
+                  height:
+                      10), // Adds space between the search field and timeline
+              TimelineWidget(
+                processes: _processes,
+                processIndex: _processIndex,
+              ),
+              const SizedBox(
+                  height:
+                      20), // Adds space between the timeline and order details
               if (_orderDetails != null) ...[
                 Container(
-                  padding: EdgeInsets.all(16.0),
-                  margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.all(16.0),
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    //color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(10.0),
                     boxShadow: [
                       BoxShadow(
@@ -103,30 +162,131 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Detalles del Pedido',
-                        style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10.0),
-                      Text('ID: ${_orderDetails!['id']}'),
-                      Text('Estado: ${_orderDetails!['estado']}'),
-                      Text('Cliente: ${_orderDetails!['cliente']}'),
-                      Text('Fecha: ${_orderDetails!['fecha']}'),
-                      SizedBox(height: 20.0),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navegar al mapa
-                            Navigator.pushNamed(context, '/map');
-                          },
-                          child: Text('Ir a mapa'),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child:Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Detalles del Pedido',
+        style: TextStyle(
+          fontSize: 20.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      const SizedBox(height: 10.0),
+      Text(
+        'ID: ${_orderDetails!['idpedidos']}',
+        style: GoogleFonts.roboto(
+          fontSize: 18.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white70,
+        ),
+      ),
+      const SizedBox(height: 10.0),
+      Text(
+        'Estado: ${_getEstadoDescripcion(_orderDetails!['estadoid'])}',
+        style: GoogleFonts.roboto(
+          fontSize: 18.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white70,
+        ),
+      ),
+      const SizedBox(height: 10.0),
+      Text(
+        'Negocio: ${_orderDetails!['nego']}',
+        style: GoogleFonts.roboto(
+          fontSize: 18.0,
+          fontWeight: FontWeight.bold,
+          //color: Colors.white70,
+        ),
+      ),
+      Text(
+        'Fecha: ${_orderDetails!['fechaCreacion'] != null ? DateFormat('dd/MM/yyyy').format((_orderDetails!['fechaCreacion'] as Timestamp).toDate()) : 'Fecha no disponible'}',
+        style: GoogleFonts.roboto(
+          fontSize: 18.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white70,
+        ),
+      ),
+      const SizedBox(height: 20.0),
+      Center(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+           
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+          ),
+          onPressed: () {
+            // Navegar al mapa
+            Navigator.pushNamed(context, '/map');
+          },
+          child: const Text('Ir a mapa'),
+        ),
+        
+      ),
+      ElevatedButton(
+                  onPressed: () async {
+                    print(_controller.text);
+                    if (_controller.text.isNotEmpty) {
+                     
+
+                   
+                      FirebaseFirestore.instance
+                          .collection('pedidos')
+                          .doc(_trackingNumber)
+                          .update({
+                        'idcliente': '${user!.email}',
+                      });
+                      // Registra el pedido para recibir notificaciones
+                      await FirebaseMessaging.instance
+                          .subscribeToTopic('pedido_$_trackingNumber');
+                    print('Subscribed to pedido_$_trackingNumber');
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Activado'),
+                            // ignore: prefer_const_constructors
+                            content:
+                                Text('Te has suscrito a las notificaciones'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text('OK'),
+                              )
+                            ],
+                          );
+                        },
+                      );
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Error'),
+                            // ignore: prefer_const_constructors
+                            content: Text(
+                                'El número de seguimiento no puede estar vacío'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text('OK'),
+                              )
+                            ],
+                          );
+                        },
+                      );
+                    }
+                  },
+                  child: const Text('Activar Notificaciones'),
+                ),
+    ],
+  ),
                 ),
               ],
             ],
@@ -139,9 +299,26 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
             _processIndex = ((_processIndex + 1) % _processes.length).toInt();
           });
         },
-        backgroundColor: inProgressColor,
-        child: const Icon(FontAwesomeIcons.chevronRight),
+        backgroundColor: Colors.deepPurpleAccent,
+        child: const Icon(FontAwesomeIcons.arrowRight),
       ),
     );
+  }
+}
+
+String _getEstadoDescripcion(int estadoid) {
+  switch (estadoid) {
+    case 1:
+      return 'Creado';
+    case 2:
+      return 'Preparando';
+    case 3:
+      return 'En camino';
+    case 4:
+      return 'Entregado';
+    case 5:
+      return 'Cancelado';
+    default:
+      return 'Desconocido';
   }
 }
