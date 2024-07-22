@@ -1,15 +1,7 @@
-import 'package:convex_bottom_bar/convex_bottom_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/widgets.dart' as pw;
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
-
-import 'package:printing/printing.dart';
-import 'package:rastreogt/providers/pedidosProvider.dart';
+import 'package:intl/intl.dart';
+import 'package:rastreogt/conf/export.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 final pedidosProvider = PedidosProvider();
 
@@ -27,6 +19,7 @@ class _PedidosPageState extends State<PedidosPage> {
   DateTime? _fechaFin;
   String? nombreNegocio;
   User? user = FirebaseAuth.instance.currentUser;
+  final GlobalKey<_PedidosPageState> myWidgetKey = GlobalKey();
 
   int _compareFechas(DocumentSnapshot<Object?> a, DocumentSnapshot<Object?> b) {
     return b['fechaCreacion']!.toDate().millisecondsSinceEpoch -
@@ -172,8 +165,8 @@ Future<void> generatePDF(
 
     // Verificar si el archivo se ha guardado correctamente
     if (await pdfFile.exists()) {
-      // Mostrar un cuadro de diálogo de éxito
-      // ignore: use_build_context_synchronously
+    if(context.mounted){
+        // Mostrar un cuadro de diálogo de éxito
       showDialog(
         context: context,
         builder: (context) {
@@ -191,9 +184,14 @@ Future<void> generatePDF(
           );
         },
       );
+    }else{
+      return;
+      }
+    
     } else {
+      // Verificar si el widget está montado antes de mostrar el cuadro de diálogo
+   if(context.mounted){
       // Mostrar un cuadro de diálogo de error
-      // ignore: use_build_context_synchronously
       showDialog(
         context: context,
         builder: (context) {
@@ -211,10 +209,17 @@ Future<void> generatePDF(
           );
         },
       );
+    }else{
+      return;
+      }
+    
+   
+
     }
   } else {
-    // Manejar el caso en el que la carpeta de almacenamiento externo no esté disponible
-    // ignore: use_build_context_synchronously
+    // Verificar si el widget está montado antes de mostrar el cuadro de diálogo
+  if(context.mounted){
+    // Mostrar un cuadro de diálogo de error
     showDialog(
       context: context,
       builder: (context) {
@@ -232,6 +237,10 @@ Future<void> generatePDF(
         );
       },
     );
+  }else{
+    return;
+    }
+    
   }
 }
 @override

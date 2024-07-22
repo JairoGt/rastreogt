@@ -1,13 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
-import 'package:rastreogt/Admin/drawer.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
-import 'package:rastreogt/providers/themeNoti.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class ClientPage extends StatefulWidget {
   const ClientPage({super.key});
@@ -134,7 +127,7 @@ class _ClientPageState extends State<ClientPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.only(top: 100, left: 50),
                 child: Text(
@@ -182,14 +175,14 @@ class _ClientPageState extends State<ClientPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.search),
-                      SizedBox(width: 20),
+                      const Icon(Icons.search),
+                      const SizedBox(width: 20),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProcessTimelinePage(
+                              builder: (context) => const ProcessTimelinePage(
                                 idPedidos: '',
                               ),
                             ),
@@ -286,7 +279,7 @@ class _ClientPageState extends State<ClientPage> {
                     );
                   }
 
-                  return Container(
+                  return SizedBox(
                     height: 200,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,

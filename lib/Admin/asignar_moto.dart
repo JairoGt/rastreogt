@@ -1,13 +1,6 @@
 // Importamos las bibliotecas necesarias
 // ignore_for_file: use_build_context_synchronously, unnecessary_null_comparison, iterable_contains_unrelated_type
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
-import 'package:rastreogt/providers/themeNoti.dart';
+import 'package:rastreogt/conf/export.dart';
 
 String nickname = '';
 // Inicializamos Cloud Firestore
@@ -52,8 +45,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
   @override
   void initState() {
     super.initState();
-    obtenerNombreUsuario();
-    print(nickname);  
+    obtenerNombreUsuario(); 
     // Obtener pedidos
     pedidosRef.where('estadoid', isEqualTo: 1)
     .where('negoname', isEqualTo: nickname)
@@ -83,7 +75,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
         elevation: 0,
         title:  Text('Asignar pedidos',style: 
         GoogleFonts.roboto(
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             //color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w500,
@@ -97,9 +89,9 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                ? [Color.fromARGB(255, 95, 107, 143), Color.fromARGB(255, 171, 170, 197)]
+                ? [const Color.fromARGB(255, 95, 107, 143), const Color.fromARGB(255, 171, 170, 197)]
                       :
-                  [Color.fromARGB(255, 114, 130, 255), Colors.white],
+                  [const Color.fromARGB(255, 114, 130, 255), Colors.white],
                   begin: Alignment.centerLeft,
                   end: Alignment.bottomCenter,
                 ),

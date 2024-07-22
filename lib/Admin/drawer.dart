@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
-import 'package:rastreogt/Home/configuracion.dart';
+import 'package:rastreogt/conf/configuracion.dart';
 
 class ModernDrawer extends StatefulWidget {
   const ModernDrawer({super.key});
@@ -45,6 +45,7 @@ Future<void> cerrarSesion() async {
       await FirebaseAuth.instance.signOut();
     }
   } catch (e) {
+      if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Error al cerrar sesión: $e'),

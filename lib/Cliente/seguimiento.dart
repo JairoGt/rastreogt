@@ -1,18 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
-import 'package:rastreogt/Home/timeline.dart';
-import 'package:rastreogt/providers/themeNoti.dart';
+import 'package:rastreogt/conf/export.dart';
+import 'package:rastreogt/conf/timeline.dart';
 
 class ProcessTimelinePage extends StatefulWidget {
   final String idPedidos;
-  ProcessTimelinePage({required this.idPedidos});
+  const ProcessTimelinePage({super.key, required this.idPedidos});
   @override
   _ProcessTimelinePageState createState() => _ProcessTimelinePageState();
 }
@@ -91,7 +84,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: const Icon(Icons.search),
             onPressed: _searchAndUpdateTimeline,
           ),
         ],
@@ -227,7 +220,6 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
       ),
       ElevatedButton(
                   onPressed: () async {
-                    print(_controller.text);
                     if (_controller.text.isNotEmpty) {
                      
 
@@ -241,7 +233,6 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                       // Registra el pedido para recibir notificaciones
                       await FirebaseMessaging.instance
                           .subscribeToTopic('pedido_$_trackingNumber');
-                    print('Subscribed to pedido_$_trackingNumber');
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
@@ -249,7 +240,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                             title: const Text('Activado'),
                             // ignore: prefer_const_constructors
                             content:
-                                Text('Te has suscrito a las notificaciones'),
+                                const Text('Te has suscrito a las notificaciones'),
                             actions: [
                               TextButton(
                                 onPressed: () {
@@ -293,15 +284,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _processIndex = ((_processIndex + 1) % _processes.length).toInt();
-          });
-        },
-        backgroundColor: Colors.deepPurpleAccent,
-        child: const Icon(FontAwesomeIcons.arrowRight),
-      ),
+      
     );
   }
 }

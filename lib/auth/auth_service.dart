@@ -98,17 +98,21 @@ class AuthService {
           await userDocument.update({'role': 'client'});
         }
       }
-
-      // Redirigir a la pantalla de inicio de sesión
-      Navigator.push(
+      if(context.mounted){
+           Navigator.push(
         context,
         CupertinoPageRoute(
-          builder: (_) => AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
+          builder: (_) => const AnimatedSwitcher(
+            duration: Duration(milliseconds: 200),
             child: Login(),
           ),
         ),
       );
+      }else{
+        return;
+      }
+      // Redirigir a la pantalla de inicio de sesión
+   
     } on FirebaseAuthException catch (e) {
       String message = "";
       if (e.code == 'weak-password') {

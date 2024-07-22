@@ -1,14 +1,8 @@
 // ignore_for_file: file_names, unused_element, non_constant_identifier_names
 
 import 'dart:math';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
+import 'package:rastreogt/conf/export.dart';
 
 String getGreeting() {
   final currentTime = DateTime.now();
@@ -482,11 +476,13 @@ void _crearPedido() async {
   _mostrarMensajePedidoCreado(idPedidoSJP);
 
   // Mostrar un mensaje de confirmación.
+  if (mounted){
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(
       content: Text('Pedido creado correctamente'),
     ),
   );
+  }
 }
   void _navegarAPedidosCreados() {
     // Limpiar los campos de generar pedido.

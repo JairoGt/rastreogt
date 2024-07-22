@@ -1,12 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
-import 'package:rastreogt/Admin/drawer.dart';
-import 'package:rastreogt/Admin/otros_nego.dart';
-import 'package:rastreogt/providers/themeNoti.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -120,81 +112,77 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
           bottom: PreferredSize(preferredSize: 
           const Size.fromHeight(20.0),
           
-                    child: Container(
-           
-            
-            child: Center(
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      Builder(
-                        builder: (context) {
-                          return IconButton(
-                            icon: Icon(Icons.menu),
-                            onPressed: () {
-                              Scaffold.of(context).openDrawer();
-                            },
-                          );
-                        }
-                      ),
-                      const SizedBox(width: 50),
-                      StreamBuilder<DocumentSnapshot>(
-                        stream: FirebaseFirestore.instance.collection('users').doc(user?.email).snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const CircularProgressIndicator();
-                          }
-                          if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          }
-                          if (!snapshot.hasData || !snapshot.data!.exists) {
-                            return const Text('Usuario no encontrado');
-                          }
-              
-                          var usuarioData = snapshot.data!.data() as Map<String, dynamic>;
-                          nombreUsuario = user?.displayName ?? usuarioData['nickname'];
-                          nombreNegocio = usuarioData['nego'];
-                          negoid = usuarioData['negoname'];
-              
-                          return Center(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(width: 50,),
-                                Center(
-                                  child: Text(
-                                    '${obtenerSaludo()}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
+                    child: Center(
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            children: [
+                              Builder(
+                                builder: (context) {
+                                  return IconButton(
+                                    icon: const Icon(Icons.menu),
+                                    onPressed: () {
+                                      Scaffold.of(context).openDrawer();
+                                    },
+                                  );
+                                }
+                              ),
+                              const SizedBox(width: 50),
+                              StreamBuilder<DocumentSnapshot>(
+                                stream: FirebaseFirestore.instance.collection('users').doc(user?.email).snapshots(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  }
+                                  if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  }
+                                  if (!snapshot.hasData || !snapshot.data!.exists) {
+                                    return const Text('Usuario no encontrado');
+                                  }
+                      
+                                  var usuarioData = snapshot.data!.data() as Map<String, dynamic>;
+                                  nombreUsuario = user?.displayName ?? usuarioData['nickname'];
+                                  nombreNegocio = usuarioData['nego'];
+                                  negoid = usuarioData['negoname'];
+                      
+                                  return Center(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const SizedBox(width: 50,),
+                                        Center(
+                                          child: Text(
+                                            obtenerSaludo(),
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          nombreUsuario,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ),
-                                Text(
-                                  '$nombreUsuario',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                                  );
+                                },
+                              ),
+                              const Spacer(),
+                              CircleAvatar(
+                                backgroundImage: NetworkImage(user?.photoURL ?? 'https://via.placeholder.com/150'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const Spacer(),
-                      CircleAvatar(
-                        backgroundImage: NetworkImage(user?.photoURL ?? 'https://via.placeholder.com/150'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+                    ),
         ),
        ), body: Stack(
           children: [
@@ -203,9 +191,9 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: themeNotifier.currentTheme.brightness == Brightness.dark
-              ? [Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
+              ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
                       :
-                  [Color.fromARGB(255, 114, 130, 255), Colors.white],
+                  [const Color.fromARGB(255, 114, 130, 255), Colors.white],
                   begin: Alignment.center,
                   end: Alignment.bottomCenter,
                 ),
@@ -327,14 +315,14 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
           color: themeNotifier.currentTheme.brightness == Brightness.dark
                       ? Colors.grey[900]!.withOpacity(0.5)
                       :
-           Color.fromARGB(157, 255, 255, 255),
+           const Color.fromARGB(157, 255, 255, 255),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
              color: themeNotifier.currentTheme.brightness == Brightness.dark
                       ? Colors.grey[900]!.withOpacity(0.5)
                       :
-             Color.fromARGB(255, 105, 89, 160).withOpacity(0.5),
+             const Color.fromARGB(255, 105, 89, 160).withOpacity(0.5),
               spreadRadius: 2,
               blurRadius: 5,
               offset: const Offset(0, 3),

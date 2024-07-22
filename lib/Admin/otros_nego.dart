@@ -1,8 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
-import 'package:rastreogt/providers/themeNoti.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class OtrosNegociosPage extends StatelessWidget {
   final String userEmail;
@@ -28,9 +24,9 @@ class OtrosNegociosPage extends StatelessWidget {
             decoration:  BoxDecoration(
               gradient: LinearGradient(
                 colors: themeNotifier.currentTheme.brightness == Brightness.dark
-              ? [Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
+              ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
                       :
-                  [Color.fromARGB(255, 114, 130, 255), Colors.white],
+                  [const Color.fromARGB(255, 114, 130, 255), Colors.white],
                 begin: Alignment.center,
                 end: Alignment.bottomCenter,
               ),
@@ -98,15 +94,24 @@ class OtrosNegociosPage extends StatelessWidget {
                               });
 
                           // Llama a la función para actualizar el negocio actual en la UI
+                        
                           onNegocioChanged(doc.id);
+                        if(context.mounted){
                           Navigator.pop(context);
+                        }
+                          
                         } catch (e) {
-                          print('Error al actualizar el negocio: $e');
+
+                          if(context.mounted){
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Error al actualizar el negocio'),
+                            SnackBar(
+                              content: Text('Error al actualizar el negocio $e'),
                             ),
                           );
+                          }else{
+                            return;
+                          }
+                        
                         }
                       },
                     ),

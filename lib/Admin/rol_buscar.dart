@@ -1,11 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class RolePage extends StatefulWidget {
   const RolePage({super.key});
@@ -37,7 +33,7 @@ class _RolePageState extends State<RolePage> {
   Future<void> _getCurrentUserNegoname() async {
     DocumentSnapshot currentUserSnapshot = await _firestore.collection('users').doc(user!.email).get();
     _currentUserNegoname = currentUserSnapshot['negoname'];
-    print('Negoname: $_currentUserNegoname');
+    
   }
 
   void _getUsers1() async {
@@ -80,6 +76,7 @@ class _RolePageState extends State<RolePage> {
     _filterUsers();
 
     await Future.delayed(const Duration(seconds: 2));
+    if(!mounted) return;
     Navigator.of(context).pop();
     setState(() {});
   }
@@ -126,7 +123,7 @@ class _RolePageState extends State<RolePage> {
     await Future.delayed(const Duration(seconds: 2));
 
     setState(() {});
-
+  if(!mounted) return;
     Navigator.of(context).pop();
   }
 

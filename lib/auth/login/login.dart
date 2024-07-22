@@ -95,7 +95,7 @@ class _LoginState extends State<Login> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                 child: Container(
-                  color: Color.fromARGB(255, 255, 255, 255).withOpacity(0.5), // Añade un color de fondo semitransparente
+                  color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.5), // Añade un color de fondo semitransparente
                   child: Center(
                     child: Lottie.asset(
                       'assets/lotties/loading.json',

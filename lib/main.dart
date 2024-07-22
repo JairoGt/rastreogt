@@ -10,7 +10,7 @@ import 'package:rastreogt/Admin/create_pedidos.dart';
 import 'package:rastreogt/Admin/edit_pedidos.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Admin/rol_buscar.dart';
-import 'package:rastreogt/Home/noti_api.dart';
+import 'package:rastreogt/conf/noti_api.dart';
 import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/firebase_options.dart';
 import 'package:rastreogt/providers/pedidosProvider.dart';
@@ -21,7 +21,6 @@ final navigatorKey = GlobalKey<NavigatorState>();
 // function to listen to background changes
 Future _firebaseBackgroundMessage(RemoteMessage message) async {
   if (message.notification != null) {
-    print("Some notification Received in background...");
   }
 }
 
@@ -37,7 +36,7 @@ void showNotification({required String title, required String body}) {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text("Ok"))
+            child: const Text("Ok"))
       ],
     ),
   );
@@ -56,7 +55,6 @@ Future<void> main() async {
   // on background notification tapped
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     if (message.notification != null) {
-      print("Background Notification Tapped");
       navigatorKey.currentState!.pushNamed("/message", arguments: message);
     }
   });
@@ -64,7 +62,6 @@ Future<void> main() async {
 // to handle foreground notifications
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     String payloadData = jsonEncode(message.data);
-    print("Got a message in foreground");
     if (message.notification != null) {
       if (kIsWeb) {
         showNotification(
@@ -84,8 +81,7 @@ Future<void> main() async {
       await FirebaseMessaging.instance.getInitialMessage();
 
   if (message != null) {
-    print("Launched from terminated state");
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 1), () {
       navigatorKey.currentState!.pushNamed("/message", arguments: message);
     });
   }
@@ -127,7 +123,7 @@ class MyApp extends StatelessWidget {
           '/reasignar': (context) => const ReasignarPedidos(),
           '/crearPedido': (context) => const CrearPedidoScreen(),
         },
-        home: Login(),
+        home: const Login(),
       ),
     );
   }

@@ -1,8 +1,4 @@
-
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class EditPedidos extends StatefulWidget {
   const EditPedidos({super.key});
@@ -54,13 +50,15 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
     );
   }
   Future<void> _buscarPedido() async {
+    if (!mounted) return;
     final idPedido = _idPedidoController.text.toUpperCase();
     if (idPedido.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor ingrese un ID de pedido')));
       return;
     }
-
+ 
     final pedidoDoc = await FirebaseFirestore.instance.collection('pedidos').doc(idPedido).get();
+  if (!mounted) return;
     if (!pedidoDoc.exists) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pedido no encontrado')));
       return;
@@ -240,7 +238,8 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
             await pInfoDocument.set(pInfoData);
           }
           
-          showDialog(
+          if(context.mounted){
+              showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -279,6 +278,10 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
         );
       },
     );
+          }else{
+            return;
+          }
+        if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos guardados exitosamente')));
         } catch (e) {
            ('Error al guardar los datos: $e');

@@ -13,7 +13,7 @@ class ConfiguracionAll extends StatelessWidget {
  return Scaffold(
   extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Home Page'),
+        title: const Text('Home Page'),
         actions: [
          Switch(
             value: Provider.of<ThemeNotifier>(context).isDarkMode,
@@ -29,9 +29,9 @@ class ConfiguracionAll extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                      ? [Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
+                      ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
                       :
-                  [Color.fromARGB(255, 114, 130, 255), Colors.white],
+                  [const Color.fromARGB(255, 114, 130, 255), Colors.white],
                   begin: Alignment.centerLeft,
                   end: Alignment.bottomCenter,
                 ),
@@ -55,7 +55,7 @@ class ConfiguracionAll extends StatelessWidget {
                   //   MaterialPageRoute(builder: (context) => SecondScreen()),
                   // );
                 },
-                child: Text('Ir a otra pantalla'),
+                child: const Text('Ir a otra pantalla'),
               ),
             ),
           ),

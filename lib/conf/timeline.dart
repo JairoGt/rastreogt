@@ -10,7 +10,7 @@ class TimelineWidget extends StatefulWidget {
   final List<String> processes;
   final int processIndex;
 
-  TimelineWidget({required this.processes, required this.processIndex});
+  const TimelineWidget({super.key, required this.processes, required this.processIndex});
 
   @override
   _TimelineWidgetState createState() => _TimelineWidgetState();
@@ -34,7 +34,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
       child: Timeline.tileBuilder(
         theme: TimelineThemeData(
           direction: Axis.horizontal,
-          connectorTheme: ConnectorThemeData(
+          connectorTheme: const ConnectorThemeData(
             space: 30.0,
             thickness: 5.0,
           ),
@@ -67,24 +67,11 @@ class _TimelineWidgetState extends State<TimelineWidget> {
             );
           },
           indicatorBuilder: (_, index) {
-            var color;
-            var child;
+            Color color;
             if (index == widget.processIndex) {
               color = inProgressColor;
-              child = Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CircularProgressIndicator(
-                  strokeWidth: 3.0,
-                  valueColor: AlwaysStoppedAnimation(Colors.white),
-                ),
-              );
             } else if (index < widget.processIndex) {
               color = completeColor;
-              child = Icon(
-                Icons.check,
-               color: Colors.white,
-                size: 15.0,
-              );
             } else {
               color = todoColor;
             }
@@ -92,20 +79,20 @@ class _TimelineWidgetState extends State<TimelineWidget> {
             if (index <= widget.processIndex) {
               return Stack(
                 children: [
-                  CustomPaint(
+                  const CustomPaint(
                     size: Size(30.0, 30.0),
                   ),
                   DotIndicator(
                     size: 30.0,
                     color: color,
-                    child: child,
+                   
                   ),
                 ],
               );
             } else {
               return Stack(
                 children: [
-                  CustomPaint(
+                  const CustomPaint(
                     size: Size(15.0, 15.0),
                   ),
                   OutlinedDotIndicator(

@@ -1,14 +1,7 @@
 // ignore: file_names
 import 'dart:math';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:rastreogt/Admin/admin_page.dart';
-import 'package:rastreogt/Cliente/client_page.dart';
-import 'package:rastreogt/Moto/moto_page.dart';
+import 'package:rastreogt/conf/export.dart';
 
 String generateName(String email) {
   String localPart = email.split('@')[0];
@@ -126,6 +119,7 @@ class GoogleAuthService {
   };
 
   await pInfoDocument.set(pInfoData);
+  
   Navigator.push(
     context,
     CupertinoPageRoute(
