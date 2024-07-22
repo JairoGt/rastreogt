@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class ThemeDark {
   static ThemeData get theme {
@@ -24,9 +25,16 @@ class ThemeDark {
         titleTextStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220), fontSize: 20),
         iconTheme: IconThemeData(color: Color.fromARGB(255, 216, 207, 207)),
       ),
-      buttonTheme: const ButtonThemeData(
-        buttonColor: Color.fromARGB(255, 34, 43, 115),
-        textTheme: ButtonTextTheme.primary,
+      buttonTheme:  ButtonThemeData(
+        buttonColor: Color.fromARGB(255, 130, 138, 199),
+        textTheme: ButtonTextTheme.normal,
+      ),
+
+       elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 37, 41, 69)),
+          foregroundColor: WidgetStateProperty.all(Colors.white),
+        ),
       ),
       textTheme: const TextTheme(
         // Define los estilos de texto aquí si es necesario
@@ -36,12 +44,16 @@ class ThemeDark {
         color: Color.fromARGB(135, 47, 47, 67),
       ),
       inputDecorationTheme: const InputDecorationTheme(
+        hintStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),
         labelStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),
         border: OutlineInputBorder(
           borderSide: BorderSide(color: Color.fromARGB(255, 100, 104, 133),style: BorderStyle.solid),
         ),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Color.fromARGB(255, 100, 104, 133)),
+        ),
+         enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Color.fromARGB(255, 124, 124, 134)),
         ),
       ),
     );

@@ -38,7 +38,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      //backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: _signup(context),
       appBar: AppBar(
@@ -52,16 +52,16 @@ class _LoginState extends State<Login> {
         children: [
         SafeArea(
           child: SingleChildScrollView(
-           padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 16),
+           padding: const EdgeInsets.all(24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Center(
                   child: Text(
                     'Hola de nuevo!',
                     style: GoogleFonts.aDLaMDisplay(
                       textStyle: const TextStyle(
-                        color: Colors.black,
+                       // color: Colors.black,
                         fontWeight: FontWeight.bold,
                         fontSize: 32
                       )
@@ -69,9 +69,10 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 80,),
-                 _emailAddress(),
+                  _buildTextField('Correo electrónico', _emailController, false,Icon(Icons.email)),
                  const SizedBox(height: 20,),
-                 _password(),
+                                  _buildTextField('Contraseña', _passwordController, true,Icon(Icons.password_outlined )),
+
                  const SizedBox(height: 50,),
                  _signin(context),
                   const SizedBox(height: 20,),
@@ -113,42 +114,6 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Widget _emailAddress() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Correo Electrónico',
-          style: GoogleFonts.raleway(
-            textStyle: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.normal,
-              fontSize: 16
-            )
-          ),
-        ),
-        const SizedBox(height: 16,),
-        TextField(
-          controller: _emailController,
-          decoration: InputDecoration(
-            filled: true,
-            hintText: 'Ingresa tu email',
-            hintStyle: const TextStyle(
-              color: Color(0xff6A6A6A),
-              fontWeight: FontWeight.normal,
-              fontSize: 14
-            ),
-            fillColor: const Color(0xffF7F7F9) ,
-            border: OutlineInputBorder(
-              borderSide: BorderSide.none,
-              borderRadius: BorderRadius.circular(14)
-            )
-          ),
-        )
-      ],
-    );
-  }
 
   Widget _password() {
     return Column(
@@ -185,7 +150,7 @@ class _LoginState extends State<Login> {
   Widget _signin(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 59, 76, 100),
+       // backgroundColor: const Color.fromARGB(255, 59, 76, 100),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
         ),
@@ -202,7 +167,7 @@ class _LoginState extends State<Login> {
         _hideLoading();
       },
       child: const Text("Ingresar", style: TextStyle(
-        color: Colors.white,
+       // color: Colors.white,
         fontWeight: FontWeight.bold,
         fontSize: 16
       ),),
@@ -227,7 +192,7 @@ class _LoginState extends State<Login> {
               TextSpan(
                 text: "Crear Cuenta",
                 style: const TextStyle(
-                    color: Color(0xff1A1D1E),
+                   // color: Color(0xff1A1D1E),
                     fontWeight: FontWeight.normal,
                     fontSize: 16
                   ),
@@ -246,3 +211,24 @@ class _LoginState extends State<Login> {
     );
   }
 }
+
+ Widget _buildTextField(String label, TextEditingController controller, bool obscureText,Icon ico) {
+    return TextField(
+      
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        prefixIcon: ico,
+        labelText: label,
+        
+        //labelStyle: GoogleFonts.raleway(color: Colors.white),
+        filled: true,
+       fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2), // Fondo semitransparente
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(25.0),
+          borderSide: BorderSide.none,
+          
+        ),
+      ),
+    );
+  }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class ThemeLight {
   static ThemeData get theme {
     return ThemeData(
-      
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: const Color.fromARGB(255, 114, 130, 255),
@@ -12,7 +11,6 @@ class ThemeLight {
         primary: Color.fromARGB(255, 96, 97, 179),
         inversePrimary: Color.fromARGB(255, 90, 110, 255),
         secondary: Colors.white,
-  //et: Colors.grey[200]!,
         surface: Colors.white,
         error: Colors.red,
         onPrimary: Colors.white,
@@ -30,18 +28,25 @@ class ThemeLight {
         buttonColor: Color.fromARGB(255, 114, 130, 255),
         textTheme: ButtonTextTheme.primary,
       ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 114, 130, 255)),
+          foregroundColor: WidgetStateProperty.all(Colors.white),
+        ),
+      ),
       textTheme: const TextTheme(
-
+        // Define los estilos de texto aquí si es necesario
       ),
       cardTheme: const CardTheme(
         color: Colors.white,
-
       ),
-      
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Color.fromARGB(255, 114, 130, 255)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Color.fromARGB(255, 59, 59, 62)),
         ),
       ),
     );

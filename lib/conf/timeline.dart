@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:timelines/timelines.dart';
 
-const completeColor = Color.fromARGB(255, 158, 134, 134);
 const inProgressColor = Color(0xff5ec792);
-const todoColor = Color(0xffd1d2d7);
 
 class TimelineWidget extends StatefulWidget {
   final List<String> processes;
@@ -17,7 +15,21 @@ class TimelineWidget extends StatefulWidget {
 }
 
 class _TimelineWidgetState extends State<TimelineWidget> {
-  Color getColor(int index) {
+  
+  Color getColor(BuildContext context, int index) {
+    // Obtener el tema actual
+    final brightness = Theme.of(context).brightness;
+
+    // Definir colores para tema claro y oscuro
+    final completeColor = brightness == Brightness.dark
+        ? Color.fromARGB(255, 136, 132, 132) // Color para tema oscuro
+        : Color.fromARGB(255, 201, 195, 195); // Color para tema claro
+
+    final todoColor = brightness == Brightness.dark
+        ? Color(0xffd1d2d7) // Color para tema oscuro
+        : Color(0xffd1d2d7); // Color para tema claro (puedes cambiarlo si es necesario)
+
+    // Devolver el color adecuado según el índice
     if (index == widget.processIndex) {
       return inProgressColor;
     } else if (index < widget.processIndex) {
@@ -49,7 +61,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
               child: Image.asset(
                 'assets/images/status${index + 1}.png',
                 width: 50.0,
-                color: getColor(index),
+                color: getColor(context, index),
               ),
             );
           },
@@ -60,20 +72,33 @@ class _TimelineWidgetState extends State<TimelineWidget> {
                 widget.processes[index],
                 style: GoogleFonts.roboto(
                   fontSize: 18.0,
-                  color: getColor(index),
+                  color: getColor(context, index),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             );
           },
-          indicatorBuilder: (_, index) {
+          indicatorBuilder: (context, index) {
             Color color;
+            var child;
             if (index == widget.processIndex) {
               color = inProgressColor;
+              child = const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(
+                  strokeWidth: 3.0,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              );
             } else if (index < widget.processIndex) {
-              color = completeColor;
+              color = getColor(context, index);
+              child = Icon(
+                Icons.check,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: 15.0,
+              );
             } else {
-              color = todoColor;
+              color = getColor(context, index);
             }
 
             if (index <= widget.processIndex) {
@@ -85,7 +110,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
                   DotIndicator(
                     size: 30.0,
                     color: color,
-                   
+                    child: child,
                   ),
                 ],
               );
@@ -103,11 +128,11 @@ class _TimelineWidgetState extends State<TimelineWidget> {
               );
             }
           },
-          connectorBuilder: (_, index, type) {
+          connectorBuilder: (context, index, type) {
             if (index > 0) {
               if (index == widget.processIndex) {
-                final prevColor = getColor(index - 1);
-                final color = getColor(index);
+                final prevColor = getColor(context, index - 1);
+                final color = getColor(context, index);
                 List<Color> gradientColors;
                 if (type == ConnectorType.start) {
                   gradientColors = [
@@ -129,7 +154,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
                 );
               } else {
                 return SolidLineConnector(
-                  color: getColor(index),
+                  color: getColor(context, index),
                 );
               }
             } else {

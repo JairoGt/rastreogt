@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
+import 'package:rastreogt/Cliente/sol_nego.dart';
 import 'package:rastreogt/conf/configuracion.dart';
 
 class ModernDrawer extends StatefulWidget {
@@ -124,6 +125,19 @@ Future<void> cerrarSesion() async {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ConfiguracionAll(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Solicitar negocio'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push( 
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MyHomePage(),
                 ),
               );
             },

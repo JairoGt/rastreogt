@@ -1,6 +1,6 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:intl/intl.dart';
+import 'package:rastreogt/Cliente/detalle_pedido.dart';
 import 'package:rastreogt/conf/export.dart';
+import 'package:intl/intl.dart';
 import 'package:rastreogt/conf/timeline.dart';
 
 class ProcessTimelinePage extends StatefulWidget {
@@ -16,6 +16,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
   User? user = FirebaseAuth.instance.currentUser;
   TextEditingController _controller = TextEditingController();
   Map<String, dynamic>? _orderDetails;
+ 
 
   final List<String> _processes = [
     'Creado',
@@ -47,7 +48,6 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
 
     void _onTrackingNumberChanged() {
     setState(() {
-     
       _trackingNumber = _controller.text
           .toUpperCase()
           .trim()
@@ -69,226 +69,217 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
     _controller.dispose();
     super.dispose();
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Process Timeline',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+@override
+Widget build(BuildContext context) {
+  final themeNotifier = Provider.of<ThemeNotifier>(context);
+  return Scaffold(
+    appBar: AppBar(
+      centerTitle: true,
+      title: Text(
+        'Seguimiento de Pedido',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: _searchAndUpdateTimeline,
+        ),
+      ],
+    ),
+    body: Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: themeNotifier.currentTheme.brightness == Brightness.dark
+                  ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
+                  : [const Color.fromARGB(255, 114, 130, 255), Colors.white],
+              begin: Alignment.center,
+              end: Alignment.bottomLeft,
+            ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _searchAndUpdateTimeline,
+        SizedBox.expand(
+          child: Lottie.asset(
+            'assets/lotties/estelas.json',
+            fit: BoxFit.cover,
+            animate: true,
+            repeat: false,
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                    ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
-                    : [const Color.fromARGB(255, 114, 130, 255), Colors.white],
-                begin: Alignment.center,
-                end: Alignment.bottomLeft,
-              ),
-            ),
-          ),
-          SizedBox.expand(
-            child: Lottie.asset(
-              'assets/lotties/estelas.json',
-              fit: BoxFit.cover,
-              animate: true,
-              repeat: false,
-            ),
-          ),
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    labelText: 'Enter ID',
-                    labelStyle: GoogleFonts.poppins(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: _searchAndUpdateTimeline,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(
-                  height:
-                      10), // Adds space between the search field and timeline
-              TimelineWidget(
-                processes: _processes,
-                processIndex: _processIndex,
-              ),
-              const SizedBox(
-                  height:
-                      20), // Adds space between the timeline and order details
-              if (_orderDetails != null) ...[
-                Container(
+        ),
+        SingleChildScrollView(
+          child: GestureDetector(
+            onTap: () {
+             showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return DetalleDialog(orderId: _orderDetails!['idpedidos']);
+    },
+  );
+            },
+            child: Column(
+              children: [
+                Padding(
                   padding: const EdgeInsets.all(16.0),
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    //color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(10.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        blurRadius: 5.0,
-                        spreadRadius: 2.0,
+                  child: TextFormField(
+                    textInputAction: TextInputAction.search,
+                    onFieldSubmitted: (value) {
+                      _searchAndUpdateTimeline();
+                    },
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: 'Enter ID',
+                     // labelStyle: GoogleFonts.poppins(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: _searchAndUpdateTimeline,
                       ),
-                    ],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
                   ),
-                  child:Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Detalles del Pedido',
-        style: TextStyle(
-          fontSize: 20.0,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      const SizedBox(height: 10.0),
-      Text(
-        'ID: ${_orderDetails!['idpedidos']}',
-        style: GoogleFonts.roboto(
-          fontSize: 18.0,
-          fontWeight: FontWeight.bold,
-          color: Colors.white70,
-        ),
-      ),
-      const SizedBox(height: 10.0),
-      Text(
-        'Estado: ${_getEstadoDescripcion(_orderDetails!['estadoid'])}',
-        style: GoogleFonts.roboto(
-          fontSize: 18.0,
-          fontWeight: FontWeight.bold,
-          color: Colors.white70,
-        ),
-      ),
-      const SizedBox(height: 10.0),
-      Text(
-        'Negocio: ${_orderDetails!['nego']}',
-        style: GoogleFonts.roboto(
-          fontSize: 18.0,
-          fontWeight: FontWeight.bold,
-          //color: Colors.white70,
-        ),
-      ),
-      Text(
-        'Fecha: ${_orderDetails!['fechaCreacion'] != null ? DateFormat('dd/MM/yyyy').format((_orderDetails!['fechaCreacion'] as Timestamp).toDate()) : 'Fecha no disponible'}',
-        style: GoogleFonts.roboto(
-          fontSize: 18.0,
-          fontWeight: FontWeight.bold,
-          color: Colors.white70,
-        ),
-      ),
-      const SizedBox(height: 20.0),
-      Center(
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-           
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0),
+                ),
+                const SizedBox(height: 10),
+                if (_orderDetails != null) ...[
+                  TimelineWidget(
+                    processes: _processes,
+                    processIndex: _processIndex,
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          blurRadius: 5.0,
+                          spreadRadius: 2.0,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ver detalles del Pedido',
+                          style: TextStyle(
+                            fontSize: 20.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 10.0),
+                       
+                        const SizedBox(height: 10.0),
+                        Text(
+                          'Negocio que envia: \n${_orderDetails!['nego']}',
+                          style: GoogleFonts.roboto(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Fecha de envio: \n${_orderDetails!['fechaCreacion'] != null ? DateFormat('dd/MM/yyyy').format((_orderDetails!['fechaCreacion'] as Timestamp).toDate()) : 'Fecha no disponible'}',
+                          style: GoogleFonts.roboto(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                          ),
+                        ),
+                         SizedBox(height: 10.0),
+                        Text(
+'Motorista Asignado: \n${_orderDetails!['motoname'] != null ? _orderDetails!['motoname'] : 'Ocurrio un Error al cargar el nombre'}',                          style: GoogleFonts.roboto(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 20.0),
+                        Center(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/map');
+                            },
+                            child: const Text('Ir a mapa'),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (_controller.text.isNotEmpty) {
+                              FirebaseFirestore.instance
+                                  .collection('pedidos')
+                                  .doc(_trackingNumber)
+                                  .update({
+                                'idcliente': '${user!.email}',
+                              });
+                              await FirebaseMessaging.instance
+                                  .subscribeToTopic('pedido_$_trackingNumber');
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Activado'),
+                                    content: const Text('Te has suscrito a las notificaciones'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('OK'),
+                                      )
+                                    ],
+                                  );
+                                },
+                              );
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Error'),
+                                    content: Text('El número de seguimiento no puede estar vacío'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('OK'),
+                                      )
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+                          },
+                          child: const Text('Activar Notificaciones'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                ],
+              ],
             ),
           ),
-          onPressed: () {
-            // Navegar al mapa
-            Navigator.pushNamed(context, '/map');
-          },
-          child: const Text('Ir a mapa'),
         ),
-        
-      ),
-      ElevatedButton(
-                  onPressed: () async {
-                    if (_controller.text.isNotEmpty) {
-                     
-
-                   
-                      FirebaseFirestore.instance
-                          .collection('pedidos')
-                          .doc(_trackingNumber)
-                          .update({
-                        'idcliente': '${user!.email}',
-                      });
-                      // Registra el pedido para recibir notificaciones
-                      await FirebaseMessaging.instance
-                          .subscribeToTopic('pedido_$_trackingNumber');
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Activado'),
-                            // ignore: prefer_const_constructors
-                            content:
-                                const Text('Te has suscrito a las notificaciones'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text('OK'),
-                              )
-                            ],
-                          );
-                        },
-                      );
-                    } else {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Error'),
-                            // ignore: prefer_const_constructors
-                            content: Text(
-                                'El número de seguimiento no puede estar vacío'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text('OK'),
-                              )
-                            ],
-                          );
-                        },
-                      );
-                    }
-                  },
-                  child: const Text('Activar Notificaciones'),
-                ),
-    ],
-  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-      
-    );
-  }
+      ],
+    ),
+   
+  );
 }
-
+}
 String _getEstadoDescripcion(int estadoid) {
   switch (estadoid) {
     case 1:
