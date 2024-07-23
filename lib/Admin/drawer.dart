@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
+import 'package:rastreogt/Cliente/pInfo.dart';
 import 'package:rastreogt/Cliente/sol_nego.dart';
 import 'package:rastreogt/conf/configuracion.dart';
 
@@ -58,7 +59,7 @@ Future<void> cerrarSesion() async {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).cardColor,
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
@@ -93,6 +94,18 @@ Future<void> cerrarSesion() async {
             title: const Text('Inicio'),
             onTap: () {
               Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Perfil'),
+            onTap: () {
+              Navigator.pop(context);
+            Navigator.push(context, 
+        
+              MaterialPageRoute(builder: (context) =>  UserInfoScreen(userEmail: user?.email))
+          
+            );
             },
           ),
           if (role == 'admin') ...[

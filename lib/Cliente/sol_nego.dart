@@ -22,7 +22,6 @@ const _credentials = r'''
 ''';
 
 /// Tu ID de hoja de cálculo
-///
 /// Se puede encontrar en el enlace a tu hoja de cálculo -
 /// el enlace se ve así https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit#gid=0
 const _spreadsheetId = '1JKDGcrfI9BGsFMraGEwI3CGFh9msBcur500Jp9OKpHo';

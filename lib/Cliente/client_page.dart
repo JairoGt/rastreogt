@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
 import 'package:rastreogt/conf/export.dart';
@@ -16,6 +18,9 @@ class _ClientPageState extends State<ClientPage> {
   String nickname = '';
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   User? user = FirebaseAuth.instance.currentUser;
+   final ScrollController _scrollController = ScrollController();
+  Timer? _timer;
+
 
   Future<void> obtenerNombreUsuario() async {
     DocumentSnapshot usuario = await FirebaseFirestore.instance
@@ -65,7 +70,36 @@ class _ClientPageState extends State<ClientPage> {
     obtenerNombreUsuario();
     obtenerNego();
     obtenerNegoid();
+     _startAutoScroll();
   }
+
+   @override
+  void dispose() {
+    _timer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  
+ void _startAutoScroll() {
+  _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+    if (_scrollController.hasClients) {
+      final maxScrollExtent = _scrollController.position.maxScrollExtent;
+      final currentScrollPosition = _scrollController.position.pixels;
+      final newScrollPosition = currentScrollPosition + 200;
+
+      if (newScrollPosition >= maxScrollExtent) {
+        _scrollController.jumpTo(0);
+      } else {
+        _scrollController.animateTo(
+          newScrollPosition,
+          duration: Duration(seconds: 1),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -163,11 +197,13 @@ class _ClientPageState extends State<ClientPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(152, 103, 100, 168),
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: const [
+                    boxShadow:  [
                       BoxShadow(
-                        color: Colors.black26,
+                     color: Theme.of(context).brightness == Brightness.dark
+      ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
+      : Colors.deepPurple.withOpacity(0.5),
                         blurRadius: 4,
                         offset: Offset(2, 2),
                       ),
@@ -247,116 +283,149 @@ class _ClientPageState extends State<ClientPage> {
                   ),
                 ),
               ),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('pedidos')
-                    .where('nickname', isEqualTo: nickname)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  var data = snapshot.data;
-                  if (data == null) {
-                    return const Center(
-                      child: Text('No hay datos disponibles'),
-                    );
-                  }
+            
+StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance
+      .collection('pedidos')
+      .where('nickname', isEqualTo: nickname)
+      .snapshots(),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+    var data = snapshot.data;
+    if (data == null) {
+      return const Center(
+        child: Text('No hay datos disponibles'),
+      );
+    }
 
-                  var pedidos = data.docs;
-                  // Filtrar pedidos por nickname y estadoid
-                  var pedidosFiltrados = pedidos.where((pedido) {
-                    var pedidoData = pedido.data() as Map<String, dynamic>;
-                    return pedidoData['nickname'] == nickname &&
-                        pedidoData['estadoid'] < 4;
-                  }).toList();
+    var pedidos = data.docs;
+    var pedidosFiltrados = pedidos.where((pedido) {
+      var pedidoData = pedido.data() as Map<String, dynamic>;
+      return pedidoData['nickname'] == nickname &&
+          pedidoData['estadoid'] < 4;
+    }).toList();
 
-                  if (pedidosFiltrados.isEmpty) {
-                    return const Center(
-                      child: Text('No hay pedidos para este usuario'),
-                    );
-                  }
+    if (pedidosFiltrados.isEmpty) {
+      return const Center(
+        child: Text('No hay pedidos para este usuario'),
+      );
+    }
 
-                  return SizedBox(
-                    height: 200,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: pedidosFiltrados.length,
-                      itemBuilder: (context, index) {
-                        var pedido = pedidosFiltrados[index].data()
-                            as Map<String, dynamic>;
-                        var idPedido = pedido['idpedidos'];
-                        var estado = pedido['estadoid'];
-                        var fecha =
-                            (pedido['fechaCreacion'] as Timestamp).toDate();
+    return SizedBox(
+      height: 200,
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        itemCount: pedidosFiltrados.length,
+        itemBuilder: (context, index) {
+          var pedido = pedidosFiltrados[index].data() as Map<String, dynamic>;
+          var idPedido = pedido['idpedidos'];
+          var fecha = (pedido['fechaCreacion'] as Timestamp).toDate();
+          
+          var ahora = DateTime.now();
+          var diferencia = ahora.difference(fecha);
+          var minutosTranscurridos = diferencia.inMinutes;
 
-                        return Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ProcessTimelinePage(idPedidos: idPedido),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              width: 200,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.5),
-                                    blurRadius: 5.0,
-                                    spreadRadius: 2.0,
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      'Pedido #$idPedido',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      'Estado: $estado',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      'Fecha: ${fecha.day}/${fecha.month}/${fecha.year}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+          String tiempoTranscurrido;
+          if (minutosTranscurridos < 60) {
+            tiempoTranscurrido = '$minutosTranscurridos minutos';
+          } else if (minutosTranscurridos < 1440) {
+            var horasTranscurridas = diferencia.inHours;
+            tiempoTranscurrido = '$horasTranscurridas horas';
+          } else {
+            var diasTranscurridos = diferencia.inDays;
+            tiempoTranscurrido = '$diasTranscurridos días';
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(8),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProcessTimelinePage(idPedidos: idPedido),
+                  ),
+                );
+              },
+              child: Container(
+                
+                width: 200,
+                decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+
+                  borderRadius: BorderRadius.circular(15.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).brightness == Brightness.dark
+      ? const Color.fromARGB(155, 0, 0, 0)
+      : Colors.deepPurple.withOpacity(0.5),
+                      blurRadius: 10.0,
+                      spreadRadius: 2.0,
+                      offset: Offset(0, 5),
                     ),
-                  );
-                },
-              )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        'Pedido #$idPedido',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        'Fecha: ${fecha.day}/${fecha.month}/${fecha.year}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        'Creado hace:',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      ),
+                    ),
+                      Padding(
+                      padding: const EdgeInsets.only(top: 1,left: 8),
+                      child: Text(
+                        tiempoTranscurrido,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  },
+)
             ],
           ),
         ]),

@@ -84,8 +84,10 @@ Widget build(BuildContext context) {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: _searchAndUpdateTimeline,
+          icon: const Icon(Icons.refresh),
+          onPressed: (){
+            
+          },
         ),
       ],
     ),
@@ -111,53 +113,55 @@ Widget build(BuildContext context) {
           ),
         ),
         SingleChildScrollView(
-          child: GestureDetector(
-            onTap: () {
-             showDialog(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  textInputAction: TextInputAction.search,
+                  onFieldSubmitted: (value) {
+                    _searchAndUpdateTimeline();
+                  },
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    labelText: 'Enter ID',
+                   // labelStyle: GoogleFonts.poppins(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: _searchAndUpdateTimeline,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (_orderDetails != null) ...[
+                TimelineWidget(
+                  processes: _processes,
+                  processIndex: _processIndex,
+                ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                     showDialog(
     context: context,
     builder: (BuildContext context) {
       return DetalleDialog(orderId: _orderDetails!['idpedidos']);
     },
   );
-            },
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextFormField(
-                    textInputAction: TextInputAction.search,
-                    onFieldSubmitted: (value) {
-                      _searchAndUpdateTimeline();
-                    },
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      labelText: 'Enter ID',
-                     // labelStyle: GoogleFonts.poppins(),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: _searchAndUpdateTimeline,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (_orderDetails != null) ...[
-                  TimelineWidget(
-                    processes: _processes,
-                    processIndex: _processIndex,
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
+                  },
+                  child: Container(
                     padding: const EdgeInsets.all(16.0),
                     margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10.0),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
+                        color:  Theme.of(context).brightness == Brightness.dark
+                  ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
+                  : Colors.deepPurple.withOpacity(0.5),
                           blurRadius: 5.0,
                           spreadRadius: 2.0,
                         ),
@@ -171,7 +175,7 @@ Widget build(BuildContext context) {
                           style: TextStyle(
                             fontSize: 20.0,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          color: Colors.white70
                           ),
                         ),
                         const SizedBox(height: 10.0),
@@ -181,6 +185,7 @@ Widget build(BuildContext context) {
                           'Negocio que envia: \n${_orderDetails!['nego']}',
                           style: GoogleFonts.roboto(
                             fontSize: 18.0,
+                            color: Colors.white70,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -195,7 +200,7 @@ Widget build(BuildContext context) {
                         ),
                          SizedBox(height: 10.0),
                         Text(
-'Motorista Asignado: \n${_orderDetails!['motoname'] != null ? _orderDetails!['motoname'] : 'Ocurrio un Error al cargar el nombre'}',                          style: GoogleFonts.roboto(
+                            'Motorista Asignado: \n${_orderDetails!['motoname'] != null ? _orderDetails!['motoname'] : 'Ocurrio un Error al cargar el nombre'}',                          style: GoogleFonts.roboto(
                             fontSize: 18.0,
                             fontWeight: FontWeight.bold,
                             color: Colors.white70,
@@ -268,10 +273,10 @@ Widget build(BuildContext context) {
                       ],
                     ),
                   ),
-                  
-                ],
+                ),
+                
               ],
-            ),
+            ],
           ),
         ),
       ],

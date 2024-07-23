@@ -9,7 +9,7 @@ class ThemeDark {
       primaryColor:Colors.grey[900]!,
       scaffoldBackgroundColor: const Color(0xFF121212),
       colorScheme: const ColorScheme.dark(
-        primary: Color.fromARGB(255, 44, 51, 99),
+        primary: Color.fromARGB(95, 44, 51, 99),
         inversePrimary: Color.fromARGB(255, 61, 63, 77),
         secondary: Color(0xFF1F1F1F),
         surface: Color(0xFF1F1F1F),
@@ -41,8 +41,9 @@ class ThemeDark {
 
       ),
       cardTheme: const CardTheme(
-        color: Color.fromARGB(135, 47, 47, 67),
+        color: Color.fromARGB(165, 49, 49, 98),
       ),
+      cardColor: Color.fromARGB(234, 35, 35, 81),
       inputDecorationTheme: const InputDecorationTheme(
         hintStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),
         labelStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),
