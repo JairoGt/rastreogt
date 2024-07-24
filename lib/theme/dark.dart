@@ -25,14 +25,14 @@ class ThemeDark {
         titleTextStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220), fontSize: 20),
         iconTheme: IconThemeData(color: Color.fromARGB(255, 216, 207, 207)),
       ),
-      buttonTheme:  ButtonThemeData(
+      buttonTheme:  const ButtonThemeData(
         buttonColor: Color.fromARGB(255, 130, 138, 199),
         textTheme: ButtonTextTheme.normal,
       ),
 
        elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 37, 41, 69)),
+          backgroundColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 41, 69)),
           foregroundColor: WidgetStateProperty.all(Colors.white),
         ),
       ),
@@ -43,7 +43,7 @@ class ThemeDark {
       cardTheme: const CardTheme(
         color: Color.fromARGB(165, 49, 49, 98),
       ),
-      cardColor: Color.fromARGB(234, 35, 35, 81),
+      cardColor: const Color.fromARGB(234, 35, 35, 81),
       inputDecorationTheme: const InputDecorationTheme(
         hintStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),
         labelStyle: TextStyle(color: Color.fromARGB(255, 237, 220, 220)),

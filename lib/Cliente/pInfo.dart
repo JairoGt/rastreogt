@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:rastreogt/Cliente/map.dart';
 
 class UserInfoScreen extends StatefulWidget {
@@ -98,7 +96,7 @@ Future<void> _selectLocation() async {
   final result = await Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => LocationPickerScreen(),
+      builder: (context) => const LocationPickerScreen(),
     ),
   );
 
@@ -139,6 +137,7 @@ Future<void> _selectLocation() async {
     }
   }
 }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,6 +150,7 @@ Future<void> _selectLocation() async {
           key: _formKey,
           child: ListView(
             children: [
+              const SizedBox(height: 50),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),

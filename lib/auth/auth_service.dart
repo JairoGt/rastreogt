@@ -1,15 +1,9 @@
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:rastreogt/Admin/admin_page.dart';
-import 'package:rastreogt/Cliente/client_page.dart';
-import 'package:rastreogt/Moto/moto_page.dart';
 import 'package:rastreogt/auth/login/login.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class AuthService {
   String generateName(String email) {
@@ -197,9 +191,9 @@ class AuthService {
           Navigator.push(
             context,
             CupertinoPageRoute(
-              builder: (_) => const AnimatedSwitcher(
-                duration: Duration(milliseconds: 200),
-                child: MotoPage(),
+              builder: (_) =>  AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: MotoristaScreen(),
               ),
             ),
           );

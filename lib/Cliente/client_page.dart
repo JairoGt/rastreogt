@@ -82,7 +82,7 @@ class _ClientPageState extends State<ClientPage> {
 
   
  void _startAutoScroll() {
-  _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+  _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
     if (_scrollController.hasClients) {
       final maxScrollExtent = _scrollController.position.maxScrollExtent;
       final currentScrollPosition = _scrollController.position.pixels;
@@ -93,7 +93,7 @@ class _ClientPageState extends State<ClientPage> {
       } else {
         _scrollController.animateTo(
           newScrollPosition,
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
           curve: Curves.easeInOut,
         );
       }
@@ -205,7 +205,7 @@ class _ClientPageState extends State<ClientPage> {
       ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
       : Colors.deepPurple.withOpacity(0.5),
                         blurRadius: 4,
-                        offset: Offset(2, 2),
+                        offset: const Offset(2, 2),
                       ),
                     ],
                   ),
@@ -241,7 +241,9 @@ class _ClientPageState extends State<ClientPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Material(
-                    color: const Color.fromARGB(106, 0, 0, 0),
+                    color:Theme.of(context).brightness == Brightness.dark
+      ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
+      : Colors.deepPurple.withOpacity(0.5),
                     child: InkWell(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: nickname));
@@ -367,7 +369,7 @@ StreamBuilder<QuerySnapshot>(
       : Colors.deepPurple.withOpacity(0.5),
                       blurRadius: 10.0,
                       spreadRadius: 2.0,
-                      offset: Offset(0, 5),
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),

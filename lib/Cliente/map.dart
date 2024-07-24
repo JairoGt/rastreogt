@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LocationPickerScreen extends StatefulWidget {
+  const LocationPickerScreen({super.key});
+
   @override
   _LocationPickerScreenState createState() => _LocationPickerScreenState();
 }
@@ -68,7 +70,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         ],
       ),
       body: _currentPosition == null
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child:  CircularProgressIndicator())
           : GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(
@@ -78,7 +80,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               onTap: _onTap,
               markers: {
                 Marker(
-                  markerId: MarkerId('selected-location'),
+                  markerId: const MarkerId('selected-location'),
                   position: _currentPosition!,
                 ),
               },

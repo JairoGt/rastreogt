@@ -1,6 +1,7 @@
 // ignore_for_file: file_names, unused_element, non_constant_identifier_names
 
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:rastreogt/conf/export.dart';
 
@@ -37,6 +38,8 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
   bool _isUserValidated = false;
   double _sumaTotal = 0.0;
   User? user = FirebaseAuth.instance.currentUser;
+ 
+ GeoPoint _ubicacionNegocio = const GeoPoint(0, 0);
   // Obtener la hora y fecha del teléfono.
   // Convertir la hora y fecha a un objeto de tipo Timestamp.
   final timestamp = Timestamp.fromDate(now);
@@ -78,10 +81,21 @@ String token = '';
     final CollectionReference collectionRef = firestore.collection('users');
     final DocumentReference documentRef = collectionRef.doc('${user!.email}');
     final DocumentSnapshot doc = await documentRef.get();
+    //Extraer las ubicaciones de la base de datos
+     // Obtener la ubicación del cliente
+    final userDoc = FirebaseFirestore.instance.collection('users').doc(user?.email);
+    final idBussiness = doc['idBussiness'];
+
+    // Obtener la ubicación del negocio
+    final negocioDoc = await userDoc.collection('negocios').doc(idBussiness).get();
+    
     setState(() {
       contenido = doc['negoname'];
-      token = doc['token'];
+     
       
+      _ubicacionNegocio = negocioDoc['ubicacionnego'];
+     
+      print('Ubicación del negocio: ${_ubicacionNegocio.latitude}, ${_ubicacionNegocio.longitude}');
     });
   }
 
@@ -91,11 +105,16 @@ String token = '';
   final CollectionReference collectionRef = firestore.collection('users');
   final DocumentReference documentRef = collectionRef.doc(email).collection('userData').doc('pInfo');
   final DocumentSnapshot doc = await documentRef.get();
+  // extraemos el tokenid para notificaciones del cliente
+    final DocumentReference tokenclient = collectionRef.doc(email);
+  final DocumentSnapshot doc2 = await tokenclient.get();
   
   if (doc.exists) {
     setState(() {
       direccion = doc['direccion'];
    ubicacion = doc['ubicacion'];
+    token = doc2['token'];
+
     });
   } else {
     // Manejar el caso en que el documento no exista
@@ -105,6 +124,7 @@ String token = '';
     });
   }
 }
+   
    Future<void> mostrarNegoid() async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     final CollectionReference collectionRef = firestore.collection('users');
@@ -325,6 +345,7 @@ void _calcularSumaTotal() {
 }
 
 Future<String?> getEmailFromNickname(String nickname) async {
+
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final QuerySnapshot querySnapshot = await firestore.collection('users')
       .where('nickname', isEqualTo: nickname)
@@ -337,6 +358,7 @@ Future<String?> getEmailFromNickname(String nickname) async {
     return null;
   }
 }
+
 void _validarUsuario(String nickname) async {
   final String? email = await getEmailFromNickname(nickname);
   
@@ -392,6 +414,13 @@ void _mostrarMensajePedidoCreado(String idPedido) {
                 fontWeight: FontWeight.bold,  
               ),
               ),
+              const SizedBox(height: 10),
+              Text('ID del pedido: $idPedido',style: 
+              GoogleFonts.asul(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,  
+              )
+              ,),
             ],
           ),
           actions: [
@@ -442,9 +471,9 @@ void _crearPedido() async {
     'idcliente': '0',
     'idpedidos': idPedidoSJP,
     'fechaCreacion': Timestamp.fromDate(now),
-    'fechadespacho': Timestamp.fromDate(now),
-    'fechaCamino': Timestamp.fromDate(now),
     'fechaEntrega': Timestamp.fromDate(now),
+    'ubicacionCliente': ubicacion,
+    'ubicacionNegocio': _ubicacionNegocio,
     'negoname': contenido,
     'nickname': _nicknameController.text,
     'nego': negoid,

@@ -22,12 +22,12 @@ class _TimelineWidgetState extends State<TimelineWidget> {
 
     // Definir colores para tema claro y oscuro
     final completeColor = brightness == Brightness.dark
-        ? Color.fromARGB(255, 136, 132, 132) // Color para tema oscuro
-        : Color.fromARGB(255, 200, 167, 167); // Color para tema claro
+        ? const Color.fromARGB(255, 136, 132, 132) // Color para tema oscuro
+        : const Color.fromARGB(255, 200, 167, 167); // Color para tema claro
 
     final todoColor = brightness == Brightness.dark
-        ? Color(0xffd1d2d7) // Color para tema oscuro
-        : Color.fromARGB(255, 66, 69, 84); // Color para tema claro (puedes cambiarlo si es necesario)
+        ? const Color(0xffd1d2d7) // Color para tema oscuro
+        : const Color.fromARGB(255, 66, 69, 84); // Color para tema claro (puedes cambiarlo si es necesario)
 
     // Devolver el color adecuado según el índice
     if (index == widget.processIndex) {

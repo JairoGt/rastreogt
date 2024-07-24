@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 class DetalleDialog extends StatelessWidget {
   final String orderId;
 
-  DetalleDialog({required this.orderId});
+  const DetalleDialog({super.key, required this.orderId});
 
   Future<Map<String, dynamic>> _fetchProductDetails() async {
     final snapshot = await FirebaseFirestore.instance
@@ -42,7 +42,7 @@ class DetalleDialog extends StatelessWidget {
       future: _fetchProductDetails(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         } else {
@@ -63,7 +63,7 @@ class DetalleDialog extends StatelessWidget {
                         style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 20),
                   Text(
                     'Precio Total: Q${totalPrice.toStringAsFixed(2)}',

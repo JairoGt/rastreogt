@@ -37,9 +37,11 @@ class _LoginState extends State<Login> {
   }
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       //backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
+extendBodyBehindAppBar: true,
       bottomNavigationBar: _signup(context),
       appBar: AppBar(
         
@@ -69,9 +71,9 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 80,),
-                  _buildTextField('Correo electrónico', _emailController, false,Icon(Icons.email)),
+                  _buildTextField('Correo electrónico', _emailController, false,const Icon(Icons.email)),
                  const SizedBox(height: 20,),
-                                  _buildTextField('Contraseña', _passwordController, true,Icon(Icons.password_outlined )),
+                                  _buildTextField('Contraseña', _passwordController, true,const Icon(Icons.password_outlined )),
 
                  const SizedBox(height: 50,),
                  _signin(context),
@@ -92,22 +94,29 @@ class _LoginState extends State<Login> {
           ),
         ),
           if (_isLoading)
-         Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Container(
-                  color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.5), // Añade un color de fondo semitransparente
-                  child: Center(
-                    child: Lottie.asset(
-                      'assets/lotties/loading.json',
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.cover,
+         Stack(
+           children: <Widget>[
+
+           
+            Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Container(
+                    color:Theme.of(context).brightness == Brightness.dark
+                 ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5) // Añade un color de fondo semitransparente
+                 :  Color.fromARGB(255, 255, 255, 255).withOpacity(0.5), // Añade un color de fondo semitransparente
+                    child: Center(
+                      child: Lottie.asset(
+                        'assets/lotties/loading.json',
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+        ]),
      ]
       ),
       
@@ -191,9 +200,10 @@ class _LoginState extends State<Login> {
               ),
               TextSpan(
                 text: "Crear Cuenta",
+                
                 style: const TextStyle(
-                   // color: Color(0xff1A1D1E),
-                    fontWeight: FontWeight.normal,
+                   color: Color.fromARGB(255, 91, 95, 96),
+                    fontWeight: FontWeight.bold,
                     fontSize: 16
                   ),
                   recognizer: TapGestureRecognizer()..onTap = () {

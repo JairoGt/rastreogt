@@ -91,6 +91,7 @@ class OtrosNegociosPage extends StatelessWidget {
                               .update({'negoname': doc['negoname']
                               ,
                             'nego':doc['nego'],
+                            'idBussiness':doc['idBussiness'],
                               });
 
                           // Llama a la función para actualizar el negocio actual en la UI

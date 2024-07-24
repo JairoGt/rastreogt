@@ -1,4 +1,6 @@
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
+import 'package:rastreogt/Cliente/mapasU.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'package:intl/intl.dart';
 import 'package:rastreogt/conf/timeline.dart';
@@ -54,6 +56,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
           .replaceAll(' ', '');
     });
   }
+ 
   @override
   void initState() {
     super.initState();
@@ -69,6 +72,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
     _controller.dispose();
     super.dispose();
   }
+
 @override
 Widget build(BuildContext context) {
   final themeNotifier = Provider.of<ThemeNotifier>(context);
@@ -189,7 +193,7 @@ Widget build(BuildContext context) {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 10.0),
+                        const SizedBox(height: 10.0),
                         Text(
                           'Fecha de envio: \n${_orderDetails!['fechaCreacion'] != null ? DateFormat('dd/MM/yyyy').format((_orderDetails!['fechaCreacion'] as Timestamp).toDate()) : 'Fecha no disponible'}',
                           style: GoogleFonts.roboto(
@@ -198,9 +202,9 @@ Widget build(BuildContext context) {
                             color: Colors.white70,
                           ),
                         ),
-                         SizedBox(height: 10.0),
+                         const SizedBox(height: 10.0),
                         Text(
-                            'Motorista Asignado: \n${_orderDetails!['motoname'] != null ? _orderDetails!['motoname'] : 'Ocurrio un Error al cargar el nombre'}',                          style: GoogleFonts.roboto(
+                            'Motorista Asignado: \n${_orderDetails!['motoname'] ?? 'Ocurrio un Error al cargar el nombre'}',                          style: GoogleFonts.roboto(
                             fontSize: 18.0,
                             fontWeight: FontWeight.bold,
                             color: Colors.white70,
@@ -214,9 +218,17 @@ Widget build(BuildContext context) {
                                 borderRadius: BorderRadius.circular(20.0),
                               ),
                             ),
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/map');
-                            },
+                           onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => MapScreen(
+        ubicacionCliente: LatLng(_orderDetails!['ubicacionCliente'].latitude, _orderDetails!['ubicacionCliente'].longitude),
+        ubicacionNegocio: LatLng(_orderDetails!['ubicacionNegocio'].latitude, _orderDetails!['ubicacionNegocio'].longitude),
+      ),
+    ),
+  );
+},
                             child: const Text('Ir a mapa'),
                           ),
                         ),
@@ -254,7 +266,7 @@ Widget build(BuildContext context) {
                                 builder: (BuildContext context) {
                                   return AlertDialog(
                                     title: const Text('Error'),
-                                    content: Text('El número de seguimiento no puede estar vacío'),
+                                    content: const Text('El número de seguimiento no puede estar vacío'),
                                     actions: [
                                       TextButton(
                                         onPressed: () {
@@ -284,20 +296,4 @@ Widget build(BuildContext context) {
    
   );
 }
-}
-String _getEstadoDescripcion(int estadoid) {
-  switch (estadoid) {
-    case 1:
-      return 'Creado';
-    case 2:
-      return 'Preparando';
-    case 3:
-      return 'En camino';
-    case 4:
-      return 'Entregado';
-    case 5:
-      return 'Cancelado';
-    default:
-      return 'Desconocido';
-  }
 }

@@ -30,7 +30,7 @@ class ThemeLight {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 114, 130, 255)),
+          backgroundColor: WidgetStateProperty.all(const Color.fromARGB(255, 114, 130, 255)),
           foregroundColor: WidgetStateProperty.all(Colors.white),
         ),
       ),

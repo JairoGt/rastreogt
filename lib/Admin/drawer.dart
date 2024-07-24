@@ -150,7 +150,7 @@ Future<void> cerrarSesion() async {
               Navigator.push( 
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MyHomePage(),
+                  builder: (context) => const MyHomePage(),
                 ),
               );
             },

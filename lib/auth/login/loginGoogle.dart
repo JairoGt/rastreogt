@@ -1,6 +1,7 @@
 // ignore: file_names
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
+import 'package:rastreogt/Moto/moto_page.dart';
 import 'package:rastreogt/conf/export.dart';
 
 String generateName(String email) {
@@ -32,7 +33,7 @@ class GoogleAuthService {
     UserCredential? userCredential =
         await FirebaseAuth.instance.signInWithCredential(credential);
 
-    showLoadingDialog(context);
+  
     // Get the user's email
     final String email = userCredential.user!.email!;
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -68,9 +69,9 @@ class GoogleAuthService {
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (_) => const AnimatedSwitcher(
+        builder: (_) =>  AnimatedSwitcher(
           duration: Duration(milliseconds: 200),
-          child: MotoPage(),
+          child: MotoristaScreen(),
         ),
       ),
     );
@@ -96,6 +97,7 @@ class GoogleAuthService {
   userDocument.set({
     'name': userCredential.user!.displayName,
     'email': email.trim(),
+    'idBussiness': '',
     'idmoto': '0',
     'estadoid': 0,
     'role': 'client',
@@ -136,15 +138,5 @@ class GoogleAuthService {
     return userCredential;
   }
 
-  void showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-  }
+  
 }

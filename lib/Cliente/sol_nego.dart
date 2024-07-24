@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:gsheets/gsheets.dart';
+import 'package:rastreogt/Cliente/map.dart';
 import 'package:rastreogt/conf/export.dart';
 
 /// Tus credenciales de autenticación de Google
@@ -28,6 +29,8 @@ const _spreadsheetId = '1JKDGcrfI9BGsFMraGEwI3CGFh9msBcur500Jp9OKpHo';
 
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -35,40 +38,54 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final _emailController = TextEditingController();
   final _nombreNegocioController = TextEditingController();
-  final _estadoController = TextEditingController();
   final _direccionController = TextEditingController();
+   final TextEditingController _ubicacionController = TextEditingController();
   final User? user = FirebaseAuth.instance.currentUser;
 
 
-
+String? _originalCoordinates;
 Future<void> _enviarDatos() async {
   try {
-    print('Iniciando envío de datos...');
     final gsheets = GSheets(_credentials);
-    print('Credenciales cargadas correctamente.');
     final ss = await gsheets.spreadsheet(_spreadsheetId);
-    print('Hoja de cálculo cargada correctamente.');
     var sheet = ss.worksheetByTitle('rastreogt');
     if (sheet == null) {
-      print('Hoja de trabajo "rastreogt" no encontrada, creando una nueva.');
       sheet = await ss.addWorksheet('rastreogt');
     } else {
-      print('Hoja de trabajo "rastreogt" encontrada.');
     }
 
     final data = [
-      user?.email,
+     user!.email?.toUpperCase(),
       _nombreNegocioController.text,
       'Solicitud Creada',
       _direccionController.text,
       DateTime.now().toIso8601String(),
     ];
 
-    print('Datos a enviar: $data');
     final result = await sheet.values.appendRow(data);
     if (result) {
-      print('Datos enviados correctamente a Google Sheets.');
+      showDialog(context: context,
+       builder: (BuildContext context) {
+         return AlertDialog(
+           title: const Text('Solicitud Creada'),
+           content: const Text('Tu solicitud ha sido creada correctamente.'),
+           actions: [
+             TextButton(
+               onPressed: () {
+                 Navigator.of(context).pop();
+               },
+               child: const Text('OK'),
+             ),
+           ],
+         );
+       },
+       
+       );
       
+       if (_originalCoordinates != null) {
+      final coordinates = _originalCoordinates!.split(',');
+      final latitude = double.parse(coordinates[0]);
+      final longitude = double.parse(coordinates[1]);
       // Insertar datos en Firestore
       final firestore = FirebaseFirestore.instance;
       final userEmail = user?.email ?? '';
@@ -88,51 +105,125 @@ Future<void> _enviarDatos() async {
         'negoname':'DF',
         'estadoid': 0,
         'direccion': _direccionController.text,
+        'idBussiness': negocioId,
+        'ubicacionnego': GeoPoint(latitude, longitude),
         'fechaSolicitud': DateTime.now().toIso8601String(),
       });
-
-      print('Datos enviados correctamente a Firestore.');
+  
+       }else{
+           ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, selecciona una ubicación')),
+      );
+       }
+    
     } else {
-      print('Error al enviar datos a Google Sheets.');
+      
     }
-    final lastRow = await sheet.values.lastRow();
-    print('Última fila en la hoja de trabajo: $lastRow');
   } catch (e) {
-    print('Error al enviar datos: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al enviar los datos: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );  
   }
 }
 
+
+
+Future<void> _selectLocation() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => LocationPickerScreen(),
+    ),
+  );
+
+  if (result != null) {
+    final coordinates = result.split(',');
+    final latitude = double.parse(coordinates[0]);
+    final longitude = double.parse(coordinates[1]);
+
+    try {
+      // Guardar las coordenadas originales
+      _originalCoordinates = result;
+
+      // Obtener la dirección a partir de las coordenadas
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+
+        // Manejar valores nulos y proporcionar valores predeterminados
+        String street = place.street ?? 'Calle desconocida';
+        String locality = place.locality ?? 'Localidad desconocida';
+
+        String formattedAddress = "$street, $locality";
+
+        setState(() {
+          _ubicacionController.text = formattedAddress;
+        });
+      } else {
+        setState(() {
+          _ubicacionController.text = 'Dirección no encontrada';
+        });
+      }
+    } catch (e) {
+      // Manejar cualquier excepción que ocurra durante la geocodificación inversa
+      setState(() {
+        _ubicacionController.text = 'Error al obtener la dirección';
+      });
+    }
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Flutter Google Sheets'),
+        title: const Text('Flutter Google Sheets'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              controller: user!.email == null ? _emailController : TextEditingController(text: user!.email),
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
+            const SizedBox(height: 20),
             TextField(
               controller: _nombreNegocioController,
-              decoration: InputDecoration(labelText: 'Nombre del Negocio'),
+              decoration: const InputDecoration(labelText: 'Nombre del Negocio'),
             ),
-       
+         const SizedBox(height: 20),
             TextField(
               controller: _direccionController,
-              decoration: InputDecoration(labelText: 'Dirección'),
+              decoration: const InputDecoration(labelText: 'Dirección'),
             ),
-            SizedBox(height: 20),
+              const SizedBox(height: 20),
+           TextFormField(
+                controller: _ubicacionController,
+                decoration: const InputDecoration(labelText: 'Ubicación'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Selecciona una ubicación';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _selectLocation,
+                child: const Text('Seleccionar Ubicación'),
+              ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _enviarDatos,
-              child: Text('Enviar'),
+              child: const Text('Enviar'),
             ),
           ],
         ),
       ),
     );
   }
+  
 }
