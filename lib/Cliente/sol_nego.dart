@@ -1,6 +1,7 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:gsheets/gsheets.dart';
 import 'package:rastreogt/Cliente/map.dart';
+import 'package:rastreogt/Cliente/mapaCentral.dart';
 import 'package:rastreogt/conf/export.dart';
 
 /// Tus credenciales de autenticación de Google
@@ -135,7 +136,7 @@ Future<void> _selectLocation() async {
   final result = await Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => LocationPickerScreen(),
+      builder: (context) => MapasC(),
     ),
   );
 

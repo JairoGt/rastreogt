@@ -143,7 +143,7 @@ Future<void> cerrarSesion() async {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.settings),
+            leading: const Icon(Icons.business),
             title: const Text('Solicitar negocio'),
             onTap: () {
               Navigator.pop(context);

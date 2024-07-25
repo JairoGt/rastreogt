@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
+import 'package:rastreogt/Admin/asignar_moto.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class RolePage extends StatefulWidget {
@@ -18,7 +19,7 @@ class _RolePageState extends State<RolePage> {
   List<DocumentSnapshot> _filteredUsersList = [];
   User? user = FirebaseAuth.instance.currentUser;
   String _currentUserNegoname = ''; // Tu propio negoname
-
+  String nick1 = '';
   @override
   void initState() {
     super.initState();
@@ -153,8 +154,38 @@ class _RolePageState extends State<RolePage> {
     if (role == 'moto') {
       String id = _getRandomId(3);
       data['idmoto'] = id;
+
+      // Crear una coleccion 'motos' y un documento 'moto' dentro de ella
+      CollectionReference motos = _firestore.collection('motos');
+      DocumentReference motoDocument = motos.doc(email);
+       DocumentReference userDoc = _firestore.collection('users').doc(email);
+   userDoc.get().then((document) {
+  if (document.exists) {
+  
+    final data = document.data() as Map<String, dynamic>?; // Realiza un casting explícito.
+    if (data != null) {
+      // Obtiene el valor del campo 'nickname' de forma segura.
+      final String? nicknamel = data['nickname'];
+        nick1 = nicknamel!;
+    }
+  } else {
+    // Manejo de la situación donde el documento no existe.
+  }
+}).catchError((error) {
+  // Manejo de error al obtener el documento
+});
+      Map<String, dynamic> motoData = {
+        'idmoto': id,
+        'estadoid': 2, // Estado de la moto (0 = disponible, 1 = ocupado,2=Inactivo,3 = baja)
+        'negoname': _currentUserNegoname,
+        'name':nick1,
+        'email': email,
+      };
+     
+   await motoDocument.set(motoData);
     }
     await userDocument.update(data);
+    
     _getUsers1();
   }
 
@@ -226,7 +257,7 @@ class _RolePageState extends State<RolePage> {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: Text('¿Desea realizar el cambio? a $role'),
+                              title: Text('¿Desea enviar solicitud de cambio? a $role'),
                               actions: [
                                 TextButton(
                                   onPressed: () {

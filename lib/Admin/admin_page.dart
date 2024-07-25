@@ -1,3 +1,4 @@
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class AdminPage extends StatefulWidget {
@@ -251,21 +252,21 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                       mainAxisSpacing: 16.0,
                       children: [
                         _buildGridItem(
-                          icon: Icons.add_shopping_cart,
+                          icon: EvaIcons.shoppingBagOutline,
                           title: 'Crear Pedido',
                           onTap: () {
                             Navigator.pushNamed(context, '/crearPedido');
                           },
                         ),
                         _buildGridItem(
-                          icon: Icons.edit_location_alt,
+                          icon: EvaIcons.editOutline,
                           title: 'Editar Pedido',
                           onTap: () {
                           Navigator.pushNamed(context, '/editPedido');
                           },
                         ),
                         _buildGridItem(
-                          icon: Icons.search,
+                          icon: EvaIcons.personOutline,
                           title: 'Buscar y Cambiar Roles',
                           onTap: () {
                             Navigator.pushNamed(context, '/rolbuscar');
@@ -273,14 +274,14 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                         ),
                       
                         _buildGridItem(
-                          icon: Icons.analytics,
+                          icon: EvaIcons.fileTextOutline,
                           title: 'Bitacora de Envios',
                           onTap: () {
                             Navigator.pushNamed(context, '/listapedidos');
                           },
                         ),
                           _buildGridItem(
-                          icon: Icons.business_center_outlined,
+                          icon: EvaIcons.folderAddOutline,
                           title: 'Otros Negocios',
                           onTap: () {
                             Navigator.push(
