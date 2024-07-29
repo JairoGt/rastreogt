@@ -1,12 +1,9 @@
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:gsheets/gsheets.dart';
-import 'package:rastreogt/Cliente/map.dart';
 import 'package:rastreogt/Cliente/mapaCentral.dart';
 import 'package:rastreogt/conf/export.dart';
 
-/// Tus credenciales de autenticación de Google
-///
-/// Cómo obtener credenciales - https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430
 const _credentials = r'''
 {
   "type": "service_account",
@@ -23,11 +20,7 @@ const _credentials = r'''
 }
 ''';
 
-/// Tu ID de hoja de cálculo
-/// Se puede encontrar en el enlace a tu hoja de cálculo -
-/// el enlace se ve así https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit#gid=0
 const _spreadsheetId = '1JKDGcrfI9BGsFMraGEwI3CGFh9msBcur500Jp9OKpHo';
-
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -37,194 +30,293 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final _emailController = TextEditingController();
   final _nombreNegocioController = TextEditingController();
   final _direccionController = TextEditingController();
-   final TextEditingController _ubicacionController = TextEditingController();
+  final TextEditingController _ubicacionController = TextEditingController();
+  final TextEditingController _codigoGeneradoController = TextEditingController();
+  final TextEditingController _codigoManualController = TextEditingController();
   final User? user = FirebaseAuth.instance.currentUser;
+  final _formKey = GlobalKey<FormState>();
 
+  String? _originalCoordinates;
+  bool _codigoManual = false;
 
-String? _originalCoordinates;
-Future<void> _enviarDatos() async {
-  try {
-    final gsheets = GSheets(_credentials);
-    final ss = await gsheets.spreadsheet(_spreadsheetId);
-    var sheet = ss.worksheetByTitle('rastreogt');
-    if (sheet == null) {
-      sheet = await ss.addWorksheet('rastreogt');
-    } else {
+  @override
+  void initState() {
+    super.initState();
+    _nombreNegocioController.addListener(_actualizarCodigo);
+    _actualizarCodigo(); // Inicializar el código
+  }
+
+  void _actualizarCodigo() {
+    if (_codigoManual) return;
+
+    setState(() {
+      _codigoGeneradoController.text = _generarCodigo();
+    });
+  }
+
+  String _generarCodigo() {
+    String email = user?.email ?? '';
+    String nombreNegocio = _nombreNegocioController.text;
+
+    if (email.isEmpty || nombreNegocio.isEmpty) {
+      return '';
     }
 
-    final data = [
-     user!.email?.toUpperCase(),
-      _nombreNegocioController.text,
-      'Solicitud Creada',
-      _direccionController.text,
-      DateTime.now().toIso8601String(),
-    ];
+    String primeraLetraEmail = email[0].toUpperCase();
+    List<String> palabrasNegocio = nombreNegocio.split(' ').where((p) => p.isNotEmpty).toList();
+    String primeraLetraNombre = palabrasNegocio.isNotEmpty ? palabrasNegocio[0][0].toUpperCase() : '';
+    String segundaLetraNombre = palabrasNegocio.length > 1 ? palabrasNegocio[1][0].toUpperCase() : '';
 
-    final result = await sheet.values.appendRow(data);
-    if (result) {
-      showDialog(context: context,
-       builder: (BuildContext context) {
-         return AlertDialog(
-           title: const Text('Solicitud Creada'),
-           content: const Text('Tu solicitud ha sido creada correctamente.'),
-           actions: [
-             TextButton(
-               onPressed: () {
-                 Navigator.of(context).pop();
-               },
-               child: const Text('OK'),
-             ),
-           ],
-         );
-       },
-       
-       );
-      
-       if (_originalCoordinates != null) {
-      final coordinates = _originalCoordinates!.split(',');
-      final latitude = double.parse(coordinates[0]);
-      final longitude = double.parse(coordinates[1]);
-      // Insertar datos en Firestore
-      final firestore = FirebaseFirestore.instance;
-      final userEmail = user?.email ?? '';
-      final negocioIdBase = userEmail.split('@')[0];
-      String negocioId = negocioIdBase;
-      int counter = 1;
+    return '$primeraLetraEmail$primeraLetraNombre$segundaLetraNombre';
+  }
 
-      // Verificar si el documento ya existe y ajustar el ID
-      while ((await firestore.collection('users').doc(userEmail).collection('negocios').doc(negocioId).get()).exists) {
-        negocioId = '$negocioIdBase$counter';
-        counter++;
+  Future<void> _enviarDatos() async {
+    try {
+      final gsheets = GSheets(_credentials); // Asegúrate de definir _credentials
+      final ss = await gsheets.spreadsheet(_spreadsheetId); // Asegúrate de definir _spreadsheetId
+      var sheet = ss.worksheetByTitle('rastreogt');
+      if (sheet == null) {
+        sheet = await ss.addWorksheet('rastreogt');
       }
 
-      await firestore.collection('users').doc(userEmail).collection('negocios').doc(negocioId).set({
-        'email': user?.email,
-        'nego': _nombreNegocioController.text,
-        'negoname':'DF',
-        'estadoid': 0,
-        'direccion': _direccionController.text,
-        'idBussiness': negocioId,
-        'ubicacionnego': GeoPoint(latitude, longitude),
-        'fechaSolicitud': DateTime.now().toIso8601String(),
-      });
-  
-       }else{
-           ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, selecciona una ubicación')),
-      );
-       }
-    
-    } else {
-      
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error al enviar los datos: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );  
-  }
-}
+      String codigo = _codigoManual ? _codigoManualController.text : _generarCodigo();
 
-
-
-Future<void> _selectLocation() async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => MapasC(),
-    ),
-  );
-
-  if (result != null) {
-    final coordinates = result.split(',');
-    final latitude = double.parse(coordinates[0]);
-    final longitude = double.parse(coordinates[1]);
-
-    try {
-      // Guardar las coordenadas originales
-      _originalCoordinates = result;
-
-      // Obtener la dirección a partir de las coordenadas
-      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-
-        // Manejar valores nulos y proporcionar valores predeterminados
-        String street = place.street ?? 'Calle desconocida';
-        String locality = place.locality ?? 'Localidad desconocida';
-
-        String formattedAddress = "$street, $locality";
-
+      // Verificar si el código ya existe en Google Sheets
+      final existingCodes = await sheet.values.column(6);
+      if (existingCodes.contains(codigo) && !_codigoManual) {
         setState(() {
-          _ubicacionController.text = formattedAddress;
+          _codigoManual = true;
         });
-      } else {
-        setState(() {
-          _ubicacionController.text = 'Dirección no encontrada';
-        });
+        return;
+      }
+
+      final data = [
+        user!.email?.toUpperCase(),
+        _nombreNegocioController.text,
+        'Solicitud Creada',
+        _direccionController.text,
+        DateTime.now().toIso8601String(),
+        codigo,
+      ];
+
+      final result = await sheet.values.appendRow(data);
+      if (result) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Solicitud Creada'),
+              content: const Text('Tu solicitud ha sido creada correctamente.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (_originalCoordinates != null) {
+          final coordinates = _originalCoordinates!.split(',');
+          final latitude = double.parse(coordinates[0]);
+          final longitude = double.parse(coordinates[1]);
+
+          final firestore = FirebaseFirestore.instance;
+          final userEmail = user?.email ?? '';
+          final negocioIdBase = userEmail.split('@')[0];
+          String negocioId = negocioIdBase;
+          int counter = 1;
+
+          while ((await firestore.collection('users').doc(userEmail).collection('negocios').doc(negocioId).get()).exists) {
+            negocioId = '$negocioIdBase$counter';
+            counter++;
+          }
+
+          await firestore.collection('users').doc(userEmail).collection('negocios').doc(negocioId).set({
+            'email': user?.email,
+            'nego': _nombreNegocioController.text,
+            'negoname': codigo, // Usar el código generado como negoname
+            'estadoid': 0,
+            'direccion': _direccionController.text,
+            'idBussiness': negocioId,
+            'ubicacionnego': GeoPoint(latitude, longitude),
+            'fechaSolicitud': DateTime.now().toIso8601String(),
+          });
+
+       
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Por favor, selecciona una ubicación')),
+          );
+        }
       }
     } catch (e) {
-      // Manejar cualquier excepción que ocurra durante la geocodificación inversa
-      setState(() {
-        _ubicacionController.text = 'Error al obtener la dirección';
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al enviar los datos: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
-}
+
+  Future<void> _selectLocation() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapasC(),
+      ),
+    );
+
+    if (result != null) {
+      final coordinates = result.split(',');
+      final latitude = double.parse(coordinates[0]);
+      final longitude = double.parse(coordinates[1]);
+
+      try {
+        _originalCoordinates = result;
+
+        List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks[0];
+          String street = place.street ?? 'Calle desconocida';
+          String locality = place.locality ?? 'Localidad desconocida';
+          String formattedAddress = "$street, $locality";
+
+          setState(() {
+            _ubicacionController.text = formattedAddress;
+          });
+        } else {
+          setState(() {
+            _ubicacionController.text = 'Dirección no encontrada';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _ubicacionController.text = 'Error al obtener la dirección';
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nombreNegocioController.dispose();
+    _direccionController.dispose();
+    _ubicacionController.dispose();
+    _codigoGeneradoController.dispose();
+    _codigoManualController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Google Sheets'),
+        title: const Text('Solicitud de Negocio'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: user!.email == null ? _emailController : TextEditingController(text: user!.email),
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nombreNegocioController,
-              decoration: const InputDecoration(labelText: 'Nombre del Negocio'),
-            ),
-         const SizedBox(height: 20),
-            TextField(
-              controller: _direccionController,
-              decoration: const InputDecoration(labelText: 'Dirección'),
-            ),
-              const SizedBox(height: 20),
-           TextFormField(
-                controller: _ubicacionController,
-                decoration: const InputDecoration(labelText: 'Ubicación'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Selecciona una ubicación';
-                  }
-                  return null;
+      body: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: TextEditingController(text: user?.email),
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  readOnly: true,
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _nombreNegocioController,
+                  decoration: const InputDecoration(labelText: 'Nombre del Negocio'),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _direccionController,
+                  decoration: const InputDecoration(labelText: 'Dirección'),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _ubicacionController,
+                  decoration: const InputDecoration(labelText: 'Ubicación'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Selecciona una ubicación';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _selectLocation,
+                  child: const Text('Seleccionar Ubicación'),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _codigoGeneradoController,
+                  decoration: const InputDecoration(labelText: 'Código Generado'),
+                  readOnly: true,
+                 
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'El código no puede estar vacío';
+                    }
+                    else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                      return 'El código solo puede contener letras';
+                    }
+                    else if (value.length > 3) {
+                      return 'El código no puede tener más de 3 caracteres';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                if (_codigoManual)
+                  TextFormField(
+                    controller: _codigoGeneradoController,
+                    decoration: const InputDecoration(labelText: 'Código Manual'),
+                   
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'El código no puede estar vacío';
+                      }
+                      else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                        return 'El código solo puede contener letras';
+                      }
+                      else if (value.length > 3) {
+                        return 'El código no puede tener más de 3 caracteres';
+                      }
+                      return null;
+                    },
+                  ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async{if (_formKey.currentState!.validate()) {
+                  // Si el formulario es válido, muestra un snackbar o realiza alguna acción
+              
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Formulario válido')),
+                  );
+                   await  _enviarDatos();
+                } else {
+                  // Si el formulario no es válido, actualiza el estado para mostrar los errores
+                  setState(() {});
+                }
                 },
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _selectLocation,
-                child: const Text('Seleccionar Ubicación'),
-              ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _enviarDatos,
-              child: const Text('Enviar'),
+                  child: const Text('Enviar'),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
-  
 }

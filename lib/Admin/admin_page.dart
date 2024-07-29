@@ -13,6 +13,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
   String nombreNegocio = 'Mi Negocio';
   String negoid = '';
   String nickname = '';
+  String emailOff = '';
    String currentNegocioId = '';
    int _repeatCount = 0;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -49,14 +50,24 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
     obtenerNombreUsuario();
     obtenerNego();
     obtenerNegoid();
+  
   }
-  Future<void> obtenerNombreUsuario() async {
-    DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user?.email).get();
+
+Future<void> obtenerNombreUsuario() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user.email).get();
+    String email = usuario['email'];
+    String emailOculto = email.split('@')[0];
+
     setState(() {
-      nombreUsuario = user?.displayName ?? usuario['nickname'];
+      nombreUsuario = user.displayName ?? emailOculto;
       nickname = usuario['nickname'];
     });
+  } else {
+    print('No hay un usuario autenticado.');
   }
+}
 
   Future<void> obtenerNego() async {
     DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user?.email).get();
@@ -66,7 +77,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
   }
 
   Future<void> obtenerNegoid() async {
-    DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user?.email).get();
+    DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user?.email ?? nombreUsuario).get();
     setState(() {
       negoid = usuario['negoname'];
     });
@@ -131,7 +142,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                               ),
                               const SizedBox(width: 50),
                               StreamBuilder<DocumentSnapshot>(
-                                stream: FirebaseFirestore.instance.collection('users').doc(user?.email).snapshots(),
+                                stream: FirebaseFirestore.instance.collection('users').doc(user?.email ?? nombreUsuario).snapshots(),
                                 builder: (context, snapshot) {
                                   if (snapshot.connectionState == ConnectionState.waiting) {
                                     return const CircularProgressIndicator();
@@ -144,16 +155,18 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                                   }
                       
                                   var usuarioData = snapshot.data!.data() as Map<String, dynamic>;
-                                  nombreUsuario = user?.displayName ?? usuarioData['nickname'];
+                                 
                                   nombreNegocio = usuarioData['nego'];
                                   negoid = usuarioData['negoname'];
-                      
+                        
                                   return Center(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
+                                        
                                         const SizedBox(width: 50,),
+                                        
                                         Center(
                                           child: Text(
                                             obtenerSaludo(),
@@ -186,6 +199,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                     ),
         ),
        ), body: Stack(
+        
           children: [
             
             Container(
@@ -217,7 +231,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                   const SizedBox(height: 20),
                  Center(
         child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').doc(user?.email).snapshots(),
+          stream: FirebaseFirestore.instance.collection('users').doc(user?.email ?? nombreUsuario).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CircularProgressIndicator();
@@ -258,6 +272,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                             Navigator.pushNamed(context, '/crearPedido');
                           },
                         ),
+                        
                         _buildGridItem(
                           icon: EvaIcons.editOutline,
                           title: 'Editar Pedido',
@@ -288,7 +303,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
                               context,
                               MaterialPageRoute(
                                 builder: (_) => OtrosNegociosPage(userEmail: 
-                                user?.email ?? '', nickname: nickname, onNegocioChanged: _updateNegocio,),
+                                user?.email ?? nombreUsuario, nickname: nickname, onNegocioChanged: _updateNegocio,),
                                 
                               ),
                             );
@@ -330,6 +345,7 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
             ),
           ],
         ),
+
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -346,7 +362,11 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
             ),
           ],
         ),
+  
       ),
+  
     );
+  
   }
+  
 }

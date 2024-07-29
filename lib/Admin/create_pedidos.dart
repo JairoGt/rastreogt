@@ -1,10 +1,9 @@
 // ignore_for_file: file_names, unused_element, non_constant_identifier_names
-
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:rastreogt/conf/export.dart';
 
+// Define la función para obtener el saludo del día según la hora actual.
 String getGreeting() {
   final currentTime = DateTime.now();
   final hour = currentTime.hour;
@@ -24,17 +23,19 @@ class CrearPedidoScreen extends StatefulWidget {
   @override
   State<CrearPedidoScreen> createState() => _CrearPedidoScreenState();
 }
-
+// Define la hora y fecha actual.
 final now = DateTime.now();
 
 class _CrearPedidoScreenState extends State<CrearPedidoScreen>
     with SingleTickerProviderStateMixin {
+   // Define los controladores de texto para los campos de texto.
   final _nombresController = TextEditingController();
   final _precioTotalController = TextEditingController();
   final _direccionController = TextEditingController();
   final _nicknameController = TextEditingController();
-   final List<TextEditingController> _productoControllers = [TextEditingController()];
+  final List<TextEditingController> _productoControllers = [TextEditingController()];
   final List<TextEditingController> _precioControllers = [TextEditingController()];
+  // Define las variables para validar el usuario y calcular la suma total.
   bool _isUserValidated = false;
   double _sumaTotal = 0.0;
   User? user = FirebaseAuth.instance.currentUser;
@@ -44,45 +45,41 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
   // Convertir la hora y fecha a un objeto de tipo Timestamp.
   final timestamp = Timestamp.fromDate(now);
 
-  // Declare an animation controller for the text field transitions
+  // Declarar un controlador de animación
   late AnimationController _animationController;
 
-  // Declare an animation for the text field opacity
-
+ // Declara una clave global para el formulario
   final _formKey = GlobalKey<FormState>();
 
   bool _isButtonEnabled = false;
   String contenido = '';
   String negoid = '';
   String direccion = '';
-GeoPoint ubicacion = const GeoPoint(0, 0);
-String token = '';
+  GeoPoint ubicacion = const GeoPoint(0, 0);
+  String token = '';
+  
+  // Inicializa el estado del widget y llama a la función mostrarContenido y mostrarNegoid.
   @override
   void initState() {
     super.initState();
     mostrarContenido();
     mostrarNegoid();
-   
-    
-    // Initialize the animation controller with a duration of one second
+    // Inicializa el controlador de animación
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
     );
-
-    // Initialize the text field opacity animation with a curve and a range
-
-    // Start the animation when the screen is loaded
     _animationController.forward();
   }
 
+//Extraer el contenido del negocio para el pedido 
+// Funcion Future para obtener el contenido del negocio
   Future<void> mostrarContenido() async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     final CollectionReference collectionRef = firestore.collection('users');
     final DocumentReference documentRef = collectionRef.doc('${user!.email}');
     final DocumentSnapshot doc = await documentRef.get();
-    //Extraer las ubicaciones de la base de datos
-     // Obtener la ubicación del cliente
+  
     final userDoc = FirebaseFirestore.instance.collection('users').doc(user?.email);
     final idBussiness = doc['idBussiness'];
 
@@ -91,21 +88,18 @@ String token = '';
     
     setState(() {
       contenido = doc['negoname'];
-     
-      
       _ubicacionNegocio = negocioDoc['ubicacionnego'];
-     
-      print('Ubicación del negocio: ${_ubicacionNegocio.latitude}, ${_ubicacionNegocio.longitude}');
     });
   }
 
+  //Extraer la dirección y ubicación del cliente
   Future<void> dataNickname(String nickname) async {
     final String? email = await getEmailFromNickname(nickname);
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final CollectionReference collectionRef = firestore.collection('users');
   final DocumentReference documentRef = collectionRef.doc(email).collection('userData').doc('pInfo');
   final DocumentSnapshot doc = await documentRef.get();
-  // extraemos el tokenid para notificaciones del cliente
+  // se extrae tokenid para notificaciones del cliente
     final DocumentReference tokenclient = collectionRef.doc(email);
   final DocumentSnapshot doc2 = await tokenclient.get();
   
@@ -124,7 +118,7 @@ String token = '';
     });
   }
 }
-   
+   //Extraer el negocio id de la base de datos para el pedido
    Future<void> mostrarNegoid() async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     final CollectionReference collectionRef = firestore.collection('users');
@@ -138,7 +132,6 @@ String token = '';
   
   @override
   void dispose() {
-// Dispose the animation controller when the screen is disposed
     _animationController.dispose();
     super.dispose();
   }
@@ -156,6 +149,8 @@ Widget build(BuildContext context) {
           key: _formKey,
           child: Column(
             children: [
+              // Muestra el saludo y el nombre del usuario.
+              //Llamamos todas las funciones que necesitamos para el pedido
               _buildNicknameField(),
               const SizedBox(height: 20.0),
               _buildValidarButton(),
@@ -179,6 +174,7 @@ Widget build(BuildContext context) {
   );
 }
 
+// Define el campo de texto para el nickname del usuario.
 Widget _buildNicknameField() {
   return TextFormField(
     controller: _nicknameController,
@@ -196,7 +192,7 @@ Widget _buildNicknameField() {
     },
   );
 }
-
+// Define el botón para validar el usuario.
 Widget _buildValidarButton() {
   return ElevatedButton(
     onPressed: (){
@@ -208,7 +204,7 @@ Widget _buildValidarButton() {
     child: const Text('Validar'),
   );
 }
-
+// Define el campo de texto para la dirección de entrega.
 Widget _buildDireccionField() {
 
   return TextFormField(
@@ -231,14 +227,14 @@ Widget _buildDireccionField() {
     },
   );
 }
-
+// Define el botón para agregar más productos.
 Widget _buildAgregarProductoButton() {
   return ElevatedButton(
     onPressed: _agregarProducto,
     child: const Text('Agregar más'),
   );
 }
-
+// Define el campo de texto para la suma total del pedido.
 Widget _buildSumaTotalField() {
   return TextFormField(
     readOnly: true,
@@ -251,14 +247,14 @@ Widget _buildSumaTotalField() {
     controller: TextEditingController(text: _sumaTotal.toStringAsFixed(2)),
   );
 }
-
+// Define el botón para crear el pedido y llama a la función _crearPedido.
 Widget _buildCrearPedidoButton() {
   return ElevatedButton(
     onPressed: _isButtonEnabled ? _crearPedido : null,
     child: const Text('Crear pedido'),
   );
 }
-
+// Define los campos de texto para los productos y precios.
 List<Widget> _buildProductoPrecioFields() {
   List<Widget> fields = [];
   for (int i = 0; i < _productoControllers.length; i++) {
@@ -320,7 +316,7 @@ List<Widget> _buildProductoPrecioFields() {
   }
   return fields;
 }
-
+// Define la función para agregar más productos.
 void _agregarProducto() {
   if (_productoControllers.length < 6) {
     setState(() {
@@ -329,7 +325,7 @@ void _agregarProducto() {
     });
   }
 }
-
+// Define la función para calcular la suma total del pedido.
 void _calcularSumaTotal() {
   double suma = 0.0;
   for (var controller in _precioControllers) {
@@ -343,7 +339,7 @@ void _calcularSumaTotal() {
     _isButtonEnabled = _formKey.currentState!.validate();
   });
 }
-
+// Define la función para obtener el email a partir del nickname.
 Future<String?> getEmailFromNickname(String nickname) async {
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -358,7 +354,7 @@ Future<String?> getEmailFromNickname(String nickname) async {
     return null;
   }
 }
-
+// Define la función para validar el usuario.
 void _validarUsuario(String nickname) async {
   final String? email = await getEmailFromNickname(nickname);
   
@@ -384,14 +380,14 @@ void _validarUsuario(String nickname) async {
      ('El nickname $nickname no existe');
   }
 }
-
+// Define la función para actualizar el listado de nombres.
 void _actualizarListadoNombres() {
   final nombres = _nombresController.text.split(',');
   setState(() {
     _listadoNombres = nombres;
   });
 }
-
+// Define la función para mostrar un mensaje emergente con el número de pedido generado.
 void _mostrarMensajePedidoCreado(String idPedido) {
    
   final dialog = AlertDialog(
@@ -427,15 +423,10 @@ void _mostrarMensajePedidoCreado(String idPedido) {
             
             TextButton(onPressed: (){
               Clipboard.setData(ClipboardData(text: idPedido));
-            // Limpiar los campos de generar pedido.
-    _nombresController.clear();
-    _precioTotalController.clear();
-    _direccionController.clear();
-    Navigator.pop(context);
-    // Navegar a la pantalla de pedidos creados.
-    Navigator.popAndPushNamed(context, '/asignacion');
+              _navegarAPedidosCreados();
             }, child: Text('Copiar ID'
             , style: GoogleFonts.asul(
+              color: Theme.of(context).colorScheme.inverseSurface,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,  
               )
@@ -448,7 +439,7 @@ void _mostrarMensajePedidoCreado(String idPedido) {
   showDialog(context: context, builder: (context) => dialog);
 }
 
-
+// Define la función para crear el pedido.
 void _crearPedido() async {
   // Obtener los datos del pedido del usuario.
   List<String> nombres = _productoControllers.map((controller) => controller.text).toList();
@@ -482,6 +473,7 @@ void _crearPedido() async {
   await userDocument.set(data);
 
   CollectionReference userData = userDocument.collection('Productos');
+  DocumentReference prod = userData.doc(idPedidoSJP);
 
   // Inicializa el mapa para almacenar los datos del pedido
   Map<String, dynamic> pInfoData = {};
@@ -499,7 +491,7 @@ void _crearPedido() async {
   pInfoData['token'] = token;
 
   // Guarda el mapa en Firestore
-  await userData.add(pInfoData);
+  await prod.set(pInfoData);
 
   // Mostrar el mensaje emergente con el número de pedido generado.
   _mostrarMensajePedidoCreado(idPedidoSJP);
@@ -513,18 +505,16 @@ void _crearPedido() async {
   );
   }
 }
-  void _navegarAPedidosCreados() {
+ // Navegar a la pantalla de pedidos creados.(Asignar motorista)
+void _navegarAPedidosCreados() {
     // Limpiar los campos de generar pedido.
     _nombresController.clear();
     _precioTotalController.clear();
     _direccionController.clear();
-    Navigator.pop(context);
-    // Navegar a la pantalla de pedidos creados.
-    Navigator.popAndPushNamed(context, '/asignacion');
+  Navigator.pop(context); // Cierra el drawer
+                Navigator.pushNamed(context, '/asignacion');
   }
-  // Mostrar un mensaje de confirmación.
-
-
+// Define la función para mostrar un diálogo con los campos para agregar productos.
 void _mostrarDialogoAgregarProductos() {
   showDialog(
     context: context,
@@ -615,8 +605,5 @@ void _mostrarDialogoAgregarProductos() {
   );
 }
 }
-
-
-
 // Listado de nombres de productos.
 List<String> _listadoNombres = [];

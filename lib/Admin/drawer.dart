@@ -7,6 +7,7 @@ import 'package:lottie/lottie.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Cliente/pInfo.dart';
 import 'package:rastreogt/Cliente/sol_nego.dart';
+import 'package:rastreogt/Moto/Profile_moto.dart';
 import 'package:rastreogt/conf/configuracion.dart';
 
 class ModernDrawer extends StatefulWidget {
@@ -36,7 +37,8 @@ class _ModernDrawerState extends State<ModernDrawer> {
       //imagenPerfil = usuario['imagenPerfil']; // Asegúrate de tener este campo en Firestore
     });
   }
-Future<void> cerrarSesion() async {
+ 
+ Future<void> cerrarSesion() async {
   try {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser!.providerData.any((userInfo) => userInfo.providerId == 'google.com')) {
@@ -96,7 +98,34 @@ Future<void> cerrarSesion() async {
               Navigator.pop(context);
             },
           ),
-          ListTile(
+          if (role == 'moto') ...[
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Perfil de motorista'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => UserMoto(userEmail: user?.email)),
+                );
+              },
+            ),
+          ],
+          if (role == 'client') ...[
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Perfil de cliente'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => UserInfoScreen(userEmail: user?.email)),
+                );
+              },
+            ),
+          ],
+          if (role == 'admin') ...[
+              ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Perfil'),
             onTap: () {
@@ -108,7 +137,6 @@ Future<void> cerrarSesion() async {
             );
             },
           ),
-          if (role == 'admin') ...[
             ListTile(
               leading: const Icon(Icons.motorcycle),
               title: const Text('Asignar moto'),
@@ -129,6 +157,7 @@ Future<void> cerrarSesion() async {
               },
             ),
           ],
+         
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Configuración'),

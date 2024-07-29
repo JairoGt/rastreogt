@@ -15,7 +15,7 @@ final pedidosRef = FirebaseFirestore.instance.collection('pedidos');
         .where('negoname', isEqualTo: nickname)
         .get();
 
-final motoristasRef = FirebaseFirestore.instance.collection('users');
+final motoristasRef = FirebaseFirestore.instance.collection('motos');
 String nickname = '';
 
 // Clase principal de la aplicación
@@ -40,6 +40,11 @@ final User? user = FirebaseAuth.instance.currentUser;
       nickname = usuario['negoname'];
     });
   }
+    Future<List<DocumentSnapshot>> _fetchMotoristas() async {
+    QuerySnapshot snapshot = await motoristasRef.where("estadoid",isEqualTo: 2).where("negoname",isEqualTo: nickname).get();
+    return snapshot.docs;
+  }
+
   // Lista de pedidos
   List<DocumentSnapshot> pedidos = [];
 
@@ -66,13 +71,8 @@ obtenerNombreUsuario();
 
       setState(() {});
     });
-
-    // Obtener motoristas
-    motoristasRef.snapshots().listen((snapshot) {
-      motoristas = snapshot.docs;
-
-      setState(() {});
-    });
+_fetchMotoristas();
+  
   }
 
   @override
@@ -147,7 +147,7 @@ obtenerNombreUsuario();
                 overflow: TextOverflow.ellipsis,
               ),
               // Lista de motoristas
-              Row(
+                Row(
                 children: [
                   Expanded(
                     child: SizedBox(
@@ -165,50 +165,42 @@ obtenerNombreUsuario();
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(12)),
                           ),
-                          child: StreamBuilder<QuerySnapshot>(
-                            stream: motoristasRef
-                                .where('role', isEqualTo: 'moto')
-                                .snapshots(),
+                          child: FutureBuilder<List<DocumentSnapshot>>(
+                            future: _fetchMotoristas(),
+                               
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
                                 return ListView.separated(
                                   separatorBuilder:
                                       (BuildContext context, int index) =>
                                           const Divider(),
-                                  itemCount: snapshot.data!.docs.length,
+                                  itemCount: snapshot.data!.length,
                                   itemBuilder: (context, index) {
                                     return Container(
                                       // height: 50,
                                       color:
-                                          Theme.of(context).colorScheme.surface,
+                                          Theme.of(context).colorScheme.inversePrimary,
                                       child: CheckboxListTile(
                                         title: Text(
-                                          snapshot.data!.docs[index]['name'],
+                                          snapshot.data![index]['name'],
                                           style: const TextStyle(
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold),
                                         ),
-                                        subtitle: Text(snapshot
-                                            .data!.docs[index]['idmoto']),
+                                        subtitle: Text(
+                                            snapshot.data![index]['email']),
                                         value: _idMotorista ==
-                                            snapshot.data!.docs[index]['email'],
+                                            snapshot.data![index]['idmoto'].toString(),
                                         onChanged: (value) {
                                           // Actualiza el valor de _idMotorista
                                           _idMotorista = value!
-                                              ? snapshot.data!.docs[index]
-                                                  ['email']
+                                              ? snapshot.data![index]
+                                                  ['idmoto'].toString()
                                               : '';
                                           // Actualiza el widget
-                                          _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Actualiza el estado del widget
-        });
-      } else {
-      
-        _timer?.cancel();
-      }
-    });
+                                          if (mounted) {
+                                            setState(() {});
+                                          }
                                         },
                                       ),
                                     );
@@ -276,7 +268,7 @@ obtenerNombreUsuario();
     });
 
 // Navegar a otra página
-                Navigator.popAndPushNamed(context, '/asignacion');
+                Navigator.popAndPushNamed(context, '/listapedidos');
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
 // ignore: prefer_interpolation_to_compose_strings
@@ -303,7 +295,7 @@ obtenerNombreUsuario();
         _timer?.cancel();
       }
     });
-                 Navigator.popAndPushNamed(context, '/asignacion');
+                 Navigator.popAndPushNamed(context, '/listapedidos');
               }
             }
           } on FirebaseException {
@@ -317,7 +309,7 @@ obtenerNombreUsuario();
         _timer?.cancel();
       }
     });
-            Navigator.popAndPushNamed(context, '/asignacion');
+            Navigator.popAndPushNamed(context, '/listapedidos');
 
 // Mostrar un mensaje de error
             ScaffoldMessenger.of(context).showSnackBar(

@@ -110,9 +110,9 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       String message = "";
       if (e.code == 'weak-password') {
-        message = 'The password provided is too weak.';
+        message = 'La contraseña proporcionada es demasiado débil.';
       } else if (e.code == 'email-already-in-use') {
-        message = 'The account already exists for that email.';
+        message = 'Ya existe una cuenta con ese correo electrónico.';
       }
       Fluttertoast.showToast(
         msg: message,
@@ -211,14 +211,14 @@ class AuthService {
       }
     } on FirebaseAuthException catch (e) {
       String message = '';
-      if (e.code == 'invalid-email') {
-        message = 'No user found for that email.';
+    if (e.code == 'invalid-email') {
+        message = 'No se encontró un usuario con ese correo electrónico.';
       } else if (e.code == 'invalid-credential') {
-        message = 'Wrong password provided for that user.';
+        message = 'Contraseña incorrecta proporcionada para ese usuario.';
       } else if (e.code == 'user-not-found') {
-        message = 'No user found for that email.';
+        message = 'No se encontró un usuario con ese correo electrónico.';
       } else if (e.code == 'wrong-password') {
-        message = 'Wrong password provided for that user.';
+        message = 'Contraseña incorrecta proporcionada para ese usuario.';
       }
       Fluttertoast.showToast(
         msg: message,

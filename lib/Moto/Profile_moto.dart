@@ -3,18 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:rastreogt/Cliente/map.dart';
 
-class UserInfoScreen extends StatefulWidget {
+class UserMoto extends StatefulWidget {
   final String? userEmail;
 
-  const UserInfoScreen({super.key, required this.userEmail});
+  const UserMoto({super.key, required this.userEmail});
 
   @override
-  _UserInfoScreenState createState() => _UserInfoScreenState();
+  _UserMotoState createState() => _UserMotoState();
 }
 
-class _UserInfoScreenState extends State<UserInfoScreen> {
+class _UserMotoState extends State<UserMoto> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _direccionController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _telefonoController = TextEditingController();
   final TextEditingController _ubicacionController = TextEditingController();
@@ -29,36 +28,21 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   Future<void> _fetchUserInfo() async {
     try {
 DocumentSnapshot userInfo = await FirebaseFirestore.instance
-        .collection('users')
+        .collection('motos')
         .doc(widget.userEmail)
-        .collection('userData')
-        .doc('pInfo')
         .get();
 
   if (userInfo.exists) {
   Map<String, dynamic> data = userInfo.data() as Map<String, dynamic>;
   setState(() {
     _emailController.text = widget.userEmail!;
-    _direccionController.text = data['direccion'] ?? '';
+
     _nameController.text = data['name'] ?? '';
     _telefonoController.text = (data['telefono'] ?? 0).toString();
     _emailController.text = widget.userEmail!;
   });
 
-  // Lee las coordenadas de Firestore
-  GeoPoint geoPoint = (data['ubicacion']) ?? GeoPoint(0, 0);
-  double latitude = geoPoint.latitude;
-  double longitude = geoPoint.longitude;
 
-  // Utiliza el paquete geocoding para convertir las coordenadas en una dirección
-
-  List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-  if (placemarks.isNotEmpty) {
-    Placemark placemark = placemarks.first;
-    setState(() {
-      _ubicacionController.text = '${placemark.street}, ${placemark.locality}, ${placemark.country}'??" No se pudo obtener la dirección";
-    });
-  }
 }
     }catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,37 +51,27 @@ DocumentSnapshot userInfo = await FirebaseFirestore.instance
     }
     
   }
-String? _originalCoordinates;
+
 
 Future<void> _saveUserInfo() async {
   if (_formKey.currentState!.validate()) {
-    if (_originalCoordinates != null) {
-      final coordinates = _originalCoordinates!.split(',');
-      final latitude = double.parse(coordinates[0]);
-      final longitude = double.parse(coordinates[1]);
+   
+   
 
       await FirebaseFirestore.instance
-          .collection('users')
+          .collection('motos')
           .doc(widget.userEmail)
-          .collection('userData')
-          .doc('pInfo')
           .update({
-        'direccion': _direccionController.text,
         'estadoid': 1,
         'name': _nameController.text,
         'telefono': _telefonoController.text,
-        'ubicacion': GeoPoint(latitude, longitude),
+       
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Información actualizada')),
       );
-    } else {
-      // Manejar el caso en que no se hayan seleccionado coordenadas
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, selecciona una ubicación')),
-      );
-    }
+   
   }
 }
 
@@ -116,7 +90,7 @@ Future<void> _selectLocation() async {
 
     try {
       // Guardar las coordenadas originales
-      _originalCoordinates = result;
+
 
       // Obtener la dirección a partir de las coordenadas
       List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
@@ -176,17 +150,7 @@ Future<void> _selectLocation() async {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _direccionController,
-                decoration: const InputDecoration(labelText: 'Dirección'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese una dirección';
-                  }
-                  return null;
-                },
-              ),
+  
               const SizedBox(height: 20),
               TextFormField(
                 controller: _telefonoController,

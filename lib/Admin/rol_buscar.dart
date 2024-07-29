@@ -19,6 +19,7 @@ class _RolePageState extends State<RolePage> {
   List<DocumentSnapshot> _filteredUsersList = [];
   User? user = FirebaseAuth.instance.currentUser;
   String _currentUserNegoname = ''; // Tu propio negoname
+  GeoPoint ubicacionM = const GeoPoint(0, 0);
   String nick1 = '';
   @override
   void initState() {
@@ -33,6 +34,12 @@ class _RolePageState extends State<RolePage> {
 
   Future<void> _getCurrentUserNegoname() async {
     DocumentSnapshot currentUserSnapshot = await _firestore.collection('users').doc(user!.email).get();
+     final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final CollectionReference collectionRef = firestore.collection('users');
+    final DocumentReference documentRef = collectionRef.doc('${user!.email}');
+    final DocumentSnapshot doc = await documentRef.get();
+
+    ubicacionM = doc['ubicacion'];
     _currentUserNegoname = currentUserSnapshot['negoname'];
     
   }
@@ -144,6 +151,7 @@ class _RolePageState extends State<RolePage> {
     }
   }
 
+  
   void _updateRole(String email, String role) async {
     DocumentReference userDocument = _firestore.collection('users').doc(email);
     Map<String, dynamic> data = {
@@ -180,6 +188,8 @@ class _RolePageState extends State<RolePage> {
         'negoname': _currentUserNegoname,
         'name':nick1,
         'email': email,
+        'telefono': 0,
+        'ubicacionM':ubicacionM ,
       };
      
    await motoDocument.set(motoData);

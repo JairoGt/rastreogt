@@ -3,14 +3,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class LocationPickerScreen extends StatefulWidget {
-  const LocationPickerScreen({super.key});
+class Mapas2 extends StatefulWidget {
+  const Mapas2({super.key});
 
   @override
-  _LocationPickerScreenState createState() => _LocationPickerScreenState();
+  _Mapas2State createState() => _Mapas2State();
 }
 
-class _LocationPickerScreenState extends State<LocationPickerScreen> {
+class _Mapas2State extends State<Mapas2> {
   GoogleMapController? mapController;
   LatLng? _currentPosition;
 
@@ -20,19 +20,28 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     _getCurrentLocation();
   }
 
-  Future<void> _getCurrentLocation() async {
-    var status = await Permission.location.status;
-    if (status.isGranted) {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
-      });
-    } else if (status.isDenied) {
-      // Handle the case where the user denied permission (show a message, etc.)
+Future<void> _getCurrentLocation() async {
+  var status = await Permission.location.status;
+  if (status.isGranted) {
+    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    setState(() {
+      _currentPosition = LatLng(position.latitude, position.longitude);
+    });
+  } else if (status.isDenied) {
+    // Solicita el permiso si es denegado
+    var newStatus = await Permission.location.request();
+    if (newStatus.isGranted) {
+      // Intenta obtener la ubicación nuevamente si el permiso es concedido
+      _getCurrentLocation();
+    } else {
+      // Maneja el caso donde el usuario niega el permiso
+      print("Permiso de ubicación denegado");
     }
+  } else if (status.isPermanentlyDenied) {
+    // Abre la configuración del app para que el usuario pueda conceder el permiso manualmente
+    openAppSettings();
   }
-
+}
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     if (_currentPosition != null) {
@@ -70,7 +79,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         ],
       ),
       body: _currentPosition == null
-          ? const Center(child:  CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(

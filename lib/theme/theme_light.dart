@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class ThemeLight {
   static ThemeData get theme {
@@ -48,6 +49,11 @@ class ThemeLight {
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Color.fromARGB(255, 59, 59, 62)),
         ),
+      ),
+        dialogTheme:  DialogTheme(
+        backgroundColor: Colors.grey.shade200,
+        titleTextStyle: GoogleFonts.roboto(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+        contentTextStyle: GoogleFonts.roboto(color: Colors.black, fontSize: 16),
       ),
     );
   }

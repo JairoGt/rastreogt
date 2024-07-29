@@ -56,6 +56,12 @@ class ThemeDark {
          enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Color.fromARGB(255, 124, 124, 134)),
         ),
+        
+      ),
+        dialogTheme:  DialogTheme(
+        backgroundColor: Colors.grey.shade900,
+        titleTextStyle: GoogleFonts.roboto(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+        contentTextStyle: GoogleFonts.roboto(color: Colors.white, fontSize: 16),
       ),
     );
   }

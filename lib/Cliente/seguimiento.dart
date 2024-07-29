@@ -18,6 +18,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
   User? user = FirebaseAuth.instance.currentUser;
   TextEditingController _controller = TextEditingController();
   Map<String, dynamic>? _orderDetails;
+    Map<String, dynamic>? _motoristaDetails;
 
   final List<String> _processes = [
     'Creado',
@@ -26,26 +27,83 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
     'Entregado'
   ]; // Define the processes list
 
-  void _searchAndUpdateTimeline() async {
-    String id = _controller.text;
-    if (id.isEmpty) return;
+void _searchAndUpdateTimeline() async {
+  String id = _controller.text;
+  if (id.isEmpty) return;
 
-    DocumentSnapshot docSnapshot =
-        await FirebaseFirestore.instance.collection('pedidos').doc(id).get();
+  DocumentSnapshot docSnapshot =
+      await FirebaseFirestore.instance.collection('pedidos').doc(id).get();
 
-    if (docSnapshot.exists) {
-      Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-      setState(() {
-        _processIndex = data['estadoid'] - 1;
-        _orderDetails = data; // Update order details
-      });
-    } else {
-      setState(() {
-        _processIndex = 0; // O algún estado por defecto
-        _orderDetails = null;
-      });
-    }
+  if (docSnapshot.exists) {
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    setState(() {
+      _processIndex = data['estadoid'] - 1;
+      _orderDetails = data; // Update order details
+    });
+
+    // Obtener el idMotorista del pedido y llamar a _obtenerDetallesMotorista
+    var idMotorista = _orderDetails!['idMotorista'];
+    _obtenerDetallesMotorista(idMotorista);
+  } else {
+    setState(() {
+      _processIndex = 0; // O algún estado por defecto
+      _orderDetails = null;
+      _motoristaDetails = null; // Limpiar los detalles del motorista si no se encuentra el pedido
+    });
   }
+}
+
+void _obtenerDetallesPedido() async {
+  String? idPedido = widget.idPedidos;
+
+  // Verificar si idPedido es nulo o vacío
+  if (idPedido == null || idPedido.isEmpty) {
+    idPedido = _controller.text;
+  }
+
+  // Verificar nuevamente si idPedido es nulo o vacío después de intentar con _controller.text
+  if (idPedido == null || idPedido.isEmpty) {
+    print('No se proporcionó un idPedido válido');
+    return;
+  }
+
+  // Intentar obtener los detalles del pedido con el idPedido válido
+  var pedidoSnapshot = await FirebaseFirestore.instance.collection('pedidos').doc(idPedido).get();
+
+  // Verificar si el pedido existe
+  if (pedidoSnapshot.exists) {
+    setState(() {
+      _orderDetails = pedidoSnapshot.data();
+    });
+    // Obtener el idMotorista del pedido
+    var idMotorista = _orderDetails!['idMotorista'];
+    _obtenerDetallesMotorista(idMotorista);
+  } else {
+    // Si no se encuentra el pedido, imprimir un mensaje de error
+    print('Pedido no encontrado');
+  }
+}
+
+void _obtenerDetallesMotorista(String idMotorista) async {
+  // Obtener los detalles del motorista buscando por el campo idMotorista
+  var querySnapshot = await FirebaseFirestore.instance
+      .collection('motos')
+      .where('idmoto', isEqualTo: idMotorista)
+      .get();
+
+  if (querySnapshot.docs.isNotEmpty) {
+    setState(() {
+      // Suponiendo que solo hay un documento que coincide con el idMotorista
+      _motoristaDetails = querySnapshot.docs.first.data();
+
+      print(idMotorista);
+    });
+  } else {
+    setState(() {
+      _motoristaDetails = null; // Limpiar los detalles del motorista si no se encuentra
+    });
+  }
+}
 
   void _onTrackingNumberChanged() {
     setState(() {
@@ -62,6 +120,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
     _searchAndUpdateTimeline();
     // Aquí puedes agregar la lógica para buscar el pedido usando el idPedido
     _trackingNumber = widget.idPedidos;
+     _obtenerDetallesPedido();
   }
 
   @override
@@ -86,7 +145,13 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                _controller.clear();
+                _orderDetails = null;
+                _motoristaDetails = null;
+              });
+            },
           ),
         ],
       ),
@@ -117,12 +182,15 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: TextFormField(
+                    
                     textInputAction: TextInputAction.search,
                     onFieldSubmitted: (value) {
                       _searchAndUpdateTimeline();
                     },
                     controller: _controller,
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2),
                       labelText: 'Enter ID',
                       // labelStyle: GoogleFonts.poppins(),
                       suffixIcon: IconButton(
@@ -200,44 +268,47 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                             ),
                           ),
                           const SizedBox(height: 10.0),
-                          Text(
-                            'Motorista Asignado: \n${_orderDetails!['motoname'] ?? 'Ocurrio un Error al cargar el nombre'}',
-                            style: GoogleFonts.roboto(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white70,
-                            ),
-                          ),
+                           Text(
+                    'Motorista Asignado: \n${_motoristaDetails?['name'] ?? 'Ocurrió un error al cargar el nombre'}',
+                    style: GoogleFonts.roboto(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                    ),
+                  ),
                           const SizedBox(height: 20.0),
-                          Center(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MapScreen(
-                                      ubicacionCliente: LatLng(
-                                          _orderDetails!['ubicacionCliente']
-                                              .latitude,
-                                          _orderDetails!['ubicacionCliente']
-                                              .longitude),
-                                      ubicacionNegocio: LatLng(
-                                          _orderDetails!['ubicacionNegocio']
-                                              .latitude,
-                                          _orderDetails!['ubicacionNegocio']
-                                              .longitude),
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text('Ir a mapa'),
-                            ),
-                          ),
+                        Center(
+  child: _orderDetails!['estadoId'] != 4
+      ? ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MapScreen(
+                  emailM: _motoristaDetails?['email'],
+                  idMotorista: _orderDetails!['idMotorista'],
+                  ubicacionCliente: LatLng(
+                      _orderDetails!['ubicacionCliente'].latitude,
+                      _orderDetails!['ubicacionCliente'].longitude),
+                  ubicacionNegocio: LatLng(
+                      _orderDetails!['ubicacionNegocio'].latitude,
+                      _orderDetails!['ubicacionNegocio'].longitude),
+                  ubicacionM: LatLng(
+                      _motoristaDetails?['latitude'] ?? 0.0,
+                      _motoristaDetails?['longitude'] ?? 0.0),
+                ),
+              ),
+            );
+          },
+          child: const Text('Ir a mapa'),
+        )
+      : Container(), // Un widget vacío cuando estadoId es 4
+),
                           ElevatedButton(
                             onPressed: () async {
                               if (_controller.text.isNotEmpty) {
