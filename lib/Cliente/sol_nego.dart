@@ -233,14 +233,28 @@ class _MyHomePageState extends State<MyHomePage> {
                   readOnly: true,
                 ),
                 const SizedBox(height: 20),
-                TextField(
+                TextFormField(
                   controller: _nombreNegocioController,
                   decoration: const InputDecoration(labelText: 'Nombre del Negocio'),
+                     validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'No Puede estar vacío';
+                    }else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                      return 'El nombre del negocio solo puede contener letras';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
-                TextField(
+                TextFormField(
                   controller: _direccionController,
                   decoration: const InputDecoration(labelText: 'Dirección'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'No Puede estar vacío';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
                 TextFormField(

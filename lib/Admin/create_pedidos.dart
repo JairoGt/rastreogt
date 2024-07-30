@@ -3,20 +3,7 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:rastreogt/conf/export.dart';
 
-// Define la función para obtener el saludo del día según la hora actual.
-String getGreeting() {
-  final currentTime = DateTime.now();
-  final hour = currentTime.hour;
-
-  if (hour >= 5 && hour < 12) {
-    return 'Buen día';
-  } else if (hour >= 12 && hour < 18) {
-    return 'Buena tarde';
-  } else {
-    return 'Buena noche';
-  }
-}
-
+// Pantalla para crear un pedido.
 class CrearPedidoScreen extends StatefulWidget {
   const CrearPedidoScreen({super.key});
 

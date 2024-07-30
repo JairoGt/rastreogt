@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
 import 'package:rastreogt/Cliente/mapasU.dart';
@@ -19,6 +20,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
   TextEditingController _controller = TextEditingController();
   Map<String, dynamic>? _orderDetails;
     Map<String, dynamic>? _motoristaDetails;
+  final _key = GlobalKey<FormState>();
 
   final List<String> _processes = [
     'Creado',
@@ -29,9 +31,11 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
 
 void _searchAndUpdateTimeline() async {
   String id = _controller.text;
-  if (id.isEmpty) return;
 
-  DocumentSnapshot docSnapshot =
+   if (_key.currentState != null && _key.currentState!.validate()){
+      // Realiza la búsqueda y actualiza la línea de tiempo
+     
+       DocumentSnapshot docSnapshot =
       await FirebaseFirestore.instance.collection('pedidos').doc(id).get();
 
   if (docSnapshot.exists) {
@@ -49,8 +53,40 @@ void _searchAndUpdateTimeline() async {
       _processIndex = 0; // O algún estado por defecto
       _orderDetails = null;
       _motoristaDetails = null; // Limpiar los detalles del motorista si no se encuentra el pedido
+      _controller.clear();
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title:  Text('Error', style: GoogleFonts.poppins(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            )),
+            content: const Text('Pedido no encontrado'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK',style: 
+                GoogleFonts.poppins(
+                  color: Theme.of(context).colorScheme.inverseSurface,
+                  fontWeight: FontWeight.bold,
+                )
+                ,),
+              )
+            ],
+          );
+        },
+      );
     });
   }
+      print('Formulario válido');
+    } else {
+      print('Formulario no válido');
+    }
+
+ 
 }
 
 void _obtenerDetallesPedido() async {
@@ -179,30 +215,46 @@ void _obtenerDetallesMotorista(String idMotorista) async {
           SingleChildScrollView(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextFormField(
-                    
-                    textInputAction: TextInputAction.search,
-                    onFieldSubmitted: (value) {
-                      _searchAndUpdateTimeline();
-                    },
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2),
-                      labelText: 'Enter ID',
-                      // labelStyle: GoogleFonts.poppins(),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: _searchAndUpdateTimeline,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
+              Form(
+        key: _key,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextFormField(
+                textInputAction: TextInputAction.search,
+                onFieldSubmitted: (value) {
+                  _searchAndUpdateTimeline();
+                },
+                controller: _controller,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2),
+                  labelText: 'Enter ID',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: _searchAndUpdateTimeline,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, ingrese un número de seguimiento';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _searchAndUpdateTimeline,
+                child: Text('Buscar'),
+              ),
+            ],
+          ),
+        ),
+      ),
                 const SizedBox(height: 10),
                 if (_orderDetails != null) ...[
                   TimelineWidget(
