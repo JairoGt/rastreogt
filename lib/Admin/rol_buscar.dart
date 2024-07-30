@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
-import 'package:rastreogt/Admin/asignar_moto.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class RolePage extends StatefulWidget {
@@ -184,7 +183,7 @@ class _RolePageState extends State<RolePage> {
 });
       Map<String, dynamic> motoData = {
         'idmoto': id,
-        'estadoid': 2, // Estado de la moto (0 = disponible, 1 = ocupado,2=Inactivo,3 = baja)
+        'estadoid': 1, // Estado de la moto (0 = baja, 1 = Disponible,2=En ruta,¿)
         'negoname': _currentUserNegoname,
         'name':nick1,
         'email': email,

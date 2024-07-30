@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:rastreogt/Cliente/pInfo.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
 import 'package:rastreogt/conf/export.dart';
 
@@ -12,10 +13,56 @@ class ClientPage extends StatefulWidget {
 }
 
 class _ClientPageState extends State<ClientPage> {
+
   String nombreUsuario = 'Mister';
   String nombreNegocio = 'Mi Negocio';
   String negoid = '';
   String nickname = '';
+
+    Future<void> _checkUserInfo() async {
+    if (user != null) {
+      final userEmail = user!.email ?? '';
+      final docSnapshot = await firestore.collection('users').doc(userEmail).collection('userData').doc('pInfo').get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data();
+        if (data != null && data['estadoid'] == 0) {
+          _showIncompleteInfoDialog();
+        }
+      }
+    }
+  }
+
+  void _showIncompleteInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Información Incompleta'),
+          content: const Text('Por favor, completa tu información personal y agrega una ubicación.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+               Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UserInfoScreen(userEmail: user?.email,) ,
+                    ),
+                  );
+              },
+              child: Text('OK',style: 
+              GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.inverseSurface,
+              )
+              ,),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   User? user = FirebaseAuth.instance.currentUser;
   final ScrollController _scrollController = ScrollController();
@@ -80,6 +127,7 @@ Future<void> obtenerNombreUsuario() async {
     obtenerNego();
     obtenerNegoid();
     _startAutoScroll();
+    _checkUserInfo();
   }
 
   @override

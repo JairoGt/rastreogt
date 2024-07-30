@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
+import 'package:rastreogt/Moto/Profile_moto.dart';
 import 'package:rastreogt/Moto/motoMaps.dart';
 
 import '../conf/export.dart';
@@ -15,33 +16,84 @@ class MotoristaScreen extends StatefulWidget {
 class _MotoristaScreenState extends State<MotoristaScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-   final User? user = FirebaseAuth.instance.currentUser;
+  final User? user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   Timer? _timer;
+
+  Future<void> _checkUserInfo() async {
+    if (user != null) {
+      final userEmail = user!.email ?? '';
+      final docSnapshot =
+          await firestore.collection('motos').doc(userEmail).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data();
+        if (data != null && data['estadoid'] == 0) {
+          _showIncompleteInfoDialog();
+        }
+      }
+    }
+  }
+
+  void _showIncompleteInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Información Incompleta'),
+          content: const Text(
+              'Por favor, completa tu información personal y agrega una ubicación.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserMoto(
+                      userEmail: user?.email,
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'OK',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.inverseSurface,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     // Verificar y solicitar permisos de ubicación
     verificarPermisosUbicacion();
     // Escuchar cambios de ubicación
-   iniciarActualizacionPeriodica();
-   verificarEstadoMotoYMostrarDialogo(user!.email!);
+    iniciarActualizacionPeriodica();
+    verificarEstadoMotoYMostrarDialogo(user!.email!);
   }
-    @override
+
+  @override
   void dispose() {
     _timer?.cancel(); // Cancelar el timer cuando el widget se destruya
     super.dispose();
   }
 
-    void iniciarActualizacionPeriodica() {
-    _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) async {
+  void iniciarActualizacionPeriodica() {
+    _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       actualizarUbicacionMotorista(position);
     });
   }
 
-   Future<void> verificarPermisosUbicacion() async {
+  Future<void> verificarPermisosUbicacion() async {
     bool serviciosHabilitados;
     LocationPermission permisos;
 
@@ -64,9 +116,7 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
     }
   }
 
-
-
-Future<void> actualizarUbicacionMotorista(Position position) async {
+  Future<void> actualizarUbicacionMotorista(Position position) async {
     User? user = _auth.currentUser;
     if (user == null) {
       print('Usuario no autenticado');
@@ -91,7 +141,8 @@ Future<void> actualizarUbicacionMotorista(Position position) async {
 
     // Verificar si el estadoid del motorista es 2
     if (userDoc['estadoid'] != 2) {
-      print('El estadoid del motorista no es 2, no se actualizará la ubicación');
+      print(
+          'El estadoid del motorista no es 2, no se actualizará la ubicación');
       return;
     }
 
@@ -215,104 +266,107 @@ Future<void> actualizarUbicacionMotorista(Position position) async {
     }
   }
 
-    void verificarEstadoMotoYMostrarDialogo(String idMoto) async {
-  DocumentSnapshot motoDocument = await firestore.collection('motos').doc(user!.email).get();
+  void verificarEstadoMotoYMostrarDialogo(String idMoto) async {
+    DocumentSnapshot motoDocument =
+        await firestore.collection('motos').doc(user!.email).get();
 
-  if (motoDocument.exists) {
-    Map<String, dynamic> motoData = motoDocument.data() as Map<String, dynamic>;
-    // Comprueba si el estado de la moto es 2
-    if (motoData['estadoid'] == 2) {
-      // El estado de la moto es 2, muestra el AlertDialog
-      mostrarDialogoSolicitudMotorista();
+    if (motoDocument.exists) {
+      Map<String, dynamic> motoData =
+          motoDocument.data() as Map<String, dynamic>;
+      // Comprueba si el estado de la moto es 2
+      if (motoData['estadoid'] == 2) {
+        // El estado de la moto es 2, muestra el AlertDialog
+        mostrarDialogoSolicitudMotorista();
+      } else {
+        // El estado de la moto no es 2, no hagas nada
+      }
     } else {
-      // El estado de la moto no es 2, no hagas nada
+      // El documento de la moto no existe, maneja este caso según sea necesario
     }
-  } else {
-    // El documento de la moto no existe, maneja este caso según sea necesario
   }
-}
 
-void mostrarDialogoSolicitudMotorista() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Solicitud para ser Motorista'),
-        content: Text('¿Quieres aceptar la solicitud para ser motorista?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              // El usuario seleccionó "No"
-              actualizarUsuarioARolCliente();
+  void mostrarDialogoSolicitudMotorista() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Solicitud para ser Motorista'),
+          content: const Text('¿Quieres aceptar la solicitud para ser motorista?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // El usuario seleccionó "No"
+                actualizarUsuarioARolCliente();
                 Navigator.of(context).pop(); // Cierra el diálogo
-                 try {
-             Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FutureBuilder(
-          future: cerrarSesion(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              // Una vez que se complete el cierre de sesión, navega a la pantalla de inicio
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.popUntil(context, ModalRoute.withName('/'));
-              });
-              return Container(); // Pantalla vacía mientras se navega
-            } else {
-              // Muestra un indicador de carga mientras se cierra la sesión
-              return const Scaffold(
-               // backgroundColor: Color.fromARGB(125, 255, 255, 255),
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-          },
-        ),
-      ),
+                try {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FutureBuilder(
+                        future: cerrarSesion(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            // Una vez que se complete el cierre de sesión, navega a la pantalla de inicio
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              Navigator.popUntil(
+                                  context, ModalRoute.withName('/'));
+                            });
+                            return Container(); // Pantalla vacía mientras se navega
+                          } else {
+                            // Muestra un indicador de carga mientras se cierra la sesión
+                            return const Scaffold(
+                              // backgroundColor: Color.fromARGB(125, 255, 255, 255),
+                              body: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al cerrar sesión: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                // El usuario seleccionó "Sí", simplemente cierra el diálogo
+                Navigator.of(context).pop();
+              },
+              child: const Text('Sí'),
+            ),
+          ],
+        );
+      },
     );
-              } catch (e) {
-             ScaffoldMessenger.of(context).showSnackBar(
-               SnackBar(
-                 content: Text('Error al cerrar sesión: $e'),
-                 backgroundColor: Colors.red,
-               ),
-             ); 
-            }
-            
-            },
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () {
-              // El usuario seleccionó "Sí", simplemente cierra el diálogo
-              Navigator.of(context).pop();
-            },
-            child: const Text('Sí'),
-          ),
-        ],
-      );
-    },
-  );
-}
+  }
 
-void actualizarUsuarioARolCliente() async {
-  String userId = "${user?.email}"; // Asegúrate de reemplazar esto con el ID del usuario actual
-  // Actualiza el rol del usuario a "cliente"
-  await firestore.collection('users').doc(userId).update({
-    'role': 'client',
-  });
-  // Cambia el estado en la colección de motoristas a 2
-  await firestore.collection('motos').doc(userId).update({
-    'estadoid': 2,
-  });
+  void actualizarUsuarioARolCliente() async {
+    String userId =
+        "${user?.email}"; // Asegúrate de reemplazar esto con el ID del usuario actual
+    // Actualiza el rol del usuario a "cliente"
+    await firestore.collection('users').doc(userId).update({
+      'role': 'client',
+    });
+    // Cambia el estado en la colección de motoristas a 2
+    await firestore.collection('motos').doc(userId).update({
+      'estadoid': 2,
+    });
+  }
 
-}
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: ModernDrawer(),
+      drawer: const ModernDrawer(),
       appBar: AppBar(
         leading: Builder(
           builder: (context) {
@@ -367,40 +421,48 @@ void actualizarUsuarioARolCliente() async {
                                   style: GoogleFonts.roboto(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   )),
                               TextSpan(
                                   text: '${pedido['direccion']}\n',
                                   style: GoogleFonts.roboto(
                                       fontSize: 20,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                       fontWeight: FontWeight.bold)),
                               TextSpan(
                                   text: 'Cliente: ',
                                   style: GoogleFonts.roboto(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   )),
                               TextSpan(
                                   text: '${pedido['nickname']}\n',
                                   style: GoogleFonts.roboto(
                                     fontSize: 16,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   )),
                               TextSpan(
                                   text: 'Estado: ',
                                   style: GoogleFonts.roboto(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   )),
                               TextSpan(
                                   text: obtenerDescripcionEstado(
                                       (pedido['estadoid'])),
                                   style: GoogleFonts.roboto(
                                       fontSize: 16,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                       fontWeight: FontWeight.bold)),
                             ],
                           ),
@@ -423,11 +485,15 @@ void actualizarUsuarioARolCliente() async {
                                     }
 
                                     if (pedido['ubicacionCliente'].latitude == null ||
-                                        pedido['ubicacionCliente'].longitude == null ||
+                                        pedido['ubicacionCliente'].longitude ==
+                                            null ||
                                         pedido['ubicacionM'].latitude == null ||
-                                        pedido['ubicacionM'].longitude == null ||
-                                        pedido['ubicacionNegocio'].latitude == null ||
-                                        pedido['ubicacionNegocio'].longitude == null) {
+                                        pedido['ubicacionM'].longitude ==
+                                            null ||
+                                        pedido['ubicacionNegocio'].latitude ==
+                                            null ||
+                                        pedido['ubicacionNegocio'].longitude ==
+                                            null) {
                                       throw Exception(
                                           'Latitud o longitud nula en las ubicaciones');
                                     }
@@ -457,8 +523,7 @@ void actualizarUsuarioARolCliente() async {
                                       ),
                                     );
                                   } catch (e, stackTrace) {
-                                    print('Error: $e');
-                                    print('StackTrace: $stackTrace');
+                                
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -498,7 +563,8 @@ void actualizarUsuarioARolCliente() async {
                                   onPressed: () async {
                                     await actualizarPedidoEnCamino(
                                         pedido['idpedidos']);
-                                    setState(() {}); // Refresca la lista de pedidos
+                                    setState(
+                                        () {}); // Refresca la lista de pedidos
                                   },
                                 ),
                                 const Text('Acción a realizar'),
