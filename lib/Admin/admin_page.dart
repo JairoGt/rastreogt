@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:flutter/services.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class AdminPage extends StatefulWidget {
@@ -19,10 +23,15 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   User? user = FirebaseAuth.instance.currentUser;
    late AnimationController _controller;
+     List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  final Connectivity _connectivity = Connectivity();
+    late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
   @override
   void initState() {
     super.initState();
     obtenerNombreUsuario();
+    initConnectivity();
     obtenerNego();
     obtenerNegoid();
       _controller = AnimationController(vsync: this);
@@ -40,9 +49,65 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
  @override
   void dispose() {
     _controller.dispose();
+       _connectivitySubscription.cancel();
     super.dispose();
   }
   
+   // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status: $e');
+      return;
+    }
+
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+    // ignore: avoid_print
+    if (_connectionStatus.contains(ConnectivityResult.none)) {
+      showDialog(context: context,
+      
+       builder: 
+        (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error de Conexión'),
+            content: const Text('No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Ok'),
+              ),
+            ],
+          );
+        },
+       );
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.green,
+          content: Text('Conexión establecida'),
+        ),
+      );
+    }
+   
+  
+    print('Connectivity changed: $_connectionStatus');
+  }
+
   void _updateNegocio(String newNegocioId) {
     setState(() {
       currentNegocioId = newNegocioId;

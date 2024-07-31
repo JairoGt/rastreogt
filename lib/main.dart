@@ -1,9 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:rastreogt/Admin/asignar_moto.dart';
 import 'package:rastreogt/Admin/bitacora_pedidos.dart';
 import 'package:rastreogt/Admin/create_pedidos.dart';
@@ -13,8 +10,7 @@ import 'package:rastreogt/Admin/rol_buscar.dart';
 import 'package:rastreogt/conf/noti_api.dart';
 import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/firebase_options.dart';
-import 'package:rastreogt/providers/pedidosProvider.dart';
-import 'package:rastreogt/providers/themeNoti.dart';
+import 'package:rastreogt/conf/export.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 

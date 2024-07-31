@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
@@ -19,6 +21,10 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
   final User? user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   Timer? _timer;
+     List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  final Connectivity _connectivity = Connectivity();
+    late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
 
   Future<void> _checkUserInfo() async {
     if (user != null) {
@@ -32,6 +38,61 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
         }
       }
     }
+  }
+
+     // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status: $e');
+      return;
+    }
+
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+    // ignore: avoid_print
+    if (_connectionStatus.contains(ConnectivityResult.none)) {
+      showDialog(context: context,
+      
+       builder: 
+        (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error de Conexión'),
+            content: const Text('No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Ok'),
+              ),
+            ],
+          );
+        },
+       );
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.green,
+          content: Text('Conexión establecida'),
+        ),
+      );
+    }
+   
+  
+    print('Connectivity changed: $_connectionStatus');
   }
 
   void _showIncompleteInfoDialog() {
@@ -76,15 +137,18 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
     verificarPermisosUbicacion();
     // Escuchar cambios de ubicación
     iniciarActualizacionPeriodica();
+    initConnectivity();
     verificarEstadoMotoYMostrarDialogo(user!.email!);
   }
 
   @override
   void dispose() {
     _timer?.cancel(); // Cancelar el timer cuando el widget se destruya
+    _connectivitySubscription.cancel();
     super.dispose();
   }
 
+  
   void iniciarActualizacionPeriodica() {
     _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
       Position position = await Geolocator.getCurrentPosition(

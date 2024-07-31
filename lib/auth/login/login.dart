@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rastreogt/auth/auth_service.dart';
@@ -22,8 +25,61 @@ class _LoginState extends State<Login> {
   final TextEditingController _passwordController = TextEditingController();
 
     final GoogleAuthService _googleAuthService = GoogleAuthService();
-  bool _isLoading = false;
+    List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  final Connectivity _connectivity = Connectivity();
+    late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
+  bool _isLoading = false;
+@override
+  void initState() {
+    super.initState();
+    initConnectivity();
+
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+  }
+ // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status: $e');
+      return;
+    }
+
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+    // ignore: avoid_print
+    if (_connectionStatus.contains(ConnectivityResult.none)) {
+      showErrorDialog(context, "No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.");
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.green,
+          content: Text('Conexión establecida'),
+        ),
+      );
+    }
+   
+  
+    print('Connectivity changed: $_connectionStatus');
+  }
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
   void _showLoading() {
     setState(() {
       _isLoading = true;
@@ -81,13 +137,20 @@ extendBodyBehindAppBar: true,
                   ElevatedButton(
         
             onPressed: () async {
+                var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      // No hay conexión a internet
+      showErrorDialog(context, "No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.");
+      return null;
+    }else{
               _showLoading();
               await _googleAuthService.signInWithGoogle(context);
               _hideLoading();
+    }
             },
             child: const Text('Iniciar con Google'),
-          ),
-         
+                  ),
+  
               ],
               
             ),

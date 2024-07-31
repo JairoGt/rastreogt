@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:rastreogt/Cliente/pInfo.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
@@ -18,6 +19,10 @@ class _ClientPageState extends State<ClientPage> {
   String nombreNegocio = 'Mi Negocio';
   String negoid = '';
   String nickname = '';
+     List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  final Connectivity _connectivity = Connectivity();
+    late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
 
     Future<void> _checkUserInfo() async {
     if (user != null) {
@@ -32,12 +37,68 @@ class _ClientPageState extends State<ClientPage> {
     }
   }
 
+
+   // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status: $e');
+      return;
+    }
+
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+    // ignore: avoid_print
+    if (_connectionStatus.contains(ConnectivityResult.none)) {
+      showDialog(context: context,
+      
+       builder: 
+        (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error de Conexión'),
+            content: const Text('No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Ok'),
+              ),
+            ],
+          );
+        },
+       );
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.green,
+          content: Text('Conexión establecida'),
+        ),
+      );
+    }
+   
+  
+    print('Connectivity changed: $_connectionStatus');
+  }
+
   void _showIncompleteInfoDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Información Incompleta'),
+          title: const Text('Acción requerida'),
           content: const Text('Por favor, completa tu información personal y agrega una ubicación.'),
           actions: [
             TextButton(
@@ -125,6 +186,7 @@ Future<void> obtenerNombreUsuario() async {
     super.initState();
     obtenerNombreUsuario();
     obtenerNego();
+    initConnectivity();
     obtenerNegoid();
     _startAutoScroll();
     _checkUserInfo();
@@ -134,6 +196,7 @@ Future<void> obtenerNombreUsuario() async {
   void dispose() {
     _timer?.cancel();
     _scrollController.dispose();
+    _connectivitySubscription.cancel();
     super.dispose();
   }
 
