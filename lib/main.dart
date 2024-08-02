@@ -7,10 +7,13 @@ import 'package:rastreogt/Admin/create_pedidos.dart';
 import 'package:rastreogt/Admin/edit_pedidos.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Admin/rol_buscar.dart';
+import 'package:rastreogt/Home/onboarding.dart';
+import 'package:rastreogt/Home/splash.dart';
 import 'package:rastreogt/conf/noti_api.dart';
 import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/firebase_options.dart';
 import 'package:rastreogt/conf/export.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -82,6 +85,10 @@ Future<void> main() async {
     });
   }
 
+  
+
+
+
   runApp(
     MultiProvider(
       providers: [
@@ -89,12 +96,13 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => UsuariosProvider()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
       ],
-      child: const MyApp(),
+      child:  MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
+ 
   const MyApp({super.key});
 
   // This widget is the root of your application.
@@ -107,6 +115,9 @@ class MyApp extends StatelessWidget {
         theme: themeNotifier.currentTheme,
         routes: {
           '/asignacion': (context) => const AsignarPedidos(),
+          '/home': (context) => const Login(),
+          '/onboarding': (context) => OnboardingScreen(),
+          '/splash': (context) =>  SplashScreen(),
           //'/admin' :(context) => const AdminScreen(),
           //'/login' :(context) => const Login(),
           //'/motoasignado' :(context) => const MotoPage(),
@@ -119,7 +130,7 @@ class MyApp extends StatelessWidget {
           '/reasignar': (context) => const ReasignarPedidos(),
           '/crearPedido': (context) => const CrearPedidoScreen(),
         },
-        home: const Login(),
+        initialRoute: '/splash',
       ),
     );
   }

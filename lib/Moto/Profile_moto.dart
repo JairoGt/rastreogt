@@ -62,7 +62,7 @@ Future<void> _saveUserInfo() async {
           .collection('motos')
           .doc(widget.userEmail)
           .update({
-        'estadoid': 1,
+        'estadoid': 0,
         'name': _nameController.text,
         'telefono': _telefonoController.text,
        

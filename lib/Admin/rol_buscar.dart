@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:rastreogt/conf/export.dart';
-
 class RolePage extends StatefulWidget {
   const RolePage({super.key});
 
@@ -32,15 +31,32 @@ class _RolePageState extends State<RolePage> {
   }
 
   Future<void> _getCurrentUserNegoname() async {
-    DocumentSnapshot currentUserSnapshot = await _firestore.collection('users').doc(user!.email).get();
-     final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    final CollectionReference collectionRef = firestore.collection('users');
-    final DocumentReference documentRef = collectionRef.doc('${user!.email}');
-    final DocumentSnapshot doc = await documentRef.get();
-
-    ubicacionM = doc['ubicacion'];
-    _currentUserNegoname = currentUserSnapshot['negoname'];
-    
+    try {
+      // Obtener el documento del usuario actual
+      DocumentSnapshot currentUserSnapshot = await _firestore.collection('users').doc(user!.email).get();
+      
+      // Obtener el idBusiness del documento del usuario
+      String idBusiness = currentUserSnapshot['idBussiness'];
+      
+      // Acceder al documento en la subcolección 'negocios' usando idBusiness
+      final DocumentReference documentRef = _firestore
+          .collection('users')
+          .doc(user!.email)
+          .collection('negocios')
+          .doc(idBusiness);
+      
+      // Obtener el documento de la subcolección
+      final DocumentSnapshot doc = await documentRef.get();
+      
+      // Extraer la información de 'ubicacion'
+      ubicacionM = doc['ubicacionnego'];
+      _currentUserNegoname = doc['negoname'];
+      
+      print('Negoname: $_currentUserNegoname');
+      print('Ubicacion: lat: ${ubicacionM.latitude}, long: ${ubicacionM.longitude}');
+    } catch (e) {
+      print('Error al obtener la información del usuario: $e');
+    }
   }
 
   void _getUsers1() async {
@@ -130,7 +146,7 @@ class _RolePageState extends State<RolePage> {
     await Future.delayed(const Duration(seconds: 2));
 
     setState(() {});
-  if(!mounted) return;
+    if(!mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -145,57 +161,83 @@ class _RolePageState extends State<RolePage> {
         return nickname.contains(searchQuery) && role == 'client';
       }).toList();
     }
+    if (_filteredUsersList.isEmpty) {
+      _showNoUsersFoundDialog();
+    }
     if (mounted) {
       setState(() {});
     }
   }
 
-  
-  void _updateRole(String email, String role) async {
-    DocumentReference userDocument = _firestore.collection('users').doc(email);
-    Map<String, dynamic> data = {
-      'role': role,
-      'estadoid': 0,
-      'negoname': _currentUserNegoname,
-    };
-    if (role == 'moto') {
-      String id = _getRandomId(3);
-      data['idmoto'] = id;
-
-      // Crear una coleccion 'motos' y un documento 'moto' dentro de ella
-      CollectionReference motos = _firestore.collection('motos');
-      DocumentReference motoDocument = motos.doc(email);
-       DocumentReference userDoc = _firestore.collection('users').doc(email);
-   userDoc.get().then((document) {
-  if (document.exists) {
-  
-    final data = document.data() as Map<String, dynamic>?; // Realiza un casting explícito.
-    if (data != null) {
-      // Obtiene el valor del campo 'nickname' de forma segura.
-      final String? nicknamel = data['nickname'];
-        nick1 = nicknamel!;
-    }
-  } else {
-    // Manejo de la situación donde el documento no existe.
+  void _showNoUsersFoundDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('No se encontraron usuarios'),
+          content: const Text('No se encontraron usuarios con el criterio de búsqueda proporcionado.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
   }
-}).catchError((error) {
-  // Manejo de error al obtener el documento
-});
-      Map<String, dynamic> motoData = {
-        'idmoto': id,
-        'estadoid': 1, // Estado de la moto (0 = baja, 1 = Disponible,2=En ruta,¿)
+
+  void _updateRole(String email, String role) async {
+    try {
+      // Obtener el documento del usuario
+      DocumentReference userDocument = _firestore.collection('users').doc(email);
+      DocumentSnapshot userSnapshot = await userDocument.get();
+
+      // Verificar si el documento existe y obtener el nickname
+      String nick1 = '';
+      if (userSnapshot.exists) {
+        final data = userSnapshot.data() as Map<String, dynamic>?;
+        if (data != null) {
+          nick1 = data['nickname'] ?? '';
+        }
+      }
+
+      // Preparar los datos para actualizar el rol del usuario
+      Map<String, dynamic> data = {
+        'role': role,
+        'estadoid': 0,
         'negoname': _currentUserNegoname,
-        'name':nick1,
-        'email': email,
-        'telefono': 0,
-        'ubicacionM':ubicacionM ,
       };
-     
-   await motoDocument.set(motoData);
+
+      if (role == 'moto') {
+        String id = _getRandomId(3);
+        data['idmoto'] = id;
+
+        // Crear una colección 'motos' y un documento 'moto' dentro de ella
+        CollectionReference motos = _firestore.collection('motos');
+        DocumentReference motoDocument = motos.doc(email);
+
+        Map<String, dynamic> motoData = {
+          'idmoto': id,
+          'estadoid': 0, // Estado de la moto (0 = baja, 1 = Disponible, 2 = En ruta, etc.)
+          'negoname': _currentUserNegoname,
+          'name': nick1,
+          'email': email,
+          'telefono': 0,
+          'ubicacionM': ubicacionM,
+        };
+
+        await motoDocument.set(motoData);
+      }
+
+      await userDocument.update(data);
+      _getUsers1();
+    } catch (error) {
+      // Manejo de errores
+      print('Error al actualizar el rol: $error');
     }
-    await userDocument.update(data);
-    
-    _getUsers1();
   }
 
   String _getRandomId(int length) {
@@ -225,7 +267,6 @@ class _RolePageState extends State<RolePage> {
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 prefixIcon: const Icon(Icons.search),
-                
               ),
             ),
             const SizedBox(height: 16.0),
@@ -297,7 +338,7 @@ class _RolePageState extends State<RolePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _getUsers,
         backgroundColor: Colors.teal,
-        child:  const Icon(Icons.search),
+        child: const Icon(Icons.search),
       ),
     );
   }

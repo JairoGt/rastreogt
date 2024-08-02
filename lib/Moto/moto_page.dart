@@ -338,7 +338,7 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
       Map<String, dynamic> motoData =
           motoDocument.data() as Map<String, dynamic>;
       // Comprueba si el estado de la moto es 2
-      if (motoData['estadoid'] == 2) {
+      if (motoData['estadoid'] == 0) {
         // El estado de la moto es 2, muestra el AlertDialog
         mostrarDialogoSolicitudMotorista();
       } else {

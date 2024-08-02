@@ -63,13 +63,6 @@ class _LoginState extends State<Login> {
     // ignore: avoid_print
     if (_connectionStatus.contains(ConnectivityResult.none)) {
       showErrorDialog(context, "No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.");
-    }else{
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.green,
-          content: Text('Conexión establecida'),
-        ),
-      );
     }
    
   
