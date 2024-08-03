@@ -1,16 +1,17 @@
 # rastreogt
 
-A new Flutter project.
+Una aplicación Flutter para gestionar y rastrear negocios.
 
-## Getting Started
+## Descripción
 
-This project is a starting point for a Flutter application.
+`rastreogt` es una aplicación diseñada para ayudar a los usuarios a gestionar y rastrear sus negocios de manera eficiente. Permite a los usuarios ver una lista de negocios, filtrar negocios por diferentes criterios y obtener detalles específicos de cada negocio.
 
-A few resources to get you started if this is your first Flutter project:
+## Características
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Autenticación de usuarios
+- Gestión de negocios
+- Filtrado de negocios por nickname y estado
+- Visualización de detalles de negocios
+- Interfaz de usuario intuitiva
+- Rastreo  de paquetes
+- Rastreo de Envios
