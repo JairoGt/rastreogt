@@ -103,9 +103,6 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
         ),
       );
     }
-   
-  
-    print('Connectivity changed: $_connectionStatus');
   }
 
   void _updateNegocio(String newNegocioId) {
@@ -119,19 +116,24 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
   }
 
 Future<void> obtenerNombreUsuario() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user.email).get();
-    String email = usuario['email'];
-    String emailOculto = email.split('@')[0];
+  DocumentSnapshot usuario = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user?.email)
+      .get();
+  
+  setState(() {
+    String nombreCompleto = user?.displayName ?? usuario['name'];
+    List<String> nombres = nombreCompleto.split(' ');
 
-    setState(() {
-      nombreUsuario = user.displayName ?? emailOculto;
-      nickname = usuario['nickname'];
-    });
-  } else {
-    print('No hay un usuario autenticado.');
-  }
+    // Asegúrate de que hay al menos tres partes en el nombre
+    if (nombres.length >= 3) {
+      nombreUsuario = '${nombres[0]} ${nombres[2]}';
+    } else {
+      nombreUsuario = nombreCompleto; // En caso de que no haya suficientes partes, usa el nombre completo
+    }
+
+    nickname = usuario['nickname'];
+  });
 }
 
   Future<void> obtenerNego() async {
