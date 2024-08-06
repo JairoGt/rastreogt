@@ -65,25 +65,9 @@ class GoogleAuthService {
         userDocument.update({'token': token});
       }
       if (role == 'admin') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: AdminPage(),
-            ),
-          ),
-        );
+       Navigator.of(context).pushReplacementNamed('/admin');
       } else if (role == 'moto') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: MotoristaScreen(),
-            ),
-          ),
-        );
+       Navigator.of(context).pushReplacementNamed('/moto');
       } else if (role == 'client') {
         Navigator.push(
           context,

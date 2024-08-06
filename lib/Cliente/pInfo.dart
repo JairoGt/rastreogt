@@ -161,6 +161,7 @@ Future<void> _selectLocation() async {
             children: [
               const SizedBox(height: 50),
               TextFormField(
+                keyboardType: TextInputType.emailAddress,
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
                 enabled: false,
@@ -201,6 +202,8 @@ Future<void> _selectLocation() async {
               ),
               const SizedBox(height: 20),
               TextFormField(
+                
+                enabled: false,
                 controller: _ubicacionController,
                 decoration: const InputDecoration(labelText: 'Ubicación'),
                 validator: (value) {

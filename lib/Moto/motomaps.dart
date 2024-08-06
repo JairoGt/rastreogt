@@ -3,17 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart'; // Importar url_launcher
 
 class MotoristaMapScreen extends StatefulWidget {
   final LatLng ubicacionCliente;
   final LatLng ubicacionNegocio;
-  final LatLng ubicacionM;
+  // final LatLng ubicacionM;
 
   const MotoristaMapScreen({
     super.key,
     required this.ubicacionCliente,
     required this.ubicacionNegocio,
-    required this.ubicacionM,
+    // required this.ubicacionM,
   });
 
   @override
@@ -29,8 +30,8 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
   @override
   void initState() {
     super.initState();
-    _ubicacionActual =
-        widget.ubicacionM; // Inicializar con la ubicación del negocio
+    // _ubicacionActual =
+    //     widget.ubicacionM; // Inicializar con la ubicación del negocio
     _obtenerUbicacionActual();
   }
 
@@ -69,11 +70,30 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
     }
   }
 
+  void _abrirGoogleMaps() async {
+    if (_ubicacionActual == null) return;
+
+    final String googleMapsUrl =
+        'https://www.google.com/maps/dir/?api=1&origin=${_ubicacionActual!.latitude},${_ubicacionActual!.longitude}&destination=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&travelmode=driving';
+
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      throw 'No se pudo abrir Google Maps';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ruta del Motorista'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.navigation),
+            onPressed: _abrirGoogleMaps,
+          ),
+        ],
       ),
       body: _ubicacionActual == null
           ? const Center(child: CircularProgressIndicator())
@@ -84,6 +104,8 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
               ),
               markers: {
                 Marker(
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueGreen),
                   markerId: const MarkerId('motorista'),
                   position: _ubicacionActual!,
                   infoWindow:
@@ -109,6 +131,7 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
                 ),
               },
               onMapCreated: (controller) {
+                
               },
             ),
     );

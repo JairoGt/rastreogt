@@ -45,12 +45,17 @@ Future<void> cerrarSesion() async {
       if (currentUser.providerData.any((userInfo) => userInfo.providerId == 'google.com')) {
         // User is signed in with Google
         await GoogleSignIn().signOut();
+        debugPrint('Usuario de Google ha cerrado sesión.');
       }
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
+      debugPrint('Usuario ha cerrado sesión de Firebase.');
+    } else {
+      debugPrint('No hay usuario autenticado.');
     }
-    Navigator.of(context).pushReplacementNamed('/home');
+  Navigator.popUntil(context, ModalRoute.withName('/home'));
   } catch (e) {
+    debugPrint('Error al cerrar sesión: $e');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,6 +67,7 @@ Future<void> cerrarSesion() async {
     });
   }
 }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(

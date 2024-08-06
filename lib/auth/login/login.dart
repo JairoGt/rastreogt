@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,8 +10,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rastreogt/auth/auth_service.dart';
 import 'package:rastreogt/auth/login/logingoogle.dart';
+import 'package:rastreogt/auth/password/resetpassword.dart';
 import 'package:rastreogt/auth/signup/signup.dart';
-
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -21,27 +22,24 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
-
   final TextEditingController _passwordController = TextEditingController();
 
-    final GoogleAuthService _googleAuthService = GoogleAuthService();
-    List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  final GoogleAuthService _googleAuthService = GoogleAuthService();
+  List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
   final Connectivity _connectivity = Connectivity();
-    late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   bool _isLoading = false;
-@override
+
+  @override
   void initState() {
     super.initState();
     initConnectivity();
-
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
- // Platform messages are asynchronous, so we initialize in an async method.
+
   Future<void> initConnectivity() async {
     late List<ConnectivityResult> result;
-    // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       result = await _connectivity.checkConnectivity();
     } on PlatformException catch (e) {
@@ -60,17 +58,18 @@ class _LoginState extends State<Login> {
     setState(() {
       _connectionStatus = result;
     });
-    // ignore: avoid_print
     if (_connectionStatus.contains(ConnectivityResult.none)) {
-      showErrorDialog(context, "No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.");
+      showErrorDialog(context,
+          "No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.");
     }
-   
   }
+
   @override
   void dispose() {
     _connectivitySubscription.cancel();
     super.dispose();
   }
+
   void _showLoading() {
     setState(() {
       _isLoading = true;
@@ -82,144 +81,156 @@ class _LoginState extends State<Login> {
       _isLoading = false;
     });
   }
+
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
-      //backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
-extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: true,
       bottomNavigationBar: _signup(context),
       appBar: AppBar(
-        
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 100,
-        
+        toolbarHeight: 20,
       ),
       body: Stack(
         children: [
-        SafeArea(
-          child: SingleChildScrollView(
-           padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Center(
-                  child: Text(
-                    'Hola de nuevo!',
-                    style: GoogleFonts.aDLaMDisplay(
+          Container(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[900]
+                : Colors.grey[400]
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 50),
+                  Icon(
+                    EvaIcons.personOutline,
+                    size: 100,
+                   // color: Colors.black,
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Bienvenido de Nuevo!',
+                    style: GoogleFonts.poppins(
                       textStyle: const TextStyle(
-                       // color: Colors.black,
+                        //color: Colors.black,
                         fontWeight: FontWeight.bold,
-                        fontSize: 32
-                      )
+                        fontSize: 24,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 80,),
-                  _buildTextField('Correo electrónico', _emailController, false,const Icon(Icons.email)),
-                 const SizedBox(height: 20,),
-                                  _buildTextField('Contraseña', _passwordController, true,const Icon(Icons.password_outlined )),
-
-                 const SizedBox(height: 50,),
-                 _signin(context),
-                  const SizedBox(height: 20,),
-                  ElevatedButton(
-        
-            onPressed: () async {
-                var connectivityResult = await (Connectivity().checkConnectivity());
-    if (ConnectivityResult.none == connectivityResult) {
-      // No hay conexión a internet
-      if (!mounted)return;
-      showErrorDialog(context, "No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.");
-      return;
-    }else{
-              _showLoading();
-          
-              await _googleAuthService.signInWithGoogle(context);
-              _hideLoading();
-    }
-            },
-            child: const Text('Iniciar con Google'),
+                  SizedBox(height: 50),
+                  _buildTextField(
+                      'Email',
+                      _emailController,
+                      false,
+                      Icon(Icons.email, color: Colors.grey),
+                      TextInputType.emailAddress),
+                  SizedBox(height: 20),
+                  _buildTextField(
+                      'Password',
+                      _passwordController,
+                      true,
+                      Icon(Icons.lock_outline, color: Colors.grey),
+                      TextInputType.visiblePassword),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecuperarContrasenaScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Olvidaste tu contraseña?',
+                        style: GoogleFonts.poppins(
+                          textStyle:  TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color.fromARGB(255, 136, 133, 133)
+                                : Colors.black,
+                            fontSize: 16,
+                          ),
+                      ),
+                    ),
+                   ) ),
+                  SizedBox(height: 30),
+                  _signin(context),
+                  SizedBox(height: 20),
+                  Text(
+                    'O inicia sesión con',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
                   ),
-  
-              ],
-              
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                     IconButton(
+  onPressed: () async {
+    _showLoading();
+    await _googleAuthService.signInWithGoogle(context);
+    _hideLoading();
+  },
+  icon: Container(
+    width: 60, // Ajusta el ancho del icono
+    height: 60, // Ajusta la altura del icono
+    child: Image.asset('assets/images/google.png'),
+  ),
+  iconSize: 20, // Ajusta el tamaño del icono
+),
+                     
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
           if (_isLoading)
-         Stack(
-           children: <Widget>[
-
-           
-            Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(
-                    color:Theme.of(context).brightness == Brightness.dark
-                 ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5) // Añade un color de fondo semitransparente
-                 :  Color.fromARGB(255, 255, 255, 255).withOpacity(0.5), // Añade un color de fondo semitransparente
-                    child: Center(
-                      child: Lottie.asset(
-                        'assets/lotties/loading.json',
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.cover,
+            Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
+                          : Color.fromARGB(255, 255, 255, 255).withOpacity(0.5),
+                      child: Center(
+                        child: Lottie.asset(
+                          'assets/lotties/loading.json',
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-        ]),
-     ]
+              ],
+            ),
+        ],
       ),
-      
-    );
-  }
-
-
-  Widget _password() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Contraseña',
-          style: GoogleFonts.raleway(
-            textStyle: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.normal,
-              fontSize: 16
-            )
-          ),
-        ),
-        const SizedBox(height: 16,),
-        TextField(
-          obscureText: true,
-          controller: _passwordController,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xffF7F7F9) ,
-            border: OutlineInputBorder(
-              borderSide: BorderSide.none,
-              borderRadius: BorderRadius.circular(14)
-            )
-          ),
-        )
-      ],
     );
   }
 
   Widget _signin(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-       // backgroundColor: const Color.fromARGB(255, 59, 76, 100),
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.black,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
         ),
-        minimumSize: const Size(double.infinity, 60),
+        minimumSize: Size(double.infinity, 50),
         elevation: 0,
       ),
       onPressed: () async {
@@ -227,15 +238,19 @@ extendBodyBehindAppBar: true,
         await AuthService().signin(
           email: _emailController.text,
           password: _passwordController.text,
-          context: context
+          context: context,
         );
         _hideLoading();
       },
-      child: const Text("Ingresar", style: TextStyle(
-       // color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 16
-      ),),
+      child: Text(
+        "Ingresar",
+        style: GoogleFonts.poppins(
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
@@ -246,55 +261,55 @@ extendBodyBehindAppBar: true,
         textAlign: TextAlign.center,
         text: TextSpan(
           children: [
-            const TextSpan(
-                text: "Nuevo Usuario? ",
-                style: TextStyle(
-                  color: Color(0xff6A6A6A),
-                  fontWeight: FontWeight.normal,
-                  fontSize: 16
-                ),
+            TextSpan(
+              text: "No estas registrado? ",
+              style: TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.normal,
+                fontSize: 16,
               ),
-              TextSpan(
-                text: "Crear Cuenta",
-                
-                style: const TextStyle(
-                   color: Color.fromARGB(255, 91, 95, 96),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16
-                  ),
-                  recognizer: TapGestureRecognizer()..onTap = () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Signup()
-                      ),
-                    );
-                  }
+            ),
+            TextSpan(
+              text: "Registrate aqui",
+              style: TextStyle(
+                color: Colors.blueAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-          ]
-        )
-      ),
-    );
-  }
-}
-
- Widget _buildTextField(String label, TextEditingController controller, bool obscureText,Icon ico) {
-    return TextField(
-      
-      controller: controller,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        prefixIcon: ico,
-        labelText: label,
-        
-        //labelStyle: GoogleFonts.raleway(color: Colors.white),
-        filled: true,
-       fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2), // Fondo semitransparente
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25.0),
-          borderSide: BorderSide.none,
-          
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Signup(),
+                    ),
+                  );
+                },
+            ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      bool obscureText, Icon ico, TextInputType keyboardType) {
+    return TextField(
+      keyboardType: keyboardType,
+      controller: controller,
+      obscureText: obscureText,
+      //style: TextStyle(color: Colors.black),
+      decoration: InputDecoration(
+        prefixIcon: ico,
+        labelText: label,
+        labelStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+        filled: true,
+       // fillColor: Colors.grey[200],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}

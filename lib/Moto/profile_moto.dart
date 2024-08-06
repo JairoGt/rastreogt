@@ -116,7 +116,7 @@ Future<void> _selectLocation() async {
       setState(() {
         _ubicacionController.text = 'Error al obtener la dirección';
       });
-      print('Error al obtener la dirección: $e');
+  
     }
   }
 }
@@ -165,6 +165,7 @@ Future<void> _selectLocation() async {
               ),
               const SizedBox(height: 20),
               TextFormField(
+                enabled: false,
                 controller: _ubicacionController,
                 decoration: const InputDecoration(labelText: 'Ubicación'),
                 validator: (value) {

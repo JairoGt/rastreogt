@@ -184,6 +184,7 @@ Future<void> obtenerNombreUsuario() async {
   void initState() {
     super.initState();
     obtenerNombreUsuario();
+  
     obtenerNego();
     initConnectivity();
     obtenerNegoid();

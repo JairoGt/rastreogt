@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
@@ -21,6 +22,7 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Timer? _timer;
      List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
   final Connectivity _connectivity = Connectivity();
@@ -90,6 +92,7 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
     // Escuchar cambios de ubicación
     iniciarActualizacionPeriodica();
     initConnectivity();
+    iniciarEscuchaEstadoMotorista();
     verificarEstadoMotoYMostrarDialogo(user!.email!);
   }
 
@@ -100,39 +103,78 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
     super.dispose();
   }
 
+Stream<DocumentSnapshot> obtenerMotoristaStream(String motoristaEmail) {
+  return _db.collection('motos').doc(motoristaEmail).snapshots();
+}
   
   void iniciarActualizacionPeriodica() {
-    _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      actualizarUbicacionMotorista(position);
+    _timer = Timer.periodic(const Duration(seconds: 30), (Timer timer) async {
+  
+      actualizarUbicacionMotorista();
     });
   }
 
-  Future<void> verificarPermisosUbicacion() async {
-    bool serviciosHabilitados;
-    LocationPermission permisos;
 
-    serviciosHabilitados = await Geolocator.isLocationServiceEnabled();
-    if (!serviciosHabilitados) {
-      return Future.error('Los servicios de ubicación están deshabilitados.');
-    }
+Future<void> verificarPermisosUbicacion() async {
+  bool serviciosHabilitados;
+  LocationPermission permisos;
 
-    permisos = await Geolocator.checkPermission();
+  serviciosHabilitados = await Geolocator.isLocationServiceEnabled();
+  if (!serviciosHabilitados) {
+    return Future.error('Los servicios de ubicación están deshabilitados.');
+  }
+
+  permisos = await Geolocator.checkPermission();
+  if (permisos == LocationPermission.denied) {
+    permisos = await Geolocator.requestPermission();
     if (permisos == LocationPermission.denied) {
-      permisos = await Geolocator.requestPermission();
-      if (permisos == LocationPermission.denied) {
-        return Future.error('Los permisos de ubicación han sido denegados');
-      }
-    }
-
-    if (permisos == LocationPermission.deniedForever) {
-      return Future.error(
-          'Los permisos de ubicación han sido denegados permanentemente, no se pueden solicitar permisos.');
+      return Future.error('Los permisos de ubicación han sido denegados');
     }
   }
 
-  Future<void> actualizarUbicacionMotorista(Position position) async {
+  if (permisos == LocationPermission.deniedForever) {
+    return Future.error(
+        'Los permisos de ubicación han sido denegados permanentemente, no se pueden solicitar permisos.');
+  }
+}
+ 
+ void iniciarEscuchaEstadoMotorista() {
+ 
+  User? user = _auth.currentUser;
+  if (user == null) {
+    showDialog(context: context, builder: 
+      (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error de Autenticación'),
+          content: const Text('No se ha podido obtener el usuario actual'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Ok'),
+            ),
+          ],
+        );
+      },
+    );
+    return;
+  }
+
+  String userEmail = user.email!;
+  obtenerMotoristaStream(userEmail).listen((DocumentSnapshot userDoc) {
+    if (userDoc.exists && userDoc['estadoid'] == 2) {
+      print('El estado de la moto es 2');
+      // Aquí puedes actualizar la ubicación del motorista
+      actualizarUbicacionMotorista();
+    } else {
+      print('El estado de la moto no es 2');
+    } 
+  });
+}
+Future<void> actualizarUbicacionMotorista() async {
+  try {
+    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     User? user = _auth.currentUser;
     if (user == null) {
       showDialog(context: context, builder: 
@@ -155,60 +197,29 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
     }
 
     String userEmail = user.email!;
-    DocumentSnapshot userDoc;
-
-    try {
-      userDoc = await _db.collection('motos').doc(userEmail).get();
-      if (!userDoc.exists) {
-        if (!mounted) return;
-         showDialog(context: context, builder: 
-        (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error '),
-            content: const Text('No se ha podido obtener el documento del usuario'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Ok'),
-              ),
-            ],
-          );
-        },
-      );
-     
-        return;
-      }
-    } catch (e) {
-      print('Error al obtener el documento del usuario: $e');
-      return;
-    }
-
-
-    // Verificar si el estadoid del motorista es 2
-    if (userDoc['estadoid'] != 2) {
-      print(
-          'El estadoid del motorista no es 2, no se actualizará la ubicación');
-      return;
-    }
-
     double latitude = position.latitude;
     double longitude = position.longitude;
 
-    try {
-      await _db.collection('motos').doc(userEmail).update({
-        'ubicacionM': GeoPoint(latitude, longitude),
-      });
-    } catch (e) {
-      print('Error al actualizar la ubicación: $e');
-    }
+    await _db.collection('motos').doc(userEmail).update({
+      'ubicacionM': GeoPoint(latitude, longitude),
+    });
+  } catch (e) {
+    Fluttertoast.showToast(
+      msg: 'Error al actualizar la ubicación: $e',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 4,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
-
+}
+  
   Future<void> cerrarSesion() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser!.providerData
+      if (currentUser != null && currentUser.providerData
           .any((userInfo) => userInfo.providerId == 'google.com')) {
         await GoogleSignIn().signOut();
       } else {
@@ -262,6 +273,27 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
 
     await pedidoRef.update({'estadoid': 3});
   }
+Future<void> marcarPedidoComoEntregado(String idPedido, String motoristaEmail) async {
+  try {
+    // Actualizar el estado del pedido a "Entregado"
+    DocumentReference pedidoDocument = _firestore.collection('pedidos').doc(idPedido);
+    await pedidoDocument.update({'estadoid': 4});
+
+    // Actualizar el estado del motorista a "Disponible"
+    DocumentReference motoristaDocument = _firestore.collection('motos').doc(motoristaEmail);
+    await motoristaDocument.update({'estadoid': 1});
+  } catch (error) {
+    Fluttertoast.showToast(
+      msg: 'Error al marcar el pedido como entregado: $error',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 4,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
+  }
+}
 
   Future<void> actualizarPedidosEnCamino() async {
     User? user = _auth.currentUser;
@@ -412,239 +444,222 @@ class _MotoristaScreenState extends State<MotoristaScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: const ModernDrawer(),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
-        title: const Text('Pedidos Asignados'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.update),
-            onPressed: () async {
-              await actualizarPedidosEnCamino();
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    drawer: const ModernDrawer(),
+    appBar: AppBar(
+      leading: Builder(
+        builder: (context) {
+          return IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
             },
-          ),
-        ],
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: obtenerPedidosAsignados(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Error al obtener los pedidos'));
-          } else {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                var pedido = snapshot.data![index];
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.all(8),
-                  child: ListTile(
-                    leading: Icon(Icons.motorcycle,
-                        color: Theme.of(context).colorScheme.inversePrimary),
-                    title: Text(pedido['idpedidos'] ?? 'Sin ID',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    isThreeLine: true,
-                    contentPadding: const EdgeInsets.all(8),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                  text: 'Dirección: ',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: '${pedido['direccion']}\n',
-                                  style: GoogleFonts.roboto(
-                                      fontSize: 20,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontWeight: FontWeight.bold)),
-                              TextSpan(
-                                  text: 'Cliente: ',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: '${pedido['nickname']}\n',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: 'Estado: ',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: obtenerDescripcionEstado(
-                                      (pedido['estadoid'])),
-                                  style: GoogleFonts.roboto(
-                                      fontSize: 16,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Column(children: [
-                              IconButton(
-                                icon: const Icon(Icons.map),
-                                onPressed: () async {
-                                  try {
-                                    if (pedido == null ||
-                                        pedido['ubicacionCliente'] == null ||
-                                        pedido['ubicacionM'] == null ||
-                                        pedido['ubicacionNegocio'] == null) {
-                                      throw Exception(
-                                          'No se ha podido encontrar las ubicaciones del negocio o del cliente');
-                                    }
-
-                                    if (pedido['ubicacionCliente'].latitude == null ||
-                                        pedido['ubicacionCliente'].longitude ==
-                                            null ||
-                                        pedido['ubicacionM'].latitude == null ||
-                                        pedido['ubicacionM'].longitude ==
-                                            null ||
-                                        pedido['ubicacionNegocio'].latitude ==
-                                            null ||
-                                        pedido['ubicacionNegocio'].longitude ==
-                                            null) {
-                                      throw Exception(
-                                          'Latitud o longitud nula en las ubicaciones');
-                                    }
-
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            MotoristaMapScreen(
-                                                ubicacionCliente: LatLng(
-                                                  pedido['ubicacionCliente']
-                                                      .latitude,
-                                                  pedido['ubicacionCliente']
-                                                      .longitude,
-                                                ),
-                                                ubicacionNegocio: LatLng(
-                                                  pedido['ubicacionNegocio']
-                                                      .latitude,
-                                                  pedido['ubicacionNegocio']
-                                                      .longitude,
-                                                ),
-                                                ubicacionM: LatLng(
-                                                  pedido['ubicacionM'].latitude,
-                                                  pedido['ubicacionM']
-                                                      .longitude,
-                                                )),
-                                      ),
-                                    );
-                                  } catch (e, stackTrace) {
-                                
-
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Error al obtener las ubicaciones: $e, $stackTrace'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                },
-                              ),
-                              const Text('Ver ubicación'),
-                            ]),
-                            Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.info),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return DetalleDialog(
-                                          orderId: pedido['idpedidos'],
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                const Text('Ver información'),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.check),
-                                  onPressed: () async {
-                                    await actualizarPedidoEnCamino(
-                                        pedido['idpedidos']);
-                                    setState(
-                                        () {}); // Refresca la lista de pedidos
-                                  },
-                                ),
-                                const Text('Acción a realizar'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          }
+          );
         },
       ),
-    );
-  }
+      title: const Text('Pedidos Asignados'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.update),
+          onPressed: () async {
+            await actualizarPedidosEnCamino();
+          },
+        ),
+      ],
+    ),
+    body: FutureBuilder<List<Map<String, dynamic>>>(
+      future: obtenerPedidosAsignados(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text('Error al obtener los pedidos'));
+        } else {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              var pedido = snapshot.data![index];
+              return Card(
+                elevation: 4,
+                margin: const EdgeInsets.all(8),
+                child: ListTile(
+                  leading: Icon(Icons.motorcycle,
+                      color: Theme.of(context).colorScheme.inversePrimary),
+                  title: Text(pedido['idpedidos'] ?? 'Sin ID',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  isThreeLine: true,
+                  contentPadding: const EdgeInsets.all(8),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                                text: 'Dirección: ',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                )),
+                            TextSpan(
+                                text: '${pedido['direccion']}\n',
+                                style: GoogleFonts.roboto(
+                                    fontSize: 20,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold)),
+                            TextSpan(
+                                text: 'Cliente: ',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                )),
+                            TextSpan(
+                                text: '${pedido['nickname']}\n',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                )),
+                            TextSpan(
+                                text: 'Estado: ',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                )),
+                            TextSpan(
+                                text: obtenerDescripcionEstado((pedido['estadoid'])),
+                                style: GoogleFonts.roboto(
+                                    fontSize: 16,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(children: [
+                            IconButton(
+                              icon: const Icon(Icons.map),
+                              onPressed: () async {
+                                try {
+                                  if (pedido == null ||
+                                      pedido['ubicacionCliente'] == null ||
+                                      pedido['ubicacionNegocio'] == null) {
+                                    throw Exception(
+                                        'No se ha podido encontrar las ubicaciones del negocio o del cliente');
+                                  }
 
-  String obtenerDescripcionEstado(int estadoid) {
-    switch (estadoid) {
-      case 1:
-        return 'Creado';
-      case 2:
-        return 'En proceso';
-      case 3:
-        return 'En camino';
-      case 4:
-        return 'Entregado';
-      default:
-        return 'Estado desconocido';
-    }
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MotoristaMapScreen(
+                                          ubicacionCliente: LatLng(
+                                            pedido['ubicacionCliente'].latitude,
+                                            pedido['ubicacionCliente'].longitude,
+                                          ),
+                                          ubicacionNegocio: LatLng(
+                                            pedido['ubicacionNegocio'].latitude,
+                                            pedido['ubicacionNegocio'].longitude,
+                                          )),
+                                    ),
+                                  );
+                                } catch (e, stackTrace) {
+                                Fluttertoast.showToast(
+                                  msg: 'Error al abrir el mapa: $e y $stackTrace',
+                                  toastLength: Toast.LENGTH_LONG,
+                                  gravity: ToastGravity.BOTTOM,
+                                  timeInSecForIosWeb: 4,
+                                  backgroundColor: Colors.red,
+                                  textColor: Colors.white,
+                                  fontSize: 16.0,
+                                );
+                                  return;
+                                }
+                              },
+                            ),
+                            const Text('Ver ubicación'),
+                          ]),
+                          Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.info),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return DetalleDialog(
+                                        orderId: pedido['idpedidos'],
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                              const Text('Ver información'),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.check),
+                                onPressed: () async {
+                                  await actualizarPedidoEnCamino(pedido['idpedidos']);
+                                  setState(() {}); // Refresca la lista de pedidos
+                                },
+                              ),
+                              const Text('Acción a realizar'),
+                            ],
+                          ),
+                          
+                        ],
+                      ),
+                      Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.done),
+                                    onPressed: () async {
+                                      await marcarPedidoComoEntregado(pedido['idpedidos'],pedido['idMotorista']);
+                                      setState(() {}); // Refresca la lista de pedidos
+                                    },
+                                  ),
+                                  const Text('Marcar como entregado'),
+                                ],
+                              ),
+                            ],
+                          ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+    ),
+  );
+}
+
+String obtenerDescripcionEstado(int estadoid) {
+  switch (estadoid) {
+    case 1:
+      return 'Creado';
+    case 2:
+      return 'En proceso';
+    case 3:
+      return 'En camino';
+    case 4:
+      return 'Entregado';
+    default:
+      return 'Estado desconocido';
   }
+}
 }

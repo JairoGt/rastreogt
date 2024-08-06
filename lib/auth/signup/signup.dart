@@ -16,7 +16,9 @@ class Signup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[900]
+                : Colors.grey[400],
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: _signin(context),
       appBar: AppBar(
@@ -34,7 +36,7 @@ class Signup extends StatelessWidget {
                   'Registra tu cuenta',
                   style: GoogleFonts.raleway(
                     textStyle: const TextStyle(
-                      color: Colors.black,
+                     // color: Colors.black,
                       fontWeight: FontWeight.bold,
                       fontSize: 32
                     )
@@ -64,7 +66,7 @@ class Signup extends StatelessWidget {
           'Correo Electrónico',
           style: GoogleFonts.raleway(
             textStyle: const TextStyle(
-              color: Colors.black,
+              //color: Colors.black,
               fontWeight: FontWeight.normal,
               fontSize: 16
             )
@@ -81,7 +83,7 @@ class Signup extends StatelessWidget {
               fontWeight: FontWeight.normal,
               fontSize: 14
             ),
-            fillColor: const Color(0xffF7F7F9) ,
+           //fillColor: const Color(0xffF7F7F9) ,
             border: OutlineInputBorder(
               borderSide: BorderSide.none,
               borderRadius: BorderRadius.circular(14)
@@ -101,7 +103,7 @@ class Signup extends StatelessWidget {
           'Contraseña',
           style: GoogleFonts.raleway(
             textStyle: const TextStyle(
-              color: Colors.black,
+             // color: Colors.black,
               fontWeight: FontWeight.normal,
               fontSize: 16
             )
@@ -113,7 +115,7 @@ class Signup extends StatelessWidget {
           obscureText: true,
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xffF7F7F9) ,
+            //fillColor: const Color(0xffF7F7F9) ,
             border: OutlineInputBorder(
               borderSide: BorderSide.none,
               borderRadius: BorderRadius.circular(14)
@@ -127,7 +129,7 @@ class Signup extends StatelessWidget {
   Widget _signup(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xff0D6EFD),
+       // backgroundColor: const Color(0xff0D6EFD),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -147,7 +149,7 @@ class Signup extends StatelessWidget {
 
   Widget _signin(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 16,left: BorderSide.strokeAlignCenter, right: BorderSide.strokeAlignCenter),
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
@@ -155,18 +157,20 @@ class Signup extends StatelessWidget {
             const TextSpan(
                 text: "Ya tienes una cuenta? ",
                 style: TextStyle(
-                  color: Color(0xff6A6A6A),
+                 // color: Color(0xff6A6A6A),
                   fontWeight: FontWeight.normal,
                   fontSize: 16
                 ),
               ),
               TextSpan(
                 text: "Inicia Sesión",
-                style: const TextStyle(
-                    color: Color(0xff1A1D1E),
-                    fontWeight: FontWeight.normal,
+                style: GoogleFonts.raleway(
+                  textStyle: const TextStyle(
+                    //color: Colors.black,
+                    fontWeight: FontWeight.bold,
                     fontSize: 16
-                  ),
+                  )
+                ),
                   recognizer: TapGestureRecognizer()..onTap = () {
                     Navigator.push(
                       context,
