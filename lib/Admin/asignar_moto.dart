@@ -350,7 +350,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
 
 // Navegar a otra página
 
-                Navigator.of(context).pop();
+                Navigator.popAndPushNamed(context, '/admin');
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
 // ignore: prefer_interpolation_to_compose_strings

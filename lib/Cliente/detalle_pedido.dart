@@ -77,7 +77,7 @@ class DetalleDialog extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text('Cerrar', style: GoogleFonts.poppins()),
+                child: Text('Cerrar', style: GoogleFonts.roboto(fontSize: 16, color: Colors.red)),
               ),
             ],
           );

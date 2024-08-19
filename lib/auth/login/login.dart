@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/gestures.dart';
@@ -84,6 +83,7 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
+  
     return Scaffold(
       resizeToAvoidBottomInset: true,
       extendBodyBehindAppBar: true,
@@ -106,13 +106,13 @@ class _LoginState extends State<Login> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: 50),
-                  Icon(
+                  const SizedBox(height: 50),
+                  const Icon(
                     EvaIcons.personOutline,
                     size: 100,
                    // color: Colors.black,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Text(
                     'Bienvenido de Nuevo!',
                     style: GoogleFonts.poppins(
@@ -123,19 +123,19 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 50),
+                  const SizedBox(height: 50),
                   _buildTextField(
                       'Email',
                       _emailController,
                       false,
-                      Icon(Icons.email, color: Colors.grey),
+                      const Icon(Icons.email, color: Colors.grey),
                       TextInputType.emailAddress),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildTextField(
                       'Password',
                       _passwordController,
                       true,
-                      Icon(Icons.lock_outline, color: Colors.grey),
+                      const Icon(Icons.lock_outline, color: Colors.grey),
                       TextInputType.visiblePassword),
                   Align(
                     alignment: Alignment.centerRight,
@@ -160,17 +160,19 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                    ) ),
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
                   _signin(context),
-                  SizedBox(height: 20),
-                  Text(
+                  const SizedBox(height: 20),
+                   Text(
                     'O inicia sesión con',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color.fromARGB(255, 136, 133, 133)
+                          : Colors.black,
                       fontSize: 16,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -202,8 +204,8 @@ class _LoginState extends State<Login> {
                     filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                     child: Container(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
-                          : Color.fromARGB(255, 255, 255, 255).withOpacity(0.5),
+                          ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
+                          : const Color.fromARGB(255, 255, 255, 255).withOpacity(0.5),
                       child: Center(
                         child: Lottie.asset(
                           'assets/lotties/loading.json',
@@ -230,7 +232,7 @@ class _LoginState extends State<Login> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        minimumSize: Size(double.infinity, 50),
+        minimumSize: const Size(double.infinity, 50),
         elevation: 0,
       ),
       onPressed: () async {
@@ -255,13 +257,14 @@ class _LoginState extends State<Login> {
   }
 
   Widget _signup(BuildContext context) {
+  
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
           children: [
-            TextSpan(
+            const TextSpan(
               text: "No estas registrado? ",
               style: TextStyle(
                 color: Colors.grey,
@@ -271,7 +274,7 @@ class _LoginState extends State<Login> {
             ),
             TextSpan(
               text: "Registrate aqui",
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.blueAccent,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

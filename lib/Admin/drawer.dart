@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
+import 'package:rastreogt/Cliente/historicopedidos.dart';
 import 'package:rastreogt/Cliente/pInfo.dart';
 import 'package:rastreogt/Cliente/sol_nego.dart';
 import 'package:rastreogt/Moto/profile_moto.dart';
@@ -93,12 +94,7 @@ Future<void> cerrarSesion() async {
                   color: Color.fromARGB(84, 47, 66, 81),
                 ),
               ),
-              Positioned.fill(
-                child: Lottie.asset(
-                  'assets/lotties/estelas.json', // Asegúrate de que el archivo Lottie esté en la carpeta assets
-                  fit: BoxFit.fill,
-                ),
-              ),
+              
             ],
           ),
           ListTile(
@@ -130,6 +126,17 @@ Future<void> cerrarSesion() async {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => UserInfoScreen(userEmail: user?.email)),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history_edu),
+              title: const Text('Historico'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>  HistoricoPedidosScreen(email: user!.email!)),
                 );
               },
             ),

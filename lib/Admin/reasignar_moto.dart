@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // Inicializamos Cloud Firestore
 final firebaseFirestore = FirebaseFirestore.instance.collection('pedidos');
@@ -39,12 +40,24 @@ final User? user = FirebaseAuth.instance.currentUser;
      // nombreUsuario = user?.displayName ?? usuario['nickname'];
       nickname = usuario['negoname'];
     });
+    _fetchMotoristas();
+    _fetchPedidos();
   }
-    Future<List<DocumentSnapshot>> _fetchMotoristas() async {
-    QuerySnapshot snapshot = await motoristasRef.where("estadoid",isEqualTo: 2).where("negoname",isEqualTo: nickname).get();
+    Future<List<DocumentSnapshot>> _fetchPedidos() async {
+    QuerySnapshot snapshot = await pedidosRef
+        .where('estadoid', isEqualTo: 2)
+        .where('negoname', isEqualTo: nickname)
+        .get();
     return snapshot.docs;
   }
 
+   Future<List<DocumentSnapshot>> _fetchMotoristas() async {
+    QuerySnapshot snapshot = await motoristasRef
+        .where("estadoid", isEqualTo: 2)
+        .where("negoname", isEqualTo: nickname)
+        .get();
+    return snapshot.docs;
+  }
   // Lista de pedidos
   List<DocumentSnapshot> pedidos = [];
 
@@ -63,15 +76,7 @@ final User? user = FirebaseAuth.instance.currentUser;
   void initState() {
     super.initState();
 obtenerNombreUsuario();
-    // Obtener pedidos
-    pedidosRef.where('estadoid', isEqualTo: 2)
-    .where('negoname', isEqualTo: nickname)
-    .snapshots().listen((snapshot) {
-      pedidos = snapshot.docs;
-
-      setState(() {});
-    });
-_fetchMotoristas();
+  
   
   }
 
@@ -89,7 +94,7 @@ _fetchMotoristas();
                 textAlign: TextAlign.start,
                 overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(
+               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: 300,
                 child: Padding(
@@ -103,38 +108,112 @@ _fetchMotoristas();
                       ),
                       borderRadius: const BorderRadius.all(Radius.circular(12)),
                     ),
-                    child: ListView.separated(
-                      separatorBuilder: (BuildContext context, int index) =>
-                          const Divider(),
-                      physics: const ClampingScrollPhysics(),
-                      itemCount: pedidos.length,
-                      itemBuilder: (context, index) {
-                        return CheckboxListTile(
-                          title: Text(
-                            pedidos[index]['idpedidos'] +
-                                ' \n Entrega en: ' +
-                                pedidos[index]['direccion'],
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                    child: FutureBuilder<List<DocumentSnapshot>>(
+                      future: _fetchPedidos(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return const Text('Error al cargar los pedidos');
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return Text(
+                            ' No se encontraron pedidos',
+                            style: GoogleFonts.roboto(
+                              textStyle: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          subtitle: Text(pedidos[index]['idpedidos']),
-                          value: _idPedido == pedidos[index].id,
-                          onChanged: (value) {
-                            _idPedido = value! ? pedidos[index].id : '';
-                            _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Actualiza el estado del widget
-        });
-      } else {
-        // Cancela el temporizador si el widget ya no está en el árbol de widgets
-        _timer?.cancel();
-      }
-    });
-                          },
-                        );
+                          );
+                        } else {
+                          pedidos = snapshot.data!;
+                          return ListView.separated(
+                            separatorBuilder:
+                                (BuildContext context, int index) =>
+                                    const Divider(),
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: pedidos.length,
+                            itemBuilder: (context, index) {
+                              return FutureBuilder<DocumentSnapshot>(
+                                future: pedidosRef
+                                    .doc(pedidos[index].id)
+                                    .collection('Productos')
+                                    .doc(pedidos[index].id)
+                                    .get(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  } else if (snapshot.hasError) {
+                                    return const Text(
+                                        '  Error al cargar el precio total');
+                                  } else if (!snapshot.hasData ||
+                                      !snapshot.data!.exists) {
+                                    // Agrega un print statement para depurar
+                                    print(
+                                        'Documento no encontrado: ${pedidos[index].id}');
+                                    return Text(
+                                      '  No se encontraron datos correctos del pedido',
+                                      style: GoogleFonts.roboto(
+                                        textStyle: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    final preciototal =
+                                        snapshot.data!['precioTotal'];
+                                    return CheckboxListTile(
+                                      title: Text(
+                                        pedidos[index]['idpedidos'] +
+                                            ' \n Entrega en: ' +
+                                            pedidos[index]['direccion'],
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: RichText(
+                                        text: TextSpan(
+                                          text: 'Total: ',
+                                          style: const TextStyle(
+                                            // color: Colors.black,
+                                            fontSize: 16,
+                                          ),
+                                          children: <TextSpan>[
+                                            TextSpan(
+                                              text:
+                                                  'Q${preciototal.toString()}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  '  -  ${pedidos[index]['nickname']}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      value: _idPedido == pedidos[index].id,
+                                      onChanged: (value) {
+                                        _idPedido =
+                                            value! ? pedidos[index].id : '';
+                                        setState(() {});
+                                      },
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
                   ),

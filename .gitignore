@@ -9,7 +9,12 @@
 .history
 .svn/
 migrate_working_dir/
-
+gradle-wrapper.jar
+/.gradle
+/captures/
+/gradle
+/gradlew.bat
+/local.properties
 # IntelliJ related
 *.iml
 *.ipr
@@ -41,3 +46,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build

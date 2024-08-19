@@ -18,19 +18,17 @@ class MotoristaScreen extends StatefulWidget {
 }
 
 class _MotoristaScreenState extends State<MotoristaScreen> {
+  
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Timer? _timer;
-     List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
   final Connectivity _connectivity = Connectivity();
-    late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
-
-
-     // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initConnectivity() async {
     late List<ConnectivityResult> result;
     // Platform messages may fail, so we use a try/catch PlatformException.
@@ -487,7 +485,7 @@ Widget build(BuildContext context) {
                 child: ListTile(
                   leading: Icon(Icons.motorcycle,
                       color: Theme.of(context).colorScheme.inversePrimary),
-                  title: Text(pedido['idpedidos'] ?? 'Sin ID',
+                  title: Text(pedido['idpedidos'] ?? 'Sin ID Verifica',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                   isThreeLine: true,
                   contentPadding: const EdgeInsets.all(8),
@@ -548,8 +546,7 @@ Widget build(BuildContext context) {
                               icon: const Icon(Icons.map),
                               onPressed: () async {
                                 try {
-                                  if (pedido == null ||
-                                      pedido['ubicacionCliente'] == null ||
+                                  if (pedido['ubicacionCliente'] == null ||
                                       pedido['ubicacionNegocio'] == null) {
                                     throw Exception(
                                         'No se ha podido encontrar las ubicaciones del negocio o del cliente');

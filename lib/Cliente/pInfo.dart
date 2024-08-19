@@ -142,7 +142,6 @@ Future<void> _selectLocation() async {
       setState(() {
         _ubicacionController.text = 'Error al obtener la dirección';
       });
-      print('Error al obtener la dirección: $e');
     }
   }
 }

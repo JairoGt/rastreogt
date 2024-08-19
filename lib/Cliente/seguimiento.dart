@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
 import 'package:rastreogt/Cliente/mapascliente.dart';
@@ -23,9 +24,9 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
 
   final List<String> _processes = [
     'Creado',
-    'Preparando',
+    'En Proceso',
     'En Camino',
-    'Entregado'
+    'Entregado',
   ]; // Define the processes list
 
   @override
@@ -186,33 +187,26 @@ void _searchAndUpdateTimeline() async {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          'Seguimiento de Pedido',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+@override
+Widget build(BuildContext context) {
+  final themeNotifier = Provider.of<ThemeNotifier>(context);
+  return Scaffold(
+    resizeToAvoidBottomInset: false, // Evita que el contenido se mueva
+    appBar: AppBar(
+      title: const Text('Seguimiento de Pedido'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: () {
+            setState(() {
+              
+            });
+          },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _controller.clear();
-                _orderDetails = null;
-                _motoristaDetails = null;
-              });
-            },
-          ),
-        ],
-      ),
-      body: Stack(
+      ],
+    ),
+    body: SafeArea(
+      child: Stack(
         children: [
           Container(
             decoration: BoxDecoration(
@@ -234,212 +228,224 @@ void _searchAndUpdateTimeline() async {
             ),
           ),
           SingleChildScrollView(
-            child: Column(
-              children: [
-              Form(
-  key: _formKey,
-  child: Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      children: [
-        TextFormField(
-          textInputAction: TextInputAction.search,
-          onFieldSubmitted: (value) {
-            _searchAndUpdateTimeline();
-          },
-          controller: _controller,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2),
-            labelText: 'Enter ID',
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: _searchAndUpdateTimeline,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Por favor, ingrese un número de seguimiento';
-            }
-            return null;
-          },
-        ),
-      ],
-    ),
-  ),
-),
-                const SizedBox(height: 10),
-                if (_orderDetails != null) ...[
-                  TimelineWidget(
-                    processes: _processes,
-                    processIndex: _processIndex,
-                  ),
-                  const SizedBox(height: 20),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return DetalleDialog(
-                              orderId: _orderDetails!['idpedidos']);
-                        },
-                      );
-                    },
-                    child: Container(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                children: [
+                  Form(
+                    key: _formKey,
+                    child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 8.0),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? const Color.fromARGB(155, 0, 0, 0)
-                                        .withOpacity(0.5)
-                                    : Colors.deepPurple.withOpacity(0.5),
-                            blurRadius: 5.0,
-                            spreadRadius: 2.0,
-                          ),
-                        ],
-                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Ver detalles del Pedido',
-                            style: TextStyle(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white70),
-                          ),
-                          const SizedBox(height: 10.0),
-                          const SizedBox(height: 10.0),
-                          Text(
-                            'Negocio que envia: \n${_orderDetails!['nego']}',
-                            style: GoogleFonts.roboto(
-                              fontSize: 18.0,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.bold,
+                          TextFormField(
+                            textInputAction: TextInputAction.search,
+                            onFieldSubmitted: (value) {
+                              _searchAndUpdateTimeline();
+                            },
+                            controller: _controller,
+                            decoration: InputDecoration(
+                              labelStyle: GoogleFonts.poppins(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              filled: true,
+                              fillColor: const Color.fromARGB(94, 255, 255, 255).withOpacity(0.2),
+                              labelText: 'Enter ID',
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.search),
+                                onPressed: _searchAndUpdateTimeline,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor, ingrese un número de seguimiento';
+                              }
+                              return null;
+                            },
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                              TextInputFormatter.withFunction((oldValue, newValue) {
+                                return newValue.copyWith(text: newValue.text.toUpperCase());
+                              }),
+                            ],
                           ),
-                          const SizedBox(height: 10.0),
-                          Text(
-                            'Fecha de envio: \n${_orderDetails!['fechaCreacion'] != null ? DateFormat('dd/MM/yyyy').format((_orderDetails!['fechaCreacion'] as Timestamp).toDate()) : 'Fecha no disponible'}',
-                            style: GoogleFonts.roboto(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white70,
+                          const SizedBox(height: 10),
+                          if (_orderDetails != null) ...[
+                            TimelineWidget(
+                              processes: _processes,
+                              processIndex: _processIndex,
                             ),
-                          ),
-                          const SizedBox(height: 10.0),
-                          Text(
-                            'Motorista Asignado: \n${_motoristaDetails?['name'] ?? 'Ocurrió un error al cargar el nombre'}',
-                            style: GoogleFonts.roboto(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          const SizedBox(height: 20.0),
-                          Center(
-                            child: _orderDetails!['estadoId'] != 4
-                                ? ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20.0),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return DetalleDialog(
+                                        orderId: _orderDetails!['idpedidos']);
+                                  },
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16.0),
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
+                                          : Colors.deepPurple.withOpacity(0.5),
+                                      blurRadius: 5.0,
+                                      spreadRadius: 2.0,
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Ver detalles del Pedido',
+                                      style: TextStyle(
+                                          fontSize: 20.0,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white70),
+                                    ),
+                                    const SizedBox(height: 10.0),
+                                    Text(
+                                      'Negocio que envia: \n${_orderDetails!['nego']}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 18.0,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => MapScreen(
-                                            emailM: _motoristaDetails?['email'],
-                                            idMotorista: _orderDetails!['idMotorista'],
-                                            ubicacionCliente: LatLng(
-                                                _orderDetails!['ubicacionCliente'].latitude,
-                                                _orderDetails!['ubicacionCliente'].longitude),
-                                            ubicacionNegocio: LatLng(
-                                                _orderDetails!['ubicacionNegocio'].latitude,
-                                                _orderDetails!['ubicacionNegocio'].longitude),
-                                            ubicacionM: LatLng(
-                                                _motoristaDetails?['latitude'] ?? 0.0,
-                                                _motoristaDetails?['longitude'] ?? 0.0),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Ir a mapa'),
-        )
-      : Container(), // Un widget vacío cuando estadoId es 4
-),
-                          ElevatedButton(
-                            onPressed: () async {
-                              if (_controller.text.isNotEmpty) {
-                                FirebaseFirestore.instance
-                                    .collection('pedidos')
-                                    .doc(_trackingNumber)
-                                    .update({
-                                  'idcliente': '${user!.email}',
-                                });
-                                await FirebaseMessaging.instance
-                                    .subscribeToTopic(
-                                        'pedido_$_trackingNumber');
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text('Activado'),
-                                      content: const Text(
-                                          'Te has suscrito a las notificaciones'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text('OK'),
-                                        )
-                                      ],
-                                    );
-                                  },
-                                );
-                              } else {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text('Error'),
-                                      content: const Text(
-                                          'El número de seguimiento no puede estar vacío'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text('OK'),
-                                        )
-                                      ],
-                                    );
-                                  },
-                                );
-                              }
-                            },
-                            child: const Text('Activar Notificaciones'),
-                          ),
+                                    const SizedBox(height: 10.0),
+                                    Text(
+                                      'Fecha de envio: \n${_orderDetails!['fechaCreacion'] != null ? DateFormat('dd/MM/yyyy').format((_orderDetails!['fechaCreacion'] as Timestamp).toDate()) : 'Fecha no disponible'}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10.0),
+                                    Text(
+                                      'Motorista Asignado: \n${_motoristaDetails?['name'] ?? 'Parece que no hay motorista asignado'}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20.0),
+                                    Center(
+                                      child: _orderDetails!['estadoid'] == 3
+                                          ? ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(20.0),
+                                                ),
+                                              ),
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => MapScreen(
+                                                      emailM: _motoristaDetails?['email'],
+                                                      idMotorista: _orderDetails!['idMotorista'],
+                                                      ubicacionCliente: LatLng(
+                                                          _orderDetails!['ubicacionCliente'].latitude,
+                                                          _orderDetails!['ubicacionCliente'].longitude),
+                                                      ubicacionNegocio: LatLng(
+                                                          _orderDetails!['ubicacionNegocio'].latitude,
+                                                          _orderDetails!['ubicacionNegocio'].longitude),
+                                                      ubicacionM: LatLng(
+                                                          _motoristaDetails?['latitude'] ?? 0.0,
+                                                          _motoristaDetails?['longitude'] ?? 0.0),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: const Text('Ir a mapa'),
+                                            )
+                                          : Container(), // Un widget vacío cuando estadoId es 4
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        if (_controller.text.isNotEmpty) {
+                                          FirebaseFirestore.instance
+                                              .collection('pedidos')
+                                              .doc(_trackingNumber)
+                                              .update({
+                                            'idcliente': '${user!.email}',
+                                          });
+                                          await FirebaseMessaging.instance
+                                              .subscribeToTopic(
+                                                  'pedido_$_trackingNumber');
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text('Activado'),
+                                                content: const Text(
+                                                    'Te has suscrito a las notificaciones'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                    },
+                                                    child: const Text('OK'),
+                                                  )
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        } else {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text('Error'),
+                                                content: const Text(
+                                                    'El número de seguimiento no puede estar vacío'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                    },
+                                                    child: const Text('OK'),
+                                                  )
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        }
+                                      },
+                                      child: const Text('Activar Notificaciones'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

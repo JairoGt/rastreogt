@@ -200,25 +200,6 @@ void _getUsers() async {
   }
 }
 
-void _showAlertDialog(String title, String content) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Aceptar'),
-          ),
-        ],
-      );
-    },
-  );
-}
 
 void _showNoUsersFoundDialog() {
   showDialog(
@@ -281,7 +262,7 @@ void _updateRole(String email, String role) async {
       // Crear una colección 'motos' y un documento 'moto' dentro de ella
       Map<String, dynamic> motoData = {
         'idmoto': id,
-        'estadoid': 0, // Estado de la moto (0 = baja, 1 = Disponible, 2 = En ruta, etc.)
+        'estadoid': 1, // Estado de la moto (0 = baja, 1 = Disponible, 2 = En ruta, etc.)
         'negoname': _currentUserNegoname,
         'name': nick1,
         'email': email,
