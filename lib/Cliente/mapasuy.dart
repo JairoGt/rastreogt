@@ -44,9 +44,9 @@ class _MapScreenState extends State<MapScreen> {
     // Redimensionar la imagen
     final resizedBytes = await FlutterImageCompress.compressWithList(
       bytes,
-      minWidth: 138,  // Ancho deseado
+      minWidth: 108,  // Ancho deseado
       minHeight: 138, // Altura deseada
-      quality: 100,
+      quality: 200,
     );
 
     _motoristaIcon = BitmapDescriptor.fromBytes(resizedBytes);

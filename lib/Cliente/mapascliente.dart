@@ -1,9 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 
 class MapScreen extends StatefulWidget {
   final LatLng ubicacionCliente;
@@ -29,6 +31,7 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _ubicacionMotorista;
   BitmapDescriptor? _motoristaIcon;
   Timer? _timer;
+  double? _distancia;
 
   @override
   void initState() {
@@ -38,18 +41,18 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadCustomMarker() async {
-    final byteData = await rootBundle.load('assets/images/motorista_icon.png');
+    final byteData = await rootBundle.load('assets/images/2.png');
     final bytes = byteData.buffer.asUint8List();
 
     // Redimensionar la imagen
     final resizedBytes = await FlutterImageCompress.compressWithList(
       bytes,
-      minWidth: 30,  // Ancho deseado
-      minHeight: 50, // Altura deseada
+      minWidth: 50,  // Ancho deseado
+      minHeight: 100, // Altura deseada
       quality: 100,
     );
 
-    _motoristaIcon = BitmapDescriptor.bytes(resizedBytes);
+    _motoristaIcon = BitmapDescriptor.fromBytes(resizedBytes);
     setState(() {});
   }
 
@@ -71,10 +74,23 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         setState(() {
           _ubicacionMotorista = LatLng(data['ubicacionM'].latitude, data['ubicacionM'].longitude);
+          _calcularDistancia();
         });
         _moverCamara(_ubicacionMotorista!);
       }
-        }
+    }
+  }
+
+  void _calcularDistancia() {
+    if (_ubicacionMotorista != null) {
+      _distancia = Geolocator.distanceBetween(
+        _ubicacionMotorista!.latitude,
+        _ubicacionMotorista!.longitude,
+        widget.ubicacionCliente.latitude,
+        widget.ubicacionCliente.longitude,
+      );
+      setState(() {});
+    }
   }
 
   void _moverCamara(LatLng nuevaUbicacion) {
@@ -96,33 +112,74 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('Ubicaciones'),
       ),
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: widget.ubicacionNegocio,
-          zoom: 14.0,
-        ),
-        markers: {
-          Marker(
-            markerId: const MarkerId('cliente'),
-            position: widget.ubicacionCliente,
-            infoWindow: const InfoWindow(title: 'Ubicación del Cliente'),
-          ),
-          Marker(
-            markerId: const MarkerId('negocio'),
-            position: widget.ubicacionNegocio,
-            infoWindow: const InfoWindow(title: 'Ubicación del Negocio'),
-          ),
-          if (_ubicacionMotorista != null)
-            Marker(
-              markerId: const MarkerId('motorista'),
-              position: _ubicacionMotorista!,
-              icon: _motoristaIcon ?? BitmapDescriptor.defaultMarker,
-              infoWindow: const InfoWindow(title: 'Ubicación del Motorista'),
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: widget.ubicacionNegocio,
+              zoom: 19.0,
             ),
-        },
-        onMapCreated: (controller) {
-          _mapController = controller;
-        },
+            markers: {
+              Marker(
+                markerId: const MarkerId('cliente'),
+                position: widget.ubicacionCliente,
+                infoWindow: const InfoWindow(title: 'Ubicación del Cliente'),
+              ),
+              Marker(
+                markerId: const MarkerId('negocio'),
+                position: widget.ubicacionNegocio,
+                infoWindow: const InfoWindow(title: 'Ubicación del Negocio'),
+              ),
+              if (_ubicacionMotorista != null)
+                Marker(
+                  markerId: const MarkerId('motorista'),
+                  position: _ubicacionMotorista!,
+                  icon: _motoristaIcon ?? BitmapDescriptor.defaultMarker,
+                  infoWindow: const InfoWindow(title: 'Ubicación del Motorista'),
+                ),
+            },
+            onMapCreated: (controller) {
+              _mapController = controller;
+            },
+          ),
+          SlidingUpPanel(
+            panel: _buildPanel(),
+            minHeight: 100,
+            maxHeight: 300,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPanel() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ID Motorista: ${widget.idMotorista}',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8.0),
+          Text('Email Motorista: ${widget.emailM}'),
+          SizedBox(height: 8.0),
+          if (_ubicacionMotorista != null)
+            Text(
+              'Aqui iran notas o comentarios del motorista',
+            ),
+          SizedBox(height: 8.0),
+          if (_distancia != null)
+            Text(
+              'Distancia al Cliente: ${_distancia!.toStringAsFixed(2)} metros',
+            ),
+          if (_distancia != null && _distancia! < 100)
+            Text(
+              'El motorista está cerca, ¡ya casi llega!',
+              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+        ],
       ),
     );
   }

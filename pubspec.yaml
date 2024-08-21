@@ -68,6 +68,8 @@ dependencies:
   firebase_crashlytics: ^4.0.4
   firebase_analytics: ^11.2.1
   firebase_performance: ^0.10.0+4
+  sliding_up_panel: ^2.0.0+1
+
 
 dev_dependencies:
   flutter_test:
