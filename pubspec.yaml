@@ -53,7 +53,7 @@ dependencies:
   intl: ^0.19.0
   printing: ^5.13.1
   convex_bottom_bar: ^3.2.0
-  pdf: ^3.11.0
+  pdf: ^3.11.1
   timelines: ^0.1.0
   flutter_local_notifications: ^17.2.1+2
   lottie: ^3.1.2

@@ -53,7 +53,7 @@ final User? user = FirebaseAuth.instance.currentUser;
 
    Future<List<DocumentSnapshot>> _fetchMotoristas() async {
     QuerySnapshot snapshot = await motoristasRef
-        .where("estadoid", isEqualTo: 2)
+        .where("estadoid", isEqualTo: 1)
         .where("negoname", isEqualTo: nickname)
         .get();
     return snapshot.docs;

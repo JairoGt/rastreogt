@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:rastreogt/Cliente/pInfo.dart';
+import 'package:rastreogt/Cliente/pinfo.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
 import 'package:rastreogt/conf/export.dart';
 
@@ -87,9 +87,6 @@ late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
         ),
       );
     }
-   
-  
-    print('Connectivity changed: $_connectionStatus');
   }
 
   void _showIncompleteInfoDialog() {
@@ -184,7 +181,6 @@ Future<void> obtenerNombreUsuario() async {
   void initState() {
     super.initState();
     obtenerNombreUsuario();
-  
     obtenerNego();
     initConnectivity();
     obtenerNegoid();
@@ -419,7 +415,7 @@ Widget build(BuildContext context) {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Toca aqui para copiar tu ID de cliente',
+                'Recuerda compartir tu ID de cliente, toca aqui para copiarlo',
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,

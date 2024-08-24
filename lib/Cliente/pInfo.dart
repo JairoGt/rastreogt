@@ -46,7 +46,7 @@ DocumentSnapshot userInfo = await FirebaseFirestore.instance
   });
 
   // Lee las coordenadas de Firestore
-  GeoPoint geoPoint = (data['ubicacion']) ?? GeoPoint(0, 0);
+  GeoPoint geoPoint = (data['ubicacion']) ?? const GeoPoint(0, 0);
   double latitude = geoPoint.latitude;
   double longitude = geoPoint.longitude;
 
@@ -105,7 +105,7 @@ Future<void> _selectLocation() async {
   final result = await Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) =>  Mapas2(),
+      builder: (context) =>  const Mapas2(),
     ),
   );
 
@@ -150,6 +150,12 @@ Future<void> _selectLocation() async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         title: const Text('Información del Usuario'),
       ),
       body: Padding(

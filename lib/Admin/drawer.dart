@@ -3,13 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:lottie/lottie.dart';
+import 'package:rastreogt/Admin/pedidos_camino.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Cliente/historicopedidos.dart';
-import 'package:rastreogt/Cliente/pInfo.dart';
-import 'package:rastreogt/Cliente/sol_nego.dart';
+import 'package:rastreogt/Cliente/pinfo.dart';
 import 'package:rastreogt/Moto/profile_moto.dart';
-import 'package:rastreogt/conf/configuracion.dart';
+import 'package:rastreogt/conf/Confi_admin.dart';
 
 class ModernDrawer extends StatefulWidget {
   const ModernDrawer({super.key});
@@ -22,6 +21,7 @@ class _ModernDrawerState extends State<ModernDrawer> {
   String nombreUsuario = 'Mister';
   String imagenPerfil = 'https://via.placeholder.com/150'; // URL de imagen de perfil por defecto
   String role = 'cliente'; // Valor por defecto
+  String negoname = ''; // Valor por defecto
   User? user = FirebaseAuth.instance.currentUser;
 
   @override
@@ -36,6 +36,7 @@ class _ModernDrawerState extends State<ModernDrawer> {
       nombreUsuario = usuario['nickname'];
       role = usuario['role']; // Asegúrate de tener este campo en Firestore
       //imagenPerfil = usuario['imagenPerfil']; // Asegúrate de tener este campo en Firestore
+      negoname = usuario['negoname']; // Asegúrate de tener este campo en Firestore
     });
   }
  
@@ -173,6 +174,19 @@ Future<void> cerrarSesion() async {
                 );
               },
             ),
+             ListTile(
+                  leading: const Icon(Icons.card_giftcard),
+                  title: const Text('Listado de Pedidos en Camino'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push( 
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  PedidosCamino(negoname: negoname),
+                      ),
+                    );
+                  },
+                ),
           ],
          
           ListTile(
@@ -183,24 +197,12 @@ Future<void> cerrarSesion() async {
               Navigator.push( 
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ConfiguracionAll(),
+                  builder: (context) => const ConfiguracionAdmin(),
                 ),
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.business),
-            title: const Text('Solicitar negocio'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push( 
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MyHomePage(),
-                ),
-              );
-            },
-          ),
+               
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Cerrar sesión'),

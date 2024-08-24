@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class Pedido {
   final String numeroSeguimiento;
@@ -112,11 +115,58 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
     });
   }
 
+  Future<void> exportarPedidosAPdf(List<Pedido> pedidos) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Histórico de Pedidos', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              ...pedidos.map((pedido) {
+                return pw.Container(
+                  margin: const pw.EdgeInsets.symmetric(vertical: 10),
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.black),
+                    borderRadius: pw.BorderRadius.circular(10),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Número de Seguimiento: ${pedido.numeroSeguimiento}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('Fecha: ${pedido.fecha}'),
+                      pw.Text('Cantidad Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}'),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Histórico de Pedidos'),
+        title: const Text('Histórico de Pedidos'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: () async {
+              final pedidos = await _futurePedidos;
+              await exportarPedidosAPdf(pedidos);
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -132,13 +182,13 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                         decoration: InputDecoration(
                           labelText: _fechaInicio != null
                               ? '${_fechaInicio!}'.split(' ')[0]
-                              : 'Selecciona Fecha Inicio',
+                              : 'Fecha Inicio',
                         ),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: 8.0),
+                const SizedBox(width: 8.0),
                 Expanded(
                   child: GestureDetector(
                     onTap: () => _selectFechaFin(context),
@@ -147,14 +197,14 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                         decoration: InputDecoration(
                           labelText: _fechaFin != null
                               ? '${_fechaFin!}'
-                              : 'Selecciona Fecha Fin',
+                              : 'Fecha Fin',
                         ),
                       ),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.search),
+                  icon: const Icon(Icons.search),
                   onPressed: _filtrarPedidos,
                 ),
               ],
@@ -165,11 +215,11 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
               future: _futurePedidos,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No hay pedidos disponibles.'));
+                  return const Center(child: Text('No hay pedidos disponibles.'));
                 } else {
                   final pedidos = snapshot.data!;
                   return ListView.builder(
@@ -177,16 +227,16 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                     itemBuilder: (context, index) {
                       final pedido = pedidos[index];
                       return Card(
-                        margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                        margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                         elevation: 5,
                         child: ListTile(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
                           title: Text(
                             'Número de Seguimiento: ${pedido.numeroSeguimiento}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16.0,
                             ),
@@ -194,12 +244,12 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(height: 5.0),
+                              const SizedBox(height: 5.0),
                               Text('Fecha: ${pedido.fecha}'),
                               Text('Cantidad Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}'),
                             ],
                           ),
-                          trailing: Icon(Icons.arrow_forward_ios),
+                          trailing: const Icon(Icons.arrow_forward_ios),
                           onTap: () {
                             // Acción al presionar sobre el pedido
                           },

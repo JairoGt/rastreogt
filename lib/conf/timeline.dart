@@ -138,10 +138,10 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
                           'assets/lotties/status${index + 1}.json',
                           width: 72.0,
                           frameBuilder: (context, child, composition) {
-                            final durationInMilliseconds = composition!.duration.inMilliseconds;
+                            final durationInMilliseconds = composition?.duration.inMilliseconds;
                             
                             // Especifica el frame como un porcentaje de la duración total
-                            final specificTime = durationInMilliseconds * 1;
+                            final specificTime = durationInMilliseconds! * 1;
 
                             _controllers[index].addListener(() {
                               if (_controllers[index].value * durationInMilliseconds >= specificTime) {
