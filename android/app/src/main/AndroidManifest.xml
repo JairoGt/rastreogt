@@ -1,8 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    
     <application
-        android:label="rastreogt"
+        android:label="Rastreo GT"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <service
@@ -50,6 +54,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+            <service android:name="com.pravera.flutter_foreground_service.FlutterForegroundService" android:foregroundServiceType="location" android:permission="android.permission.BIND_JOB_SERVICE"/>
+     <!-- Servicio en segundo plano -->
+        <service
+            android:name=".YourBackgroundService"
+            android:permission="android.permission.FOREGROUND_SERVICE"
+            android:foregroundServiceType="location" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

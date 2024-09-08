@@ -219,14 +219,6 @@ Widget build(BuildContext context) {
               ),
             ),
           ),
-          SizedBox.expand(
-            child: Lottie.asset(
-              'assets/lotties/estelas.json',
-              fit: BoxFit.cover,
-              animate: true,
-              repeat: false,
-            ),
-          ),
           SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.only(

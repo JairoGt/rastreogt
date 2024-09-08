@@ -99,6 +99,7 @@ late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
           actions: [
             TextButton(
               onPressed: () {
+                Navigator.of(context).pop();
                Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -269,14 +270,7 @@ Widget build(BuildContext context) {
             ),
           ),
         ),
-        SizedBox.expand(
-          child: Lottie.asset(
-            'assets/lotties/estelas.json',
-            fit: BoxFit.cover,
-            animate: true,
-            repeat: false,
-          ),
-        ),
+       
    Column(
   crossAxisAlignment: CrossAxisAlignment.start,
   children: [
@@ -364,13 +358,9 @@ Widget build(BuildContext context) {
               ),
             ],
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.search),
-              const SizedBox(width: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ProcessTimelinePage(
@@ -378,16 +368,20 @@ Widget build(BuildContext context) {
                       ),
                     ),
                   );
-                },
-                child: Text(
+            },
+            child: Row(
+              children: [
+                const Icon(Icons.search),
+                const SizedBox(width: 20),
+                Text(
                   'ID PEDIDO',
                   style: GoogleFonts.zillaSlab(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -465,8 +459,21 @@ Widget build(BuildContext context) {
         }).toList();
 
         if (pedidosFiltrados.isEmpty) {
-          return const Center(
-            child: Text('No hay pedidos para este usuario'),
+          return  Center(
+            child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Lottie.asset("assets/lotties/stopM.json",
+        animate: true,
+        repeat: false,
+        ), // Imagen
+        const SizedBox(height: 20), // Espacio entre la imagen y el texto
+        Text('No tienes pedidos asignados', style: GoogleFonts.poppins(fontSize: 20
+        ,fontWeight: FontWeight.bold
+        )
+        ), // Texto
+      ],
+    ),
           );
         }
 

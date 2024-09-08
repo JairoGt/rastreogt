@@ -94,12 +94,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
             ),
           ),
         ),
-        Lottie.asset(
-          'assets/lotties/estelas.json',
-          fit: BoxFit.cover,
-          animate: true,
-          repeat: false,
-        ),
+        
         SingleChildScrollView(
           child: Column(
             children: [
@@ -165,9 +160,6 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
                                         '  Error al cargar el precio total');
                                   } else if (!snapshot.hasData ||
                                       !snapshot.data!.exists) {
-                                    // Agrega un print statement para depurar
-                                    print(
-                                        'Documento no encontrado: ${pedidos[index].id}');
                                     return Text(
                                       '  No se encontraron datos correctos del pedido',
                                       style: GoogleFonts.roboto(

@@ -27,12 +27,7 @@ class ConfiguracionAdmin extends StatelessWidget {
               ),
             ),
           ),
-          Lottie.asset(
-            'assets/lotties/estelas.json',
-            fit: BoxFit.cover,
-            animate: true,
-            repeat: false,
-          ),
+         
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.all(16.0),
@@ -50,6 +45,7 @@ class ConfiguracionAdmin extends StatelessWidget {
                     },
                   ),
                 ),
+                Divider(),
                 ListTile(
                   leading: const Icon(Icons.business),
                   title: const Text('Solicitar negocio'),

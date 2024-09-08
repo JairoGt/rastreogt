@@ -123,6 +123,7 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                   ),
+                 
                   const SizedBox(height: 50),
                   _buildTextField(
                       'Email',
@@ -182,7 +183,7 @@ class _LoginState extends State<Login> {
     await _googleAuthService.signInWithGoogle(context);
     _hideLoading();
   },
-  icon: Container(
+  icon: SizedBox(
     width: 60, // Ajusta el ancho del icono
     height: 60, // Ajusta la altura del icono
     child: Image.asset('assets/images/google.png'),
@@ -289,10 +290,15 @@ class _LoginState extends State<Login> {
                   );
                 },
             ),
+            
           ],
+          
         ),
+
       ),
+      
     );
+    
   }
 
   Widget _buildTextField(String label, TextEditingController controller,

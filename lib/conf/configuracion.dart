@@ -27,12 +27,7 @@ class ConfiguracionAll extends StatelessWidget {
               ),
             ),
           ),
-          Lottie.asset(
-            'assets/lotties/estelas.json',
-            fit: BoxFit.cover,
-            animate: true,
-            repeat: false,
-          ),
+        
           SafeArea(
             child: Center(
               child: Column(
