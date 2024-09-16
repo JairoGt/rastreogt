@@ -1,6 +1,22 @@
-# rastreogtt
+# Rastreo GT
 
-A new Flutter project.
+Una aplicación Flutter para gestionar negociosy rastrear pedidos.
+
+## Descripción
+
+rastreogt es una aplicación diseñada para ayudar a los usuarios a gestionar y rastrear sus negocios de manera eficiente. Permite a los usuarios ver una lista de negocios, filtrar negocios por diferentes criterios y obtener detalles específicos de cada negocio, así como también ofrecer un sistema de rastreo de cada negocio para que los clientes puedan darle seguimiento a sus paquetes.
+
+## Características
+
+- Autenticación de usuarios
+- Gestión de negocios
+- Filtrado de negocios por nickname y estado
+- Visualización de detalles de negocios
+- Interfaz de usuario intuitiva
+- Rastreo de paquetes
+- Rastreo de envíos
+- Notificaciones en tiempo real
+- Seguimiento en tiempo real
 
 ## Getting Started
 
