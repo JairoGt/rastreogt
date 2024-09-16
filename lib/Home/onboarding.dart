@@ -1,6 +1,5 @@
+import 'package:rastreogt/conf/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../conf/export.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -12,45 +11,51 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-List<Widget> _buildPages() {
-  return [
-    _buildPage(
-      title: "Bienvenido",
-      description: "En la aplicación de Rastreo GT, puedes hacer muchas cosas.",
-      lottiePath: "assets/lotties/rider1.json",
-    ),
-    _buildPage(
-      title: "Explora",
-      description: "Desde rastrear tus envíos hasta ver el historial de tus pedidos.",
-      lottiePath: "assets/lotties/rider2.json",
-    ),
-    _buildPage(
-      title: "Emprendimiento",
-      description: "Si tienes un negocio, puedes rastrear tus pedidos y ver el historial de tus envíos. y mas.",
-      lottiePath: "assets/lotties/rider3.json",
-    ),
-  ];
-}
+  List<Widget> _buildPages() {
+    return [
+      _buildPage(
+        title: "Bienvenido",
+        description:
+            "En la aplicación de Rastreo GT, puedes hacer muchas cosas.",
+        lottiePath: "assets/lotties/rider1.json",
+      ),
+      _buildPage(
+        title: "Explora",
+        description:
+            "Desde rastrear tus envíos hasta ver el historial de tus pedidos.",
+        lottiePath: "assets/lotties/rider2.json",
+      ),
+      _buildPage(
+        title: "Emprendimiento",
+        description:
+            "Si tienes un negocio, puedes rastrear tus pedidos y ver el historial de tus envíos. y mas.",
+        lottiePath: "assets/lotties/rider3.json",
+      ),
+    ];
+  }
 
-Widget _buildPage({required String title, required String description, required String lottiePath}) {
-  return Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Lottie.asset(lottiePath),
-      const SizedBox(height: 20),
-      Text(
-        title,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        description,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 16),
-      ),
-    ],
-  );
-}
+  Widget _buildPage(
+      {required String title,
+      required String description,
+      required String lottiePath}) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Lottie.asset(lottiePath),
+        const SizedBox(height: 20),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          description,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +84,8 @@ Widget _buildPage({required String title, required String description, required 
           _currentPage == _buildPages().length - 1
               ? ElevatedButton(
                   onPressed: () async {
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
                     await prefs.setBool('seenOnboarding', true);
                     Navigator.pushReplacementNamed(context, '/home');
                   },

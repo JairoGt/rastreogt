@@ -9,12 +9,7 @@
 .history
 .svn/
 migrate_working_dir/
-gradle-wrapper.jar
-/.gradle
-/captures/
-/gradle
-/gradlew.bat
-/local.properties
+
 # IntelliJ related
 *.iml
 *.ipr

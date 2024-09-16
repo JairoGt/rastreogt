@@ -88,7 +88,7 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
   shape: BoxShape.rectangle,
   color: Theme.of(context).brightness == Brightness.dark
       ? const Color.fromARGB(115, 9, 9, 22) // Azul oscuro para modo oscuro
-      : Color.fromARGB(148, 109, 58, 131), // Color actual para modo claro
+      : const Color.fromARGB(148, 109, 58, 131), // Color actual para modo claro
   borderRadius: BorderRadius.circular(10.0), // Bordes redondeados
   boxShadow: const [
      BoxShadow(
@@ -150,10 +150,10 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
                             });
 
                             return AnimatedOpacity(
-                              child: child,
                               opacity: index == widget.processIndex ? 1.0 : 0.5,
                               duration: const Duration(milliseconds: 150),
                               curve: Curves.easeOut,
+                              child: child,
                             );
                           },
                           repeat: false,
@@ -181,7 +181,7 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
             },
             indicatorBuilder: (context, index) {
               Color color;
-              var child;
+              Widget child;
               if (index == widget.processIndex) {
                 color = inProgressColor;
                 child = const Padding(
@@ -211,7 +211,7 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
                     DotIndicator(
                       size: 25.0,
                       color: color,
-                      child: child,
+                     // child: child,
                     ),
                   ],
                 );

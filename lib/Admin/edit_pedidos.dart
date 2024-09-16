@@ -15,7 +15,8 @@ class _EditPedidosState extends State<EditPedidos> {
   var _sumaTotal = 0.0;
   bool _isPedidoLoaded = false;
   final List<Map<String, String>> _productos = [];
-void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool esExitoso) {
+  void mostrarDialogo(
+      BuildContext context, String titulo, String mensaje, bool esExitoso) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -25,7 +26,9 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
             mainAxisSize: MainAxisSize.min,
             children: [
               Lottie.asset(
-                esExitoso ? 'assets/lotties/correct.json' : 'assets/lotties/error.json',
+                esExitoso
+                    ? 'assets/lotties/correct.json'
+                    : 'assets/lotties/error.json',
                 width: 100,
                 height: 100,
                 fit: BoxFit.fill,
@@ -49,27 +52,37 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
       },
     );
   }
+
   Future<void> _buscarPedido() async {
     if (!mounted) return;
     final idPedido = _idPedidoController.text.toUpperCase();
     if (idPedido.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor ingrese un ID de pedido')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Por favor ingrese un ID de pedido')));
       return;
     }
- 
-    final pedidoDoc = await FirebaseFirestore.instance.collection('pedidos').doc(idPedido).get();
-  if (!mounted) return;
-    if (!pedidoDoc.exists) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pedido no encontrado')));
-      return;
-    } 
- final pedidoData = pedidoDoc.data() as Map<String, dynamic>;
-  if (pedidoData['estadoid'] == 3) {
-    mostrarDialogo(context, 'Error', 'El pedido ya está en camino', false);
-    return;
-  }
 
-    final productos = await FirebaseFirestore.instance.collection('pedidos').doc(idPedido).collection('Productos').get();
+    final pedidoDoc = await FirebaseFirestore.instance
+        .collection('pedidos')
+        .doc(idPedido)
+        .get();
+    if (!mounted) return;
+    if (!pedidoDoc.exists) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Pedido no encontrado')));
+      return;
+    }
+    final pedidoData = pedidoDoc.data() as Map<String, dynamic>;
+    if (pedidoData['estadoid'] == 3) {
+      mostrarDialogo(context, 'Error', 'El pedido ya está en camino', false);
+      return;
+    }
+
+    final productos = await FirebaseFirestore.instance
+        .collection('pedidos')
+        .doc(idPedido)
+        .collection('Productos')
+        .get();
     _productos.clear();
     _productoControllers.clear();
     _precioControllers.clear();
@@ -133,65 +146,66 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
     for (int i = 0; i < _productoControllers.length; i++) {
       fields.add(Row(
         children: [
-        Expanded(
-              child: TextFormField(
-                controller: _productoControllers[i],
-                decoration: InputDecoration(
-                  labelText: 'Producto ${i + 1}',
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'El producto no puede \nestar vacío';
-                  }
-                  return null;
-                },
+          Expanded(
+            child: TextFormField(
+              controller: _productoControllers[i],
+              decoration: InputDecoration(
+                labelText: 'Producto ${i + 1}',
+                border: const OutlineInputBorder(),
               ),
-            ),
-            const SizedBox(width: 15),
-            SizedBox(
-              width: 90, // Ajusta el ancho según tus necesidades
-              child: TextFormField(
-                controller: _precioControllers[i],
-                decoration: InputDecoration(
-                  labelText: 'Precio ${i + 1}',
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) => _calcularTotal(),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'El precio \nno puede \nestar vacío';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            const SizedBox(width: 15),
-            IconButton(
-              icon: const Icon(Icons.remove_circle),
-              onPressed: () {
-                setState(() {
-                  _productoControllers.removeAt(i);
-                  _precioControllers.removeAt(i);
-                  _calcularTotal();
-                });
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'El producto no puede \nestar vacío';
+                }
+                return null;
               },
             ),
+          ),
+          const SizedBox(width: 15),
+          SizedBox(
+            width: 90, // Ajusta el ancho según tus necesidades
+            child: TextFormField(
+              controller: _precioControllers[i],
+              decoration: InputDecoration(
+                labelText: 'Precio ${i + 1}',
+                border: const OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) => _calcularTotal(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'El precio \nno puede \nestar vacío';
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(width: 15),
+          IconButton(
+            icon: const Icon(Icons.remove_circle),
+            onPressed: () {
+              setState(() {
+                _productoControllers.removeAt(i);
+                _precioControllers.removeAt(i);
+                _calcularTotal();
+              });
+            },
+          ),
         ],
       ));
       fields.add(const SizedBox(height: 20));
     }
     return fields;
   }
+
   void _agregarProducto() {
-  if (_productoControllers.length < 6) {
-    setState(() {
-      _productoControllers.add(TextEditingController());
-      _precioControllers.add(TextEditingController());
-    });
+    if (_productoControllers.length < 6) {
+      setState(() {
+        _productoControllers.add(TextEditingController());
+        _precioControllers.add(TextEditingController());
+      });
+    }
   }
-}
 
   Widget _buildTotalField() {
     return Text(
@@ -204,95 +218,97 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
   }
 
   Widget _buildGuardarButton() {
-  return ElevatedButton(
-    onPressed: () async {
-      if (_formKey.currentState!.validate()) {
-        try {
-          FirebaseFirestore firestore = FirebaseFirestore.instance;
-          CollectionReference users = firestore.collection('pedidos');
-          DocumentReference userDocument = users.doc(_idPedidoController.text.toUpperCase());
-          CollectionReference userData = userDocument.collection('Productos');
-          DocumentReference pInfoDocument = userData.doc(_idPedidoController.text.toUpperCase());
+    return ElevatedButton(
+      onPressed: () async {
+        if (_formKey.currentState!.validate()) {
+          try {
+            FirebaseFirestore firestore = FirebaseFirestore.instance;
+            CollectionReference users = firestore.collection('pedidos');
+            DocumentReference userDocument =
+                users.doc(_idPedidoController.text.toUpperCase());
+            CollectionReference userData = userDocument.collection('Productos');
+            DocumentReference pInfoDocument =
+                userData.doc(_idPedidoController.text.toUpperCase());
 
-          // Inicializa el mapa para almacenar los datos del pedido
-          Map<String, dynamic> pInfoData = {};
+            // Inicializa el mapa para almacenar los datos del pedido
+            Map<String, dynamic> pInfoData = {};
 
-          // Agrega los productos y precios al mapa con claves dinámicas
-          for (int i = 0; i < _productoControllers.length; i++) {
-            pInfoData['producto${i + 1}'] = _productoControllers[i].text;
-            pInfoData['precio${i + 1}'] = _precioControllers[i].text;
-          }
+            // Agrega los productos y precios al mapa con claves dinámicas
+            for (int i = 0; i < _productoControllers.length; i++) {
+              pInfoData['producto${i + 1}'] = _productoControllers[i].text;
+              pInfoData['precio${i + 1}'] = _precioControllers[i].text;
+            }
 
-          // Agrega la suma total y otros campos necesarios al mapa
-          pInfoData['precioTotal'] = _sumaTotal;
+            // Agrega la suma total y otros campos necesarios al mapa
+            pInfoData['precioTotal'] = _sumaTotal;
 
-          // Verifica si el documento existe
-          DocumentSnapshot docSnapshot = await pInfoDocument.get();
-          if (!docSnapshot.exists) {
-            // Si el documento no existe, créalo
-          
-          
-          } else {
-            // Si el documento existe, actualízalo
-          
-            await pInfoDocument.set(pInfoData);
-          }
-          
-          if(context.mounted){
-            if(!mounted) return;
+            // Verifica si el documento existe
+            DocumentSnapshot docSnapshot = await pInfoDocument.get();
+            if (!docSnapshot.exists) {
+              // Si el documento no existe, créalo
+            } else {
+              // Si el documento existe, actualízalo
+
+              await pInfoDocument.set(pInfoData);
+            }
+
+            if (context.mounted) {
+              if (!mounted) return;
               showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Exito"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Lottie.asset(
-            'assets/lotties/correct.json',
-                width: 200,
-                height: 200,
-                animate: true,
-            
-                fit: BoxFit.cover,
-              ),
-              const SizedBox(height: 10),
-              Text('Datos modificados exitosamente',
-              style: GoogleFonts.asul(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,  
-              ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-        );
-      },
-    );
-          }else{
-            return;
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text("Exito"),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Lottie.asset(
+                          'assets/lotties/correct.json',
+                          width: 200,
+                          height: 200,
+                          animate: true,
+                          fit: BoxFit.cover,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Datos modificados exitosamente',
+                          style: GoogleFonts.asul(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        child: const Text('OK'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  );
+                },
+              );
+            } else {
+              return;
+            }
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Datos guardados exitosamente')));
+          } catch (e) {
+            ('Error al guardar los datos: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error al guardar los datos: $e')));
           }
-        if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Datos guardados exitosamente')));
-        } catch (e) {
-           ('Error al guardar los datos: $e');
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al guardar los datos: $e')));
-        } 
-      }
-    },
-    child: const Text('Guardar Cambios'),
-  );
-}
+        }
+      },
+      child: const Text('Guardar Cambios'),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,10 +330,10 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
                   const SizedBox(height: 20),
                   ..._buildProductoPrecioFields(),
                   const SizedBox(height: 20),
-                ElevatedButton(
-    onPressed: _agregarProducto,
-    child: const Text('Agregar más'),
-  ),
+                  ElevatedButton(
+                    onPressed: _agregarProducto,
+                    child: const Text('Agregar más'),
+                  ),
                   const SizedBox(height: 20),
                   _buildTotalField(),
                   const SizedBox(height: 20),
@@ -330,4 +346,4 @@ void mostrarDialogo(BuildContext context, String titulo, String mensaje, bool es
       ),
     );
   }
-}         
+}

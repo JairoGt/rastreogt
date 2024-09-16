@@ -19,8 +19,7 @@ final navigatorKey = GlobalKey<NavigatorState>();
 
 // function to listen to background changes
 Future _firebaseBackgroundMessage(RemoteMessage message) async {
-  if (message.notification != null) {
-  }
+  if (message.notification != null) {}
 }
 
 // to handle notification on foreground on web platform
@@ -44,11 +43,13 @@ void showNotification({required String title, required String body}) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    // Pass all uncaught "fatal" errors from the framework to Crashlytics
+  await Firebase.initializeApp();
+  // Pass all uncaught "fatal" errors from the framework to Crashlytics
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   if (!kIsWeb) {
     await PushNotifications.localNotiInit();
   }
+
   // Listen to background notifications
   FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
 
@@ -85,18 +86,16 @@ Future<void> main() async {
       navigatorKey.currentState!.pushNamed("/message", arguments: message);
     });
   }
-   
-   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-   FlutterError.onError = (errorDetails) {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-    };
-    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    };
 
-
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   runApp(
     MultiProvider(
@@ -105,13 +104,12 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => UsuariosProvider()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
       ],
-      child:  const MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
- 
   const MyApp({super.key});
 
   // This widget is the root of your application.
@@ -126,8 +124,8 @@ class MyApp extends StatelessWidget {
           '/asignacion': (context) => const AsignarPedidos(),
           '/home': (context) => const Login(),
           '/onboarding': (context) => const OnboardingScreen(),
-          '/splash': (context) =>  const SplashScreen(),
-          '/admin' :(context) => const AdminPage(),
+          '/splash': (context) => const SplashScreen(),
+          '/admin': (context) => const AdminPage(),
           '/moto': (context) => const MotoristaScreen(),
           //'/login' :(context) => const Login(),
           //'/motoasignado' :(context) => const MotoPage(),

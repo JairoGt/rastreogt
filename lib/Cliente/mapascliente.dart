@@ -160,22 +160,22 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           Text(
             'ID Motorista: ${widget.idMotorista}',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8.0),
+          const SizedBox(height: 8.0),
           Text('Email Motorista: ${widget.emailM}'),
-          SizedBox(height: 8.0),
+          const SizedBox(height: 8.0),
           if (_ubicacionMotorista != null)
-            Text(
+            const Text(
               'Aqui iran notas o comentarios del motorista',
             ),
-          SizedBox(height: 8.0),
+          const SizedBox(height: 8.0),
           if (_distancia != null)
             Text(
               'Distancia al Cliente: ${_distancia!.toStringAsFixed(2)} metros',
             ),
           if (_distancia != null && _distancia! < 100)
-            Text(
+            const Text(
               'El motorista está cerca, ¡ya casi llega!',
               style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
             ),

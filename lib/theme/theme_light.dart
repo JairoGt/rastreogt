@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class ThemeLight {

@@ -1,5 +1,6 @@
+import 'package:rastreogt/conf/export.dart';
+
 import '../Cliente/sol_nego.dart';
-import 'export.dart';
 
 class ConfiguracionAdmin extends StatelessWidget {
   const ConfiguracionAdmin({super.key});
@@ -27,15 +28,18 @@ class ConfiguracionAdmin extends StatelessWidget {
               ),
             ),
           ),
-         
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
                 ListTile(
                   leading: Icon(
-                    themeNotifier.isDarkMode ? Icons.nightlight_round : Icons.wb_sunny,
-                    color: themeNotifier.isDarkMode ? Colors.yellow : Colors.yellowAccent,
+                    themeNotifier.isDarkMode
+                        ? Icons.nightlight_round
+                        : Icons.wb_sunny,
+                    color: themeNotifier.isDarkMode
+                        ? Colors.yellow
+                        : Colors.yellowAccent,
                   ),
                   title: const Text('Cambiar Tema'),
                   trailing: Switch(

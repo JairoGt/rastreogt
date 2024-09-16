@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:rastreogt/providers/themenoti.dart';
 
@@ -38,7 +37,7 @@ class ConfiguracionAll extends StatelessWidget {
                       themeNotifier.isDarkMode ? Icons.nightlight_round : Icons.wb_sunny,
                       color: themeNotifier.isDarkMode ? Colors.yellow : Colors.yellowAccent,
                     ),
-                    title: const Text('Cambiar Tema'),
+                    title: const Text('Cambiar Tem'),
                     trailing: Switch(
                       value: themeNotifier.isDarkMode,
                       onChanged: (value) {

@@ -166,7 +166,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MapasC(),
+        builder: (context) => const MapasC(),
       ),
     );
 

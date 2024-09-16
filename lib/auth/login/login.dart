@@ -83,7 +83,6 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-  
     return Scaffold(
       resizeToAvoidBottomInset: true,
       extendBodyBehindAppBar: true,
@@ -96,10 +95,9 @@ class _LoginState extends State<Login> {
       body: Stack(
         children: [
           Container(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[900]
-                : Colors.grey[400]
-          ),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[900]
+                  : Colors.grey[400]),
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -110,7 +108,7 @@ class _LoginState extends State<Login> {
                   const Icon(
                     EvaIcons.personOutline,
                     size: 100,
-                   // color: Colors.black,
+                    // color: Colors.black,
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -123,7 +121,6 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                   ),
-                 
                   const SizedBox(height: 50),
                   _buildTextField(
                       'Email',
@@ -139,32 +136,34 @@ class _LoginState extends State<Login> {
                       const Icon(Icons.lock_outline, color: Colors.grey),
                       TextInputType.visiblePassword),
                   Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RecuperarContrasenaScreen(),
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const RecuperarContrasenaScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Olvidaste tu contraseña?',
+                          style: GoogleFonts.poppins(
+                            textStyle: TextStyle(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? const Color.fromARGB(255, 136, 133, 133)
+                                  : Colors.black,
+                              fontSize: 16,
+                            ),
                           ),
-                        );
-                      },
-                      child: Text(
-                        'Olvidaste tu contraseña?',
-                        style: GoogleFonts.poppins(
-                          textStyle:  TextStyle(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color.fromARGB(255, 136, 133, 133)
-                                : Colors.black,
-                            fontSize: 16,
-                          ),
-                      ),
-                    ),
-                   ) ),
+                        ),
+                      )),
                   const SizedBox(height: 30),
                   _signin(context),
                   const SizedBox(height: 20),
-                   Text(
+                  Text(
                     'O inicia sesión con',
                     style: TextStyle(
                       color: Theme.of(context).brightness == Brightness.dark
@@ -177,20 +176,19 @@ class _LoginState extends State<Login> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                     IconButton(
-  onPressed: () async {
-    _showLoading();
-    await _googleAuthService.signInWithGoogle(context);
-    _hideLoading();
-  },
-  icon: SizedBox(
-    width: 60, // Ajusta el ancho del icono
-    height: 60, // Ajusta la altura del icono
-    child: Image.asset('assets/images/google.png'),
-  ),
-  iconSize: 20, // Ajusta el tamaño del icono
-),
-                     
+                      IconButton(
+                        onPressed: () async {
+                          _showLoading();
+                          await _googleAuthService.signInWithGoogle(context);
+                          _hideLoading();
+                        },
+                        icon: SizedBox(
+                          width: 60, // Ajusta el ancho del icono
+                          height: 60, // Ajusta la altura del icono
+                          child: Image.asset('assets/images/google.png'),
+                        ),
+                        iconSize: 20, // Ajusta el tamaño del icono
+                      ),
                     ],
                   ),
                 ],
@@ -206,7 +204,8 @@ class _LoginState extends State<Login> {
                     child: Container(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
-                          : const Color.fromARGB(255, 255, 255, 255).withOpacity(0.5),
+                          : const Color.fromARGB(255, 255, 255, 255)
+                              .withOpacity(0.5),
                       child: Center(
                         child: Lottie.asset(
                           'assets/lotties/loading.json',
@@ -258,7 +257,6 @@ class _LoginState extends State<Login> {
   }
 
   Widget _signup(BuildContext context) {
-  
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: RichText(
@@ -290,15 +288,10 @@ class _LoginState extends State<Login> {
                   );
                 },
             ),
-            
           ],
-          
         ),
-
       ),
-      
     );
-    
   }
 
   Widget _buildTextField(String label, TextEditingController controller,
@@ -311,9 +304,12 @@ class _LoginState extends State<Login> {
       decoration: InputDecoration(
         prefixIcon: ico,
         labelText: label,
-        labelStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+        labelStyle: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black),
         filled: true,
-       // fillColor: Colors.grey[200],
+        // fillColor: Colors.grey[200],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
           borderSide: BorderSide.none,

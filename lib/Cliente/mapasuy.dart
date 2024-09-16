@@ -44,7 +44,7 @@ class _MapScreenState extends State<MapScreen> {
     // Redimensionar la imagen
     final resizedBytes = await FlutterImageCompress.compressWithList(
       bytes,
-      minWidth: 108,  // Ancho deseado
+      minWidth: 108, // Ancho deseado
       minHeight: 138, // Altura deseada
       quality: 200,
     );
@@ -61,20 +61,17 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _actualizarUbicacionMotorista() async {
     String emailM = widget.emailM;
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance
-        .collection('motos')
-        .doc(emailM)
-        .get();
+    DocumentSnapshot snapshot =
+        await FirebaseFirestore.instance.collection('motos').doc(emailM).get();
 
     if (snapshot.exists) {
       var data = snapshot.data() as Map<String, dynamic>;
-      if (data != null) {
-        if (mounted) {
-          setState(() {
-            _ubicacionMotorista = LatLng(data['ubicacionM'].latitude, data['ubicacionM'].longitude);
-          });
-          _moverCamara(_ubicacionMotorista!);
-        }
+      if (mounted) {
+        setState(() {
+          _ubicacionMotorista =
+              LatLng(data['ubicacionM'].latitude, data['ubicacionM'].longitude);
+        });
+        _moverCamara(_ubicacionMotorista!);
       }
     }
   }

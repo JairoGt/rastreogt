@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class RecuperarContrasenaScreen extends StatefulWidget {
+  const RecuperarContrasenaScreen({super.key});
+
   @override
-  _RecuperarContrasenaScreenState createState() => _RecuperarContrasenaScreenState();
+  _RecuperarContrasenaScreenState createState() =>
+      _RecuperarContrasenaScreenState();
 }
 
 class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
@@ -18,10 +19,12 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
         _isLoading = true;
       });
       try {
-        await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailController.text);
+        await FirebaseAuth.instance
+            .sendPasswordResetEmail(email: _emailController.text);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Se ha enviado un correo para restablecer la contraseña.'),
+            content:
+                Text('Se ha enviado un correo para restablecer la contraseña.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -50,7 +53,10 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 25, 40, 67), Color.fromARGB(255, 83, 108, 120)],
+            colors: [
+              Color.fromARGB(255, 25, 40, 67),
+              Color.fromARGB(255, 83, 108, 120)
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -74,7 +80,7 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
                         const Icon(
                           Icons.lock_reset,
                           size: 100,
-                         // color: Colors.blueAccent,
+                          // color: Colors.blueAccent,
                         ),
                         const SizedBox(height: 20),
                         Text(
@@ -82,7 +88,7 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
                           style: GoogleFonts.aBeeZee(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                           // color: Colors.blueAccent,
+                            // color: Colors.blueAccent,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -101,7 +107,8 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Por favor, ingresa tu correo electrónico';
                             }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                .hasMatch(value)) {
                               return 'Por favor, ingresa un correo electrónico válido';
                             }
                             return null;
@@ -113,12 +120,13 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
                             : ElevatedButton(
                                 onPressed: _recuperarContrasena,
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child:  Text(
+                                child: Text(
                                   'Enviar',
                                   style: GoogleFonts.aBeeZee(
                                     fontSize: 20,

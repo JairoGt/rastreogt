@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+     match /users/{users} {
+      allow read, write, create: if request.auth != null;
+      
+      match /userData/{document=**} {
+        allow read, write, create: if request.auth != null;
+      }
+       match /negocios/{document=**} {
+        allow read, write, create: if request.auth != null;
+      }
+    }
+  
+    match /pedidos/{pedidos} {
+      allow read, write, create: if request.auth != null;
+      
+       match /Productos/{document=**} {
+        allow read, write, create,update: if request.auth != null;
+      }
+    }
+    
+      match /negocios/{negocios} {
+      allow read: if request.auth != null;
+      allow write: if request.auth !=null;
+      allow create: if request.auth !=null;
+    }
+      match /motos/{motos} {
+      allow read: if request.auth != null;
+      allow write: if request.auth !=null;
+      allow create: if request.auth !=null;
+    }
+    }
+  }
+

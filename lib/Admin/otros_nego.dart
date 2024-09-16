@@ -1,4 +1,3 @@
-import 'package:google_fonts/google_fonts.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class OtrosNegociosPage extends StatelessWidget {

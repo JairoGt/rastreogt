@@ -143,7 +143,7 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ],
           );
         },
