@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
@@ -25,60 +23,6 @@ class _MotoristaScreenState extends State<MotoristaScreen>
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Timer? _timer;
-  List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
-  final Connectivity _connectivity = Connectivity();
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-
-  Future<void> initConnectivity() async {
-    late List<ConnectivityResult> result;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      result = await _connectivity.checkConnectivity();
-    } on PlatformException catch (e) {
-      debugPrint('Couldn\'t check connectivity status: $e');
-      return;
-    }
-
-    if (!mounted) {
-      return Future.value(null);
-    }
-
-    return _updateConnectionStatus(result);
-  }
-
-  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
-    setState(() {
-      _connectionStatus = result;
-    });
-    // ignore: avoid_print
-    if (_connectionStatus.contains(ConnectivityResult.none)) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error de Conexión'),
-            content: const Text(
-                'No hay conexión a internet. Por favor, verifica tu conexión e inténtalo de nuevo.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Ok'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.green,
-          content: Text('Conexión establecida'),
-        ),
-      );
-    }
-  }
 
   @override
   void initState() {
@@ -88,7 +32,6 @@ class _MotoristaScreenState extends State<MotoristaScreen>
     WidgetsBinding.instance
         .addObserver(this as WidgetsBindingObserver); // Agrega el observador
     iniciarActualizacionPeriodica();
-    initConnectivity();
     iniciarEscuchaEstadoMotorista();
     //initializeBackgroundService();
     verificarEstadoMotoYMostrarDialogo(user!.email!);
@@ -97,7 +40,6 @@ class _MotoristaScreenState extends State<MotoristaScreen>
   @override
   void dispose() {
     _timer?.cancel(); // Cancelar el timer cuando el widget se destruya
-    _connectivitySubscription.cancel();
     stopBackgroundService();
     WidgetsBinding.instance.removeObserver(this as WidgetsBindingObserver);
     // LocatorService.stopLocator();
@@ -548,236 +490,243 @@ class _MotoristaScreenState extends State<MotoristaScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        tooltip: 'Actualizar todos los pedidos en camino',
-        onPressed: () async {
-          actualizarPedidosEnCamino();
-        },
-        child: const Icon(Icons.rotate_left_rounded, color: Colors.white),
-      ),
-      drawer: const ModernDrawer(),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        floatingActionButton: FloatingActionButton(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          tooltip: 'Actualizar todos los pedidos en camino',
+          onPressed: () async {
+            actualizarPedidosEnCamino();
           },
+          child: const Icon(Icons.rotate_left_rounded, color: Colors.white),
         ),
-        title: const Text('Pedidos Asignados'),
-        actions: [
-          IconButton(
-            tooltip: 'Actualizar',
-            icon: const Icon(Icons.update),
-            onPressed: () {
-              setState(() {}); // Refresca la lista de pedidos
+        drawer: const ModernDrawer(),
+        appBar: AppBar(
+          leading: Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              );
             },
           ),
-        ],
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: obtenerPedidosAsignados(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.error != null) {
-            return const Center(child: Text('Error al obtener los pedidos'));
-          } else if (snapshot.data!.isEmpty) {
-            return const Center(child: Text('No hay pedidos asignados'));
-          } else {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                var pedido = snapshot.data![index];
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.all(8),
-                  child: ListTile(
-                    leading: Icon(Icons.motorcycle,
-                        color: Theme.of(context).colorScheme.inversePrimary),
-                    title: Text(pedido['idpedidos'] ?? 'Sin ID Verifica',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    isThreeLine: true,
-                    contentPadding: const EdgeInsets.all(8),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                  text: 'Dirección: ',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: '${pedido['direccion']}\n',
-                                  style: GoogleFonts.roboto(
-                                      fontSize: 20,
+          title: const Text('Pedidos Asignados'),
+          actions: [
+            IconButton(
+              tooltip: 'Actualizar',
+              icon: const Icon(Icons.update),
+              onPressed: () {
+                setState(() {}); // Refresca la lista de pedidos
+              },
+            ),
+          ],
+        ),
+        body: FutureBuilder<List<Map<String, dynamic>>>(
+          future: obtenerPedidosAsignados(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.error != null) {
+              return const Center(child: Text('Error al obtener los pedidos'));
+            } else if (snapshot.data!.isEmpty) {
+              return const Center(child: Text('No hay pedidos asignados'));
+            } else {
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  var pedido = snapshot.data![index];
+                  return Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.all(8),
+                    child: ListTile(
+                      leading: Icon(Icons.motorcycle,
+                          color: Theme.of(context).colorScheme.inversePrimary),
+                      title: Text(pedido['idpedidos'] ?? 'Sin ID Verifica',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      isThreeLine: true,
+                      contentPadding: const EdgeInsets.all(8),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                    text: 'Dirección: ',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface,
-                                      fontWeight: FontWeight.bold)),
-                              TextSpan(
-                                  text: 'Cliente: ',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: '${pedido['nickname']}\n',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: 'Estado: ',
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )),
-                              TextSpan(
-                                  text: obtenerDescripcionEstado(
-                                      (pedido['estadoid'])),
-                                  style: GoogleFonts.roboto(
+                                    )),
+                                TextSpan(
+                                    text: '${pedido['direccion']}\n',
+                                    style: GoogleFonts.roboto(
+                                        fontSize: 20,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontWeight: FontWeight.bold)),
+                                TextSpan(
+                                    text: 'Cliente: ',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    )),
+                                TextSpan(
+                                    text: '${pedido['nickname']}\n',
+                                    style: GoogleFonts.roboto(
                                       fontSize: 16,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface,
-                                      fontWeight: FontWeight.bold)),
+                                    )),
+                                TextSpan(
+                                    text: 'Estado: ',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    )),
+                                TextSpan(
+                                    text: obtenerDescripcionEstado(
+                                        (pedido['estadoid'])),
+                                    style: GoogleFonts.roboto(
+                                        fontSize: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Column(children: [
+                                IconButton(
+                                  icon: const Icon(Icons.map),
+                                  onPressed: () async {
+                                    try {
+                                      if (pedido['ubicacionCliente'] == null ||
+                                          pedido['ubicacionNegocio'] == null) {
+                                        throw Exception(
+                                            'No se ha podido encontrar las ubicaciones del negocio o del cliente');
+                                      }
+
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              MotoristaMapScreen(
+                                                  ubicacionCliente: LatLng(
+                                                    pedido['ubicacionCliente']
+                                                        .latitude,
+                                                    pedido['ubicacionCliente']
+                                                        .longitude,
+                                                  ),
+                                                  ubicacionNegocio: LatLng(
+                                                    pedido['ubicacionNegocio']
+                                                        .latitude,
+                                                    pedido['ubicacionNegocio']
+                                                        .longitude,
+                                                  )),
+                                        ),
+                                      );
+                                    } catch (e, stackTrace) {
+                                      Fluttertoast.showToast(
+                                        msg:
+                                            'Error al abrir el mapa: $e y $stackTrace',
+                                        toastLength: Toast.LENGTH_LONG,
+                                        gravity: ToastGravity.BOTTOM,
+                                        timeInSecForIosWeb: 4,
+                                        backgroundColor: Colors.red,
+                                        textColor: Colors.white,
+                                        fontSize: 16.0,
+                                      );
+                                      return;
+                                    }
+                                  },
+                                ),
+                                const Text('Ver ubicación'),
+                              ]),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.info),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return DetalleDialog(
+                                            orderId: pedido['idpedidos'],
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                  const Text('Ver información'),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.check),
+                                    onPressed: () async {
+                                      await actualizarPedidoEnCamino(
+                                          pedido['idpedidos']);
+                                      setState(
+                                          () {}); // Refresca la lista de pedidos
+                                    },
+                                  ),
+                                  const Text('Acción a realizar'),
+                                ],
+                              ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Column(children: [
-                              IconButton(
-                                icon: const Icon(Icons.map),
-                                onPressed: () async {
-                                  try {
-                                    if (pedido['ubicacionCliente'] == null ||
-                                        pedido['ubicacionNegocio'] == null) {
-                                      throw Exception(
-                                          'No se ha podido encontrar las ubicaciones del negocio o del cliente');
-                                    }
-
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            MotoristaMapScreen(
-                                                ubicacionCliente: LatLng(
-                                                  pedido['ubicacionCliente']
-                                                      .latitude,
-                                                  pedido['ubicacionCliente']
-                                                      .longitude,
-                                                ),
-                                                ubicacionNegocio: LatLng(
-                                                  pedido['ubicacionNegocio']
-                                                      .latitude,
-                                                  pedido['ubicacionNegocio']
-                                                      .longitude,
-                                                )),
-                                      ),
-                                    );
-                                  } catch (e, stackTrace) {
-                                    Fluttertoast.showToast(
-                                      msg:
-                                          'Error al abrir el mapa: $e y $stackTrace',
-                                      toastLength: Toast.LENGTH_LONG,
-                                      gravity: ToastGravity.BOTTOM,
-                                      timeInSecForIosWeb: 4,
-                                      backgroundColor: Colors.red,
-                                      textColor: Colors.white,
-                                      fontSize: 16.0,
-                                    );
-                                    return;
-                                  }
-                                },
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.done),
+                                    onPressed: () async {
+                                      await marcarPedidoComoEntregado(
+                                          pedido['idpedidos'],
+                                          pedido['idMotorista']);
+                                      setState(
+                                          () {}); // Refresca la lista de pedidos
+                                    },
+                                  ),
+                                  const Text('Marcar como entregado'),
+                                ],
                               ),
-                              const Text('Ver ubicación'),
-                            ]),
-                            Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.info),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return DetalleDialog(
-                                          orderId: pedido['idpedidos'],
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                const Text('Ver información'),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.check),
-                                  onPressed: () async {
-                                    await actualizarPedidoEnCamino(
-                                        pedido['idpedidos']);
-                                    setState(
-                                        () {}); // Refresca la lista de pedidos
-                                  },
-                                ),
-                                const Text('Acción a realizar'),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.done),
-                                  onPressed: () async {
-                                    await marcarPedidoComoEntregado(
-                                        pedido['idpedidos'],
-                                        pedido['idMotorista']);
-                                    setState(
-                                        () {}); // Refresca la lista de pedidos
-                                  },
-                                ),
-                                const Text('Marcar como entregado'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            );
-          }
-        },
+                  );
+                },
+              );
+            }
+          },
+        ),
       ),
     );
   }

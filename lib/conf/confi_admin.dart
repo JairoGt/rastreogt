@@ -49,7 +49,7 @@ class ConfiguracionAdmin extends StatelessWidget {
                     },
                   ),
                 ),
-                Divider(),
+                const Divider(),
                 ListTile(
                   leading: const Icon(Icons.business),
                   title: const Text('Solicitar negocio'),
