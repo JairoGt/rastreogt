@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:rastreogt/conf/export.dart';
+
 class RolePage extends StatefulWidget {
   const RolePage({super.key});
 
@@ -34,30 +35,29 @@ class _RolePageState extends State<RolePage> {
   Future<void> _getCurrentUserNegoname() async {
     try {
       // Obtener el documento del usuario actual
-      DocumentSnapshot currentUserSnapshot = await _firestore.collection('users').doc(user!.email).get();
-      
+      DocumentSnapshot currentUserSnapshot =
+          await _firestore.collection('users').doc(user!.email).get();
+
       // Obtener el idBusiness del documento del usuario
       String idBusiness = currentUserSnapshot['idBussiness'];
-      
+
       // Acceder al documento en la subcolección 'negocios' usando idBusiness
       final DocumentReference documentRef = _firestore
           .collection('users')
           .doc(user!.email)
           .collection('negocios')
           .doc(idBusiness);
-      
+
       // Obtener el documento de la subcolección
       final DocumentSnapshot doc = await documentRef.get();
-      
+
       // Extraer la información de 'ubicacion'
       ubicacionM = doc['ubicacionnego'];
       _currentUserNegoname = doc['negoname'];
       nego = doc['nego'];
-      
-    
     } catch (e) {
       if (!mounted) return;
-     ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('tuvimos un error $e'),
           backgroundColor: Colors.red,
@@ -66,259 +66,265 @@ class _RolePageState extends State<RolePage> {
     }
   }
 
-void _getUsers1() async {
-  setState(() {});
+  void _getUsers1() async {
+    setState(() {});
 
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-        child: AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Lottie.asset('assets/lotties/search.json'),
-              const SizedBox(height: 20),
-              Text(
-                'Cargando...',
-                style: GoogleFonts.aBeeZee(
-                  textStyle: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.asset('assets/lotties/search.json'),
+                const SizedBox(height: 20),
+                Text(
+                  'Cargando...',
+                  style: GoogleFonts.aBeeZee(
+                    textStyle: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+        );
+      },
+    );
+
+    try {
+      QuerySnapshot usersSnapshot = await _firestore
+          .collection('users')
+          .where('email', isNotEqualTo: user!.email)
+          .where('negoname', isEqualTo: _currentUserNegoname)
+          .get();
+      _usersList = usersSnapshot.docs;
+      _filterUsers();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar los usuarios: $e'),
+          backgroundColor: Colors.red,
         ),
       );
-    },
-  );
-
-  try {
-    QuerySnapshot usersSnapshot = await _firestore.collection('users')
-        .where('email', isNotEqualTo: user!.email)
-        .where('negoname', isEqualTo: _currentUserNegoname)
-        .get();
-    _usersList = usersSnapshot.docs;
-    _filterUsers();
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error al cargar los usuarios: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } finally {
+    }
     if (!mounted) return;
     Navigator.of(context).pop();
     setState(() {});
   }
-}
 
-void _getUsers() async {
-  setState(() {});
+  void _getUsers() async {
+    setState(() {});
 
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-        child: AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Lottie.asset('assets/lotties/search.json'),
-              const SizedBox(height: 20),
-              Text(
-                'Cargando...',
-                style: GoogleFonts.aBeeZee(
-                  textStyle: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.asset('assets/lotties/search.json'),
+                const SizedBox(height: 20),
+                Text(
+                  'Cargando...',
+                  style: GoogleFonts.aBeeZee(
+                    textStyle: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+        );
+      },
+    );
+
+    try {
+      await Future.delayed(const Duration(seconds: 2));
+      QuerySnapshot usersSnapshot = await _firestore
+          .collection('users')
+          .where('nickname', isEqualTo: _searchController.text)
+          // .where('negoname', isEqualTo: _currentUserNegoname)
+          .get();
+
+      _usersList = usersSnapshot.docs;
+      _filterUsers();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar los usuarios: $e'),
+          backgroundColor: Colors.red,
         ),
       );
-    },
-  );
-
-  try {
-    await Future.delayed(const Duration(seconds: 2));
-    QuerySnapshot usersSnapshot = await _firestore.collection('users')
-        .where('nickname', isEqualTo: _searchController.text)
-        // .where('negoname', isEqualTo: _currentUserNegoname)
-        .get();
-      
-    _usersList = usersSnapshot.docs;
-    _filterUsers();
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error al cargar los usuarios: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } finally {
-    if (!mounted) return;
-    Navigator.of(context).pop();
-    setState(() {});
+    } finally {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      setState(() {});
+    }
   }
-}
 
   void _filterUsers() {
-  String searchQuery = _searchController.text.toLowerCase();
-  if (searchQuery.isEmpty) {
-    _filteredUsersList = _usersList;
-  } else {
-    _filteredUsersList = _usersList.where((user) {
-      String nickname = user['nickname'].toLowerCase();
-      String role = user['role'].toLowerCase();
-      return nickname.contains(searchQuery) && role == 'client';
-    }).toList();
-  }
-
-  if (mounted) {
-    setState(() {});
-  }
-  if (_filteredUsersList.isEmpty) {
-    // Asegúrate de que el diálogo de carga se cierre antes de mostrar el diálogo de "No se encontraron usuarios"
-   
-    Future.delayed(Duration.zero, () {
-      _showNoUsersFoundDialog();
-    });
-  }
-}
-
-
-void _showNoUsersFoundDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('No se encontraron usuarios'),
-        content: const Text('Estas dejando vacio el campo de busqueda o el usuario ya es moto o admin o no existe'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Aceptar'),
-          ),
-        ],
-      );
-    },
-  );
-}
-void _updateRole(String email, String role) async {
-  try {
-    // Obtener el documento del usuario
-    DocumentReference userDocument = _firestore.collection('users').doc(email);
-    DocumentSnapshot userSnapshot = await userDocument.get();
-
-    // Verificar si el documento existe y obtener el nickname
-    String nick1 = '';
-    if (userSnapshot.exists) {
-      final data = userSnapshot.data() as Map<String, dynamic>?;
-      if (data != null) {
-        nick1 = data['nickname'] ?? '';
-      }
+    String searchQuery = _searchController.text.toLowerCase();
+    if (searchQuery.isEmpty) {
+      _filteredUsersList = _usersList;
+    } else {
+      _filteredUsersList = _usersList.where((user) {
+        String nickname = user['nickname'].toLowerCase();
+        String role = user['role'].toLowerCase();
+        return nickname.contains(searchQuery) && role == 'client';
+      }).toList();
     }
 
-    // Preparar los datos para actualizar el rol del usuario
-    Map<String, dynamic> data = {
-      'role': role,
-      'estadoid': 0,
-    };
+    if (mounted) {
+      setState(() {});
+    }
+    if (_filteredUsersList.isEmpty) {
+      // Asegúrate de que el diálogo de carga se cierre antes de mostrar el diálogo de "No se encontraron usuarios"
 
-    if (role == 'moto') {
-      // Obtener el documento de la moto
-      DocumentReference motoDocument = _firestore.collection('motos').doc(email);
-      DocumentSnapshot motoSnapshot = await motoDocument.get();
+      Future.delayed(Duration.zero, () {
+        _showNoUsersFoundDialog();
+      });
+    }
+  }
 
-      String? id;
-      if (motoSnapshot.exists) {
-        final motoData = motoSnapshot.data() as Map<String, dynamic>?;
-        if (motoData != null) {
-          id = motoData['idmoto'];
+  void _showNoUsersFoundDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('No se encontraron usuarios'),
+          content: const Text(
+              'Estas dejando vacio el campo de busqueda o el usuario ya es moto o admin o no existe'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _updateRole(String email, String role) async {
+    try {
+      // Obtener el documento del usuario
+      DocumentReference userDocument =
+          _firestore.collection('users').doc(email);
+      DocumentSnapshot userSnapshot = await userDocument.get();
+
+      // Verificar si el documento existe y obtener el nickname
+      String nick1 = '';
+      if (userSnapshot.exists) {
+        final data = userSnapshot.data() as Map<String, dynamic>?;
+        if (data != null) {
+          nick1 = data['nickname'] ?? '';
         }
       }
 
-      if (id == null || id.isEmpty) {
-        id = _getRandomId(3);
-        data['idmoto'] = id;
+      // Preparar los datos para actualizar el rol del usuario
+      Map<String, dynamic> data = {
+        'role': role,
+        'estadoid': 0,
+      };
+
+      if (role == 'moto') {
+        // Obtener el documento de la moto
+        DocumentReference motoDocument =
+            _firestore.collection('motos').doc(email);
+        DocumentSnapshot motoSnapshot = await motoDocument.get();
+
+        String? id;
+        if (motoSnapshot.exists) {
+          final motoData = motoSnapshot.data() as Map<String, dynamic>?;
+          if (motoData != null) {
+            id = motoData['idmoto'];
+          }
+        }
+
+        if (id == null || id.isEmpty) {
+          id = _getRandomId(3);
+          data['idmoto'] = id;
+        }
+
+        // Crear una colección 'motos' y un documento 'moto' dentro de ella
+        Map<String, dynamic> motoData = {
+          'idmoto': id,
+          'estadoid':
+              1, // Estado de la moto (0 = baja, 1 = Disponible, 2 = En ruta, etc.)
+          'negoname': _currentUserNegoname,
+          'name': nick1,
+          'email': email,
+          'telefono': 0,
+          'ubicacionM': ubicacionM,
+        };
+
+        await motoDocument.set(motoData);
       }
 
-      // Crear una colección 'motos' y un documento 'moto' dentro de ella
-      Map<String, dynamic> motoData = {
-        'idmoto': id,
-        'estadoid': 1, // Estado de la moto (0 = baja, 1 = Disponible, 2 = En ruta, etc.)
-        'negoname': _currentUserNegoname,
-        'name': nick1,
-        'email': email,
-        'telefono': 0,
-        'ubicacionM': ubicacionM,
-      };
+      if (role == 'client') {
+        // Crear una colección 'motos' y un documento 'moto' dentro de ella
+        CollectionReference motos = _firestore.collection('motos');
+        DocumentReference motoDocument = motos.doc(email);
 
-      await motoDocument.set(motoData);
+        Map<String, dynamic> motoData = {
+          'estadoid':
+              3, // Estado de la moto (0 = inactivo, 1 = Disponible, 2 = En ruta, 3 = baja, etc.)
+        };
+
+        await motoDocument.update(motoData);
+        CollectionReference users = _firestore.collection('users');
+        DocumentReference userDocument = users.doc(email);
+        Map<String, dynamic> userData = {
+          'role': role,
+          'estadoid': 0,
+          'negoname': 'df',
+          'nego': 'df',
+        };
+        await userDocument.update(userData);
+      }
+
+      if (role == 'admin') {
+        CollectionReference users = _firestore.collection('users');
+        DocumentReference userDocument = users.doc(email);
+        Map<String, dynamic> userData = {
+          'role': role,
+          'estadoid': 0,
+          'negoname': _currentUserNegoname,
+          'nego': nego,
+        };
+        await userDocument.update(userData);
+      }
+
+      await userDocument.update(data);
+      _getUsers1();
+    } catch (error) {
+      // Manejo de errores
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar el rol del usuario: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-
-    if (role == 'client') {
-      // Crear una colección 'motos' y un documento 'moto' dentro de ella
-      CollectionReference motos = _firestore.collection('motos');
-      DocumentReference motoDocument = motos.doc(email);
-
-      Map<String, dynamic> motoData = {
-        'estadoid': 3, // Estado de la moto (0 = inactivo, 1 = Disponible, 2 = En ruta, 3 = baja, etc.)
-      };
-
-      await motoDocument.update(motoData);
-      CollectionReference users = _firestore.collection('users');
-      DocumentReference userDocument = users.doc(email);
-      Map<String, dynamic> userData = {
-        'role': role,
-        'estadoid': 0,
-        'negoname': 'df',
-        'nego': 'df',
-      };
-      await userDocument.update(userData);
-    }
-
-    if (role == 'admin') {
-      CollectionReference users = _firestore.collection('users');
-      DocumentReference userDocument = users.doc(email);
-      Map<String, dynamic> userData = {
-        'role': role,
-        'estadoid': 0,
-        'negoname': _currentUserNegoname,
-        'nego': nego,
-      };
-      await userDocument.update(userData);
-    }
-
-    await userDocument.update(data);
-    _getUsers1();
-  } catch (error) {
-    // Manejo de errores
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error al actualizar el rol del usuario: $error'),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
 
   String _getRandomId(int length) {
     var random = Random();
@@ -387,19 +393,22 @@ void _updateRole(String email, String role) async {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: Text('¿Desea enviar solicitud de cambio? a $role'),
+                              title: Text(
+                                  '¿Desea enviar solicitud de cambio? a $role'),
                               actions: [
                                 TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
                                   },
-                                  child:  Text('Cancelar',
+                                  child: Text(
+                                    'Cancelar',
                                     style: GoogleFonts.aBeeZee(
-                                      color: Theme.of(context).colorScheme.inverseSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .inverseSurface,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                               
-                                  ),
+                                    ),
                                   ),
                                 ),
                                 TextButton(
@@ -407,13 +416,15 @@ void _updateRole(String email, String role) async {
                                     _updateRole(user['email'], role);
                                     Navigator.of(context).pop();
                                   },
-                                  child:  Text('Aceptar',
-                                  style: GoogleFonts.aBeeZee(
-                                      color: Theme.of(context).colorScheme.inverseSurface,
+                                  child: Text(
+                                    'Aceptar',
+                                    style: GoogleFonts.aBeeZee(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .inverseSurface,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                               
-                                  ),
+                                    ),
                                   ),
                                 ),
                               ],

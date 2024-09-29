@@ -38,22 +38,6 @@
           }
         },
         {
-          "client_id": "1097242350126-tdolas35glrj9f2s6pes1b8s21v8kqon.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.misterjd.rastreogt",
-            "certificate_hash": "5c1fa0a8de373f4a8be2175d1a248aba9ee2a180"
-          }
-        },
-        {
-          "client_id": "1097242350126-u6qhdr5k61h4mdnt5vrnk40j374snu84.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.misterjd.rastreogt",
-            "certificate_hash": "0205b1e00f8ad783cd5540b1cfd2eae99035f842"
-          }
-        },
-        {
           "client_id": "1097242350126-olirphfliv5lpa4lav6iiksv5juefkt1.apps.googleusercontent.com",
           "client_type": 3
         }

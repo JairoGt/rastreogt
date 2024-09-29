@@ -22,6 +22,7 @@ class _MotoristaScreenState extends State<MotoristaScreen>
   final User? user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  StreamSubscription<DocumentSnapshot>? _motoristaSubscription;
   Timer? _timer;
 
   @override
@@ -33,14 +34,41 @@ class _MotoristaScreenState extends State<MotoristaScreen>
         .addObserver(this as WidgetsBindingObserver); // Agrega el observador
     iniciarActualizacionPeriodica();
     iniciarEscuchaEstadoMotorista();
+    _initializeMotoristaListener();
     //initializeBackgroundService();
     verificarEstadoMotoYMostrarDialogo(user!.email!);
+  }
+
+  void _initializeMotoristaListener() {
+    final user = _auth.currentUser;
+    if (user != null) {
+      _motoristaSubscription = _db
+          .collection('motos')
+          .doc(user.email)
+          .snapshots()
+          .listen(_handleMotoristaUpdate);
+    }
+  }
+
+  void _handleMotoristaUpdate(DocumentSnapshot snapshot) {
+    if (snapshot.exists) {
+      final motoristaData = snapshot.data() as Map<String, dynamic>?;
+      if (motoristaData != null) {
+        int estadoId = motoristaData['estadoid'] ?? 0;
+        if (estadoId == 2) {
+          initializeBackgroundService();
+        } else if (estadoId == 1) {
+          stopBackgroundService();
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel(); // Cancelar el timer cuando el widget se destruya
     stopBackgroundService();
+    _motoristaSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this as WidgetsBindingObserver);
     // LocatorService.stopLocator();
     super.dispose();
@@ -190,6 +218,9 @@ class _MotoristaScreenState extends State<MotoristaScreen>
 
   Future<void> cerrarSesion() async {
     try {
+      await _motoristaSubscription?.cancel();
+
+      stopBackgroundService();
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null &&
           currentUser.providerData

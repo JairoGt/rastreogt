@@ -32,7 +32,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final _nombreNegocioController = TextEditingController();
   final _direccionController = TextEditingController();
   final TextEditingController _ubicacionController = TextEditingController();
-  final TextEditingController _codigoGeneradoController = TextEditingController();
+  final TextEditingController _codigoGeneradoController =
+      TextEditingController();
   final TextEditingController _codigoManualController = TextEditingController();
   final User? user = FirebaseAuth.instance.currentUser;
   final _formKey = GlobalKey<FormState>();
@@ -47,12 +48,28 @@ class _MyHomePageState extends State<MyHomePage> {
     _actualizarCodigo(); // Inicializar el código
   }
 
-  void _actualizarCodigo() {
-    if (_codigoManual) return;
-
+  void _limpiarCampos() {
     setState(() {
-      _codigoGeneradoController.text = _generarCodigo();
+      _nombreNegocioController.clear();
+      _direccionController.clear();
+      _ubicacionController.clear();
+      _codigoGeneradoController.clear();
+      _codigoManualController.clear();
+      _codigoManual = false;
+      _originalCoordinates = null;
     });
+  }
+
+  void _actualizarCodigo() {
+    if (_codigoManual == true) {
+      setState(() {
+        _codigoGeneradoController.text = _generarCodigo();
+      });
+    } else {
+      setState(() {
+        _codigoGeneradoController.text = _generarCodigo();
+      });
+    }
   }
 
   String _generarCodigo() {
@@ -64,21 +81,27 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     String primeraLetraEmail = email[0].toUpperCase();
-    List<String> palabrasNegocio = nombreNegocio.split(' ').where((p) => p.isNotEmpty).toList();
-    String primeraLetraNombre = palabrasNegocio.isNotEmpty ? palabrasNegocio[0][0].toUpperCase() : '';
-    String segundaLetraNombre = palabrasNegocio.length > 1 ? palabrasNegocio[1][0].toUpperCase() : '';
+    List<String> palabrasNegocio =
+        nombreNegocio.split(' ').where((p) => p.isNotEmpty).toList();
+    String primeraLetraNombre =
+        palabrasNegocio.isNotEmpty ? palabrasNegocio[0][0].toUpperCase() : '';
+    String segundaLetraNombre =
+        palabrasNegocio.length > 1 ? palabrasNegocio[1][0].toUpperCase() : '';
 
     return '$primeraLetraEmail$primeraLetraNombre$segundaLetraNombre';
   }
 
   Future<void> _enviarDatos() async {
     try {
-      final gsheets = GSheets(_credentials); // Asegúrate de definir _credentials
-      final ss = await gsheets.spreadsheet(_spreadsheetId); // Asegúrate de definir _spreadsheetId
+      final gsheets =
+          GSheets(_credentials); // Asegúrate de definir _credentials
+      final ss = await gsheets
+          .spreadsheet(_spreadsheetId); // Asegúrate de definir _spreadsheetId
       var sheet = ss.worksheetByTitle('rastreogt');
       sheet ??= await ss.addWorksheet('rastreogt');
 
-      String codigo = _codigoManual ? _codigoManualController.text : _generarCodigo();
+      String codigo =
+          _codigoManual ? _codigoGeneradoController.text : _generarCodigo();
 
       // Verificar si el código ya existe en Google Sheets
       final existingCodes = await sheet.values.column(6);
@@ -86,9 +109,26 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           _codigoManual = true;
         });
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Código Duplicado'),
+              content: const Text(
+                  'El código generado ya existe, por favor, ingresa uno manualmente.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
         return;
       }
-
       final data = [
         user!.email?.toUpperCase(),
         _nombreNegocioController.text,
@@ -100,6 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       final result = await sheet.values.appendRow(data);
       if (result) {
+        _limpiarCampos();
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -129,12 +170,23 @@ class _MyHomePageState extends State<MyHomePage> {
           String negocioId = negocioIdBase;
           int counter = 1;
 
-          while ((await firestore.collection('users').doc(userEmail).collection('negocios').doc(negocioId).get()).exists) {
+          while ((await firestore
+                  .collection('users')
+                  .doc(userEmail)
+                  .collection('negocios')
+                  .doc(negocioId)
+                  .get())
+              .exists) {
             negocioId = '$negocioIdBase$counter';
             counter++;
           }
 
-          await firestore.collection('users').doc(userEmail).collection('negocios').doc(negocioId).set({
+          await firestore
+              .collection('users')
+              .doc(userEmail)
+              .collection('negocios')
+              .doc(negocioId)
+              .set({
             'email': user?.email,
             'nego': _nombreNegocioController.text,
             'negoname': codigo, // Usar el código generado como negoname
@@ -144,11 +196,10 @@ class _MyHomePageState extends State<MyHomePage> {
             'ubicacionnego': GeoPoint(latitude, longitude),
             'fechaSolicitud': DateTime.now().toIso8601String(),
           });
-
-       
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Por favor, selecciona una ubicación')),
+            const SnackBar(
+                content: Text('Por favor, selecciona una ubicación')),
           );
         }
       }
@@ -178,7 +229,8 @@ class _MyHomePageState extends State<MyHomePage> {
       try {
         _originalCoordinates = result;
 
-        List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+        List<Placemark> placemarks =
+            await placemarkFromCoordinates(latitude, longitude);
         if (placemarks.isNotEmpty) {
           Placemark place = placemarks[0];
           String street = place.street ?? 'Calle desconocida';
@@ -232,13 +284,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _nombreNegocioController,
-                  decoration: const InputDecoration(labelText: 'Nombre del Negocio'),
-                     validator: (value) {
+                  decoration:
+                      const InputDecoration(labelText: 'Nombre del Negocio'),
+                  validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'No Puede estar vacío';
-                  }else if (!RegExp(r'^[a-zA-Z]+( [a-zA-Z]+)*$').hasMatch(value)) {
-  return 'El nombre solo puede contener letras y sin espacios al inicio, final o dobles';
-}
+                    } else if (!RegExp(r'^[a-zA-Z]+( [a-zA-Z]+)*$')
+                        .hasMatch(value)) {
+                      return 'El nombre solo puede contener letras y sin espacios al inicio, final o dobles';
+                    }
                     return null;
                   },
                 ),
@@ -273,17 +327,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _codigoGeneradoController,
-                  decoration: const InputDecoration(labelText: 'Código Generado'),
+                  decoration:
+                      const InputDecoration(labelText: 'Código Generado'),
                   readOnly: true,
-                 
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'El código no puede estar vacío';
-                    }
-                    else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                    } else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
                       return 'El código solo puede contener letras, no se permite espacios';
-                    }
-                    else if (value.length > 3) {
+                    } else if (value.length > 3) {
                       return 'El código no puede tener más de 3 caracteres';
                     }
                     return null;
@@ -293,16 +345,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 if (_codigoManual)
                   TextFormField(
                     controller: _codigoGeneradoController,
-                    decoration: const InputDecoration(labelText: 'Código Manual'),
-                   
+                    decoration:
+                        const InputDecoration(labelText: 'Código Manual'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'El código no puede estar vacío';
-                      }
-                      else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
+                      } else if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
                         return 'El código solo puede contener letras';
-                      }
-                      else if (value.length > 3) {
+                      } else if (value.length > 3) {
                         return 'El código no puede tener más de 3 caracteres';
                       }
                       return null;
@@ -310,19 +360,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () async{if (_formKey.currentState!.validate()) {
-                  // Si el formulario es válido, muestra un snackbar o realiza alguna acción
-              
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content:  Text('Formulario válido')),
-                  );
-                   await  _enviarDatos();
-                } else {
-                  // Si el formulario no es válido, actualiza el estado para mostrar los errores
-                  setState(() {});
-                }
-                },
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      // Si el formulario es válido, muestra un snackbar o realiza alguna acción
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Formulario válido')),
+                      );
+                      await _enviarDatos();
+                    } else {
+                      // Si el formulario no es válido, actualiza el estado para mostrar los errores
+                      setState(() {});
+                    }
+                  },
                   child: const Text('Enviar'),
+                ),
+                const SizedBox(height: 80),
+                ElevatedButton(
+                  onPressed: _mostrarEstadoNegocio,
+                  child: const Text('Ver mis solicitudes'),
                 ),
               ],
             ),
@@ -330,5 +386,106 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  Future<void> _mostrarEstadoNegocio() async {
+    try {
+      final gsheets = GSheets(_credentials); // Define _credentials
+      final ss = await gsheets.spreadsheet(_spreadsheetId);
+      var sheet = ss.worksheetByTitle('rastreogt');
+
+      if (sheet == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo encontrar la hoja de cálculo'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Leer las columnas de la hoja (correo electrónico en la primera, nombre del negocio en la segunda, estado en la tercera)
+      final correos = await sheet.values
+          .column(1); // Suponiendo que los correos están en la columna 1
+      final nombresNegocios = await sheet.values.column(2);
+      final estadosNegocios = await sheet.values.column(3);
+
+      if (correos.isEmpty ||
+          nombresNegocios.isEmpty ||
+          estadosNegocios.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay datos en la hoja'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Obtener el correo del usuario (puedes reemplazar esto por la manera en que obtienes el correo del usuario logueado)
+      final correoUsuario = user!.email!
+          .toUpperCase(); // Cambia esto por tu correo electrónico actual
+
+      // Filtrar solo los negocios asociados al correo electrónico del usuario
+      List<String> negociosFiltrados = [];
+      List<String> estadosFiltrados = [];
+
+      for (int i = 0; i < correos.length; i++) {
+        if (correos[i] == correoUsuario) {
+          negociosFiltrados.add(nombresNegocios[i]);
+          estadosFiltrados.add(estadosNegocios[i]);
+        }
+      }
+
+      if (negociosFiltrados.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se encontraron negocios asociados a tu correo'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Mostrar el nombre del negocio y el estado en un AlertDialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Estado de mis solicitudes'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < negociosFiltrados.length; i++)
+                  ListTile(
+                    title: Text(negociosFiltrados[i]),
+                    subtitle: Text('Estado: ${estadosFiltrados[i]}'),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  'Cerrar',
+                  style: GoogleFonts.podkova(
+                      textStyle:
+                          const TextStyle(color: Colors.blue, fontSize: 20)),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al obtener los datos: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

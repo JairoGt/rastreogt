@@ -70,6 +70,38 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
     }
   }
 
+  void _abrirNavegacion() async {
+    if (_ubicacionActual == null) return;
+
+    // Mostrar el diálogo para elegir entre Google Maps y Waze
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Seleccionar aplicación de navegación'),
+          content:
+              const Text('¿Qué aplicación deseas usar para la navegación?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _abrirGoogleMaps();
+              },
+              child: const Text('Google Maps'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _abrirWaze();
+              },
+              child: const Text('Waze'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _abrirGoogleMaps() async {
     if (_ubicacionActual == null) return;
 
@@ -83,6 +115,19 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
     }
   }
 
+  void _abrirWaze() async {
+    if (_ubicacionActual == null) return;
+
+    final String wazeUrl =
+        'https://waze.com/ul?ll=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&navigate=yes';
+
+    if (await canLaunch(wazeUrl)) {
+      await launch(wazeUrl);
+    } else {
+      throw 'No se pudo abrir Waze';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +136,7 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.navigation),
-            onPressed: _abrirGoogleMaps,
+            onPressed: _abrirNavegacion,
           ),
         ],
       ),
@@ -130,9 +175,7 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
                   width: 5,
                 ),
               },
-              onMapCreated: (controller) {
-                
-              },
+              onMapCreated: (controller) {},
             ),
     );
   }

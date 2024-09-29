@@ -8,6 +8,7 @@ import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Cliente/historicopedidos.dart';
 import 'package:rastreogt/Cliente/pinfo.dart';
 import 'package:rastreogt/Moto/profile_moto.dart';
+import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/conf/Confi_admin.dart';
 
 class ModernDrawer extends StatefulWidget {
@@ -40,42 +41,45 @@ class _ModernDrawerState extends State<ModernDrawer> {
         .get();
     setState(() {
       nombreUsuario = usuario['nickname'];
-      role = usuario['role']; // Asegúrate de tener este campo en Firestore
-      //imagenPerfil = usuario['imagenPerfil']; // Asegúrate de tener este campo en Firestore
-      negoname =
-          usuario['negoname']; // Asegúrate de tener este campo en Firestore
+      role = usuario['role'];
+
+      negoname = usuario['negoname'];
     });
   }
 
-  Future<void> cerrarSesion() async {
+  Future<void> cerrarSesion(BuildContext context) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        if (currentUser.providerData
-            .any((userInfo) => userInfo.providerId == 'google.com')) {
-          // User is signed in with Google
-          await GoogleSignIn().signOut();
-          debugPrint('Usuario de Google ha cerrado sesión.');
-          Navigator.popUntil(context, ModalRoute.withName('/home'));
-        }
-        // Sign out from Firebase
-        await FirebaseAuth.instance.signOut();
-        Navigator.popUntil(context, ModalRoute.withName('/home'));
-        debugPrint('Usuario ha cerrado sesión de Firebase.');
-      } else {
-        debugPrint('No hay usuario autenticado.');
-      }
-    } catch (e) {
-      debugPrint('Error al cerrar sesión: $e');
+      // Aquí puedes cancelar cualquier listener o stream de Firestore
+      await FirebaseFirestore.instance
+          .terminate(); // Termina todas las conexiones con Firestore
+      debugPrint('Conexiones con Firestore terminadas.');
+      // Cerrar sesión de Google
+      await GoogleSignIn().signOut();
+      debugPrint('Usuario de Google ha cerrado sesión.');
+
+      // Cerrar sesión de Firebase
+      await FirebaseAuth.instance.signOut();
+      debugPrint('Usuario ha cerrado sesión de Firebase.');
+
+      // Limpiar cualquier dato de usuario almacenado localmente si es necesario
+      // Por ejemplo: await SharedPreferences.getInstance().then((prefs) => prefs.clear());
+
+      // Navegar a la pantalla de inicio/login y limpiar la pila de navegación
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cerrar sesión: $e'),
-            backgroundColor: Colors.red,
-          ),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const Login()),
+          (Route<dynamic> route) => false,
         );
       });
+    } catch (e) {
+      debugPrint('Error al cerrar sesión: $e');
+      // Mostrar un SnackBar con el error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cerrar sesión: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -220,46 +224,47 @@ class _ModernDrawerState extends State<ModernDrawer> {
             },
           ),
           ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Cerrar sesión'),
-              onTap: () async {
-                try {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FutureBuilder(
-                        future: cerrarSesion(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            // Una vez que se complete el cierre de sesión, navega a la pantalla de inicio
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              Navigator.popUntil(
-                                  context, ModalRoute.withName('/home'));
-                            });
-                            return Container(); // Pantalla vacía mientras se navega
-                          } else {
-                            // Muestra un indicador de carga mientras se cierra la sesión
-                            return const Scaffold(
-                              // backgroundColor: Color.fromARGB(125, 255, 255, 255),
-                              body: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          }
-                        },
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Cerrar sesión'),
+            onTap: () async {
+              bool? confirmLogout = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Confirmar cierre de sesión'),
+                    content: const Text(
+                        '¿Estás seguro de que quieres cerrar sesión?'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('Cancelar'),
+                        onPressed: () => Navigator.of(context).pop(false),
                       ),
-                    ),
+                      TextButton(
+                        child: const Text('Cerrar sesión'),
+                        onPressed: () => Navigator.of(context).pop(true),
+                      ),
+                    ],
                   );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al cerrar sesión: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }),
+                },
+              );
+
+              if (confirmLogout == true) {
+                // Mostrar un indicador de carga
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) {
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                );
+
+                // Cerrar sesión
+                await cerrarSesion(context);
+
+                // No cerramos el indicador de carga aquí, ya que la navegación lo hará automáticamente
+              }
+            },
+          ),
         ],
       ),
     );

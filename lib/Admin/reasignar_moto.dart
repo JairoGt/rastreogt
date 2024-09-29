@@ -12,9 +12,7 @@ final firebaseFirestore = FirebaseFirestore.instance.collection('pedidos');
 final now = DateTime.now();
 // Colección de pedidos
 final pedidosRef = FirebaseFirestore.instance.collection('pedidos');
- final pedidos =  pedidosRef
-        .where('negoname', isEqualTo: nickname)
-        .get();
+final pedidos = pedidosRef.where('negoname', isEqualTo: nickname).get();
 
 final motoristasRef = FirebaseFirestore.instance.collection('motos');
 String nickname = '';
@@ -32,18 +30,22 @@ class ReasignarPedidos extends StatefulWidget {
 class _ReasignarPedidosState extends State<ReasignarPedidos> {
   Timer? _timer;
   // Importamos las bibliotecas necesarias
-final User? user = FirebaseAuth.instance.currentUser;
+  final User? user = FirebaseAuth.instance.currentUser;
 // Estado de la aplicación
- Future<void> obtenerNombreUsuario() async {
-    DocumentSnapshot usuario = await FirebaseFirestore.instance.collection('users').doc(user?.email).get();
+  Future<void> obtenerNombreUsuario() async {
+    DocumentSnapshot usuario = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user?.email)
+        .get();
     setState(() {
-     // nombreUsuario = user?.displayName ?? usuario['nickname'];
+      // nombreUsuario = user?.displayName ?? usuario['nickname'];
       nickname = usuario['negoname'];
     });
     _fetchMotoristas();
     _fetchPedidos();
   }
-    Future<List<DocumentSnapshot>> _fetchPedidos() async {
+
+  Future<List<DocumentSnapshot>> _fetchPedidos() async {
     QuerySnapshot snapshot = await pedidosRef
         .where('estadoid', isEqualTo: 2)
         .where('negoname', isEqualTo: nickname)
@@ -51,13 +53,14 @@ final User? user = FirebaseAuth.instance.currentUser;
     return snapshot.docs;
   }
 
-   Future<List<DocumentSnapshot>> _fetchMotoristas() async {
+  Future<List<DocumentSnapshot>> _fetchMotoristas() async {
     QuerySnapshot snapshot = await motoristasRef
         .where("estadoid", isEqualTo: 1)
         .where("negoname", isEqualTo: nickname)
         .get();
     return snapshot.docs;
   }
+
   // Lista de pedidos
   List<DocumentSnapshot> pedidos = [];
 
@@ -75,9 +78,7 @@ final User? user = FirebaseAuth.instance.currentUser;
   @override
   void initState() {
     super.initState();
-obtenerNombreUsuario();
-  
-  
+    obtenerNombreUsuario();
   }
 
   @override
@@ -87,237 +88,231 @@ obtenerNombreUsuario();
         title: const Text('Reasignar pedidos'),
       ),
       body: SingleChildScrollView(
-          child: Column(
-            children: [
-              const Text(
-                'SELECCIONA UN PEDIDO',
-                textAlign: TextAlign.start,
-                overflow: TextOverflow.ellipsis,
-              ),
-               SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 300,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Card(
-                    borderOnForeground: true,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+        child: Column(
+          children: [
+            const Text(
+              'SELECCIONA UN PEDIDO',
+              textAlign: TextAlign.start,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: 300,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Card(
+                  borderOnForeground: true,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
                     ),
-                    child: FutureBuilder<List<DocumentSnapshot>>(
-                      future: _fetchPedidos(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return const Text('Error al cargar los pedidos');
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return Text(
-                            ' No se encontraron pedidos',
-                            style: GoogleFonts.roboto(
-                              textStyle: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w500,
-                              ),
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  ),
+                  child: FutureBuilder<List<DocumentSnapshot>>(
+                    future: _fetchPedidos(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return const Text('Error al cargar los pedidos');
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Text(
+                          ' No se encontraron pedidos',
+                          style: GoogleFonts.roboto(
+                            textStyle: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
                             ),
-                          );
-                        } else {
-                          pedidos = snapshot.data!;
-                          return ListView.separated(
-                            separatorBuilder:
-                                (BuildContext context, int index) =>
-                                    const Divider(),
-                            physics: const ClampingScrollPhysics(),
-                            itemCount: pedidos.length,
-                            itemBuilder: (context, index) {
-                              return FutureBuilder<DocumentSnapshot>(
-                                future: pedidosRef
-                                    .doc(pedidos[index].id)
-                                    .collection('Productos')
-                                    .doc(pedidos[index].id)
-                                    .get(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const CircularProgressIndicator();
-                                  } else if (snapshot.hasError) {
-                                    return const Text(
-                                        '  Error al cargar el precio total');
-                                  } else if (!snapshot.hasData ||
-                                      !snapshot.data!.exists) {
-                                    // Agrega un print statement para depurar
-                                    print(
-                                        'Documento no encontrado: ${pedidos[index].id}');
-                                    return Text(
-                                      '  No se encontraron datos correctos del pedido',
-                                      style: GoogleFonts.roboto(
-                                        textStyle: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                          ),
+                        );
+                      } else {
+                        pedidos = snapshot.data!;
+                        return ListView.separated(
+                          separatorBuilder: (BuildContext context, int index) =>
+                              const Divider(),
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: pedidos.length,
+                          itemBuilder: (context, index) {
+                            return FutureBuilder<DocumentSnapshot>(
+                              future: pedidosRef
+                                  .doc(pedidos[index].id)
+                                  .collection('Productos')
+                                  .doc(pedidos[index].id)
+                                  .get(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const CircularProgressIndicator();
+                                } else if (snapshot.hasError) {
+                                  return const Text(
+                                      '  Error al cargar el precio total');
+                                } else if (!snapshot.hasData ||
+                                    !snapshot.data!.exists) {
+                                  // Agrega un print statement para depurar
+                                  debugPrint(
+                                      'Documento no encontrado: ${pedidos[index].id}');
+                                  return Text(
+                                    '  No se encontraron datos correctos del pedido',
+                                    style: GoogleFonts.roboto(
+                                      textStyle: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                    );
-                                  } else {
-                                    final preciototal =
-                                        snapshot.data!['precioTotal'];
-                                    return CheckboxListTile(
-                                      title: Text(
-                                        pedidos[index]['idpedidos'] +
-                                            ' \n Entrega en: ' +
-                                            pedidos[index]['direccion'],
+                                    ),
+                                  );
+                                } else {
+                                  final preciototal =
+                                      snapshot.data!['precioTotal'];
+                                  return CheckboxListTile(
+                                    title: Text(
+                                      pedidos[index]['idpedidos'] +
+                                          ' \n Entrega en: ' +
+                                          pedidos[index]['direccion'],
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: RichText(
+                                      text: TextSpan(
+                                        text: 'Total: ',
                                         style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
+                                          // color: Colors.black,
+                                          fontSize: 16,
                                         ),
-                                      ),
-                                      subtitle: RichText(
-                                        text: TextSpan(
-                                          text: 'Total: ',
-                                          style: const TextStyle(
-                                            // color: Colors.black,
-                                            fontSize: 16,
+                                        children: <TextSpan>[
+                                          TextSpan(
+                                            text: 'Q${preciototal.toString()}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                          children: <TextSpan>[
-                                            TextSpan(
-                                              text:
-                                                  'Q${preciototal.toString()}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                          TextSpan(
+                                            text:
+                                                '  -  ${pedidos[index]['nickname']}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
                                             ),
-                                            TextSpan(
-                                              text:
-                                                  '  -  ${pedidos[index]['nickname']}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      value: _idPedido == pedidos[index].id,
-                                      onChanged: (value) {
-                                        _idPedido =
-                                            value! ? pedidos[index].id : '';
-                                        setState(() {});
-                                      },
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
+                                    ),
+                                    value: _idPedido == pedidos[index].id,
+                                    onChanged: (value) {
+                                      _idPedido =
+                                          value! ? pedidos[index].id : '';
+                                      setState(() {});
+                                    },
+                                  );
+                                }
+                              },
+                            );
+                          },
+                        );
+                      }
+                    },
                   ),
                 ),
               ),
+            ),
 
-              const Text(
-                'SELECCIONA AL MOTORISTA ',
-                textAlign: TextAlign.start,
-                overflow: TextOverflow.ellipsis,
-              ),
-              // Lista de motoristas
-                Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: 300,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Card(
-                          borderOnForeground: true,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(12)),
+            const Text(
+              'SELECCIONA AL MOTORISTA ',
+              textAlign: TextAlign.start,
+              overflow: TextOverflow.ellipsis,
+            ),
+            // Lista de motoristas
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: 300,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Card(
+                        borderOnForeground: true,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
                           ),
-                          child: FutureBuilder<List<DocumentSnapshot>>(
-                            future: _fetchMotoristas(),
-                               
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                return ListView.separated(
-                                  separatorBuilder:
-                                      (BuildContext context, int index) =>
-                                          const Divider(),
-                                  itemCount: snapshot.data!.length,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      // height: 50,
-                                      color:
-                                          Theme.of(context).colorScheme.inversePrimary,
-                                      child: CheckboxListTile(
-                                        title: Text(
-                                          snapshot.data![index]['name'],
-                                          style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        subtitle: Text(
-                                            snapshot.data![index]['email']),
-                                        value: _idMotorista ==
-                                            snapshot.data![index]['idmoto'].toString(),
-                                        onChanged: (value) {
-                                          // Actualiza el valor de _idMotorista
-                                          _idMotorista = value!
-                                              ? snapshot.data![index]
-                                                  ['idmoto'].toString()
-                                              : '';
-                                          // Actualiza el widget
-                                          if (mounted) {
-                                            setState(() {});
-                                          }
-                                        },
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(12)),
+                        ),
+                        child: FutureBuilder<List<DocumentSnapshot>>(
+                          future: _fetchMotoristas(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return ListView.separated(
+                                separatorBuilder:
+                                    (BuildContext context, int index) =>
+                                        const Divider(),
+                                itemCount: snapshot.data!.length,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    // height: 50,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .inversePrimary,
+                                    child: CheckboxListTile(
+                                      title: Text(
+                                        snapshot.data![index]['name'],
+                                        style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
                                       ),
-                                    );
-                                  },
-                                  physics: const ClampingScrollPhysics(),
-                                  shrinkWrap: true,
-                                  primary: false,
-                                );
-                              } else {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                            },
-                          ),
+                                      subtitle:
+                                          Text(snapshot.data![index]['email']),
+                                      value: _idMotorista ==
+                                          snapshot.data![index]['idmoto']
+                                              .toString(),
+                                      onChanged: (value) {
+                                        // Actualiza el valor de _idMotorista
+                                        _idMotorista = value!
+                                            ? snapshot.data![index]['idmoto']
+                                                .toString()
+                                            : '';
+                                        // Actualiza el widget
+                                        if (mounted) {
+                                          setState(() {});
+                                        }
+                                      },
+                                    ),
+                                  );
+                                },
+                                physics: const ClampingScrollPhysics(),
+                                shrinkWrap: true,
+                                primary: false,
+                              );
+                            } else {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+                          },
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
-    
+      ),
       bottomNavigationBar: BottomAppBar(
-        
         shape: const CircularNotchedRectangle(),
         child: Container(height: 50.0),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
-        ? Colors.green  // Si el tema es oscuro, usa texto blanco
-        : Colors.blueAccent, 
+            ? Colors.green // Si el tema es oscuro, usa texto blanco
+            : Colors.blueAccent,
         onPressed: () async {
           //print(_idPedido);
 
           try {
-           
 // Mostrar un mensaje de error
             if (_idPedido == '0' || _idMotorista == '0') {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -334,17 +329,17 @@ obtenerNombreUsuario();
                   'estadoid': 2,
                   'fechadespacho': Timestamp.fromDate(now),
                 });
-             
-              _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Actualiza el estado del widget
-        });
-      } else {
-        // Cancela el temporizador si el widget ya no está en el árbol de widgets
-        _timer?.cancel();
-      }
-    });
+
+                _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                  if (mounted) {
+                    setState(() {
+                      // Actualiza el estado del widget
+                    });
+                  } else {
+                    // Cancela el temporizador si el widget ya no está en el árbol de widgets
+                    _timer?.cancel();
+                  }
+                });
 
 // Navegar a otra página
                 Navigator.popAndPushNamed(context, '/listapedidos');
@@ -355,7 +350,6 @@ obtenerNombreUsuario();
                   ),
                 );
               } catch (e) {
-               
                 // Mostrar un mensaje de error
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -364,30 +358,30 @@ obtenerNombreUsuario();
                   ),
                 );
 
-                 _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Actualiza el estado del widget
-        });
-      } else {
-        // Cancela el temporizador si el widget ya no está en el árbol de widgets
-        _timer?.cancel();
-      }
-    });
-                 Navigator.popAndPushNamed(context, '/listapedidos');
+                _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                  if (mounted) {
+                    setState(() {
+                      // Actualiza el estado del widget
+                    });
+                  } else {
+                    // Cancela el temporizador si el widget ya no está en el árbol de widgets
+                    _timer?.cancel();
+                  }
+                });
+                Navigator.popAndPushNamed(context, '/listapedidos');
               }
             }
           } on FirebaseException {
-             _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Actualiza el estado del widget
-        });
-      } else {
-        // Cancela el temporizador si el widget ya no está en el árbol de widgets
-        _timer?.cancel();
-      }
-    });
+            _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+              if (mounted) {
+                setState(() {
+                  // Actualiza el estado del widget
+                });
+              } else {
+                // Cancela el temporizador si el widget ya no está en el árbol de widgets
+                _timer?.cancel();
+              }
+            });
             Navigator.popAndPushNamed(context, '/listapedidos');
 
 // Mostrar un mensaje de error

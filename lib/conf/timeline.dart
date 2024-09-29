@@ -9,13 +9,15 @@ class TimelineWidget extends StatefulWidget {
   final List<String> processes;
   final int processIndex;
 
-  const TimelineWidget({super.key, required this.processes, required this.processIndex});
+  const TimelineWidget(
+      {super.key, required this.processes, required this.processIndex});
 
   @override
   _TimelineWidgetState createState() => _TimelineWidgetState();
 }
 
-class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStateMixin {
+class _TimelineWidgetState extends State<TimelineWidget>
+    with TickerProviderStateMixin {
   late List<AnimationController> _controllers;
 
   @override
@@ -85,19 +87,21 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
 
     return Container(
       decoration: BoxDecoration(
-  shape: BoxShape.rectangle,
-  color: Theme.of(context).brightness == Brightness.dark
-      ? const Color.fromARGB(115, 9, 9, 22) // Azul oscuro para modo oscuro
-      : const Color.fromARGB(148, 109, 58, 131), // Color actual para modo claro
-  borderRadius: BorderRadius.circular(10.0), // Bordes redondeados
-  boxShadow: const [
-     BoxShadow(
-      color: Color.fromARGB(66, 99, 62, 89), // Sombra
-      blurRadius: 10.0, // Desenfoque de la sombra
-      offset: Offset(0, 5), // Desplazamiento de la sombra
-    ),
-  ],
-),
+        shape: BoxShape.rectangle,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color.fromARGB(
+                115, 9, 9, 22) // Azul oscuro para modo oscuro
+            : const Color.fromARGB(
+                148, 109, 58, 131), // Color actual para modo claro
+        borderRadius: BorderRadius.circular(10.0), // Bordes redondeados
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromARGB(66, 99, 62, 89), // Sombra
+            blurRadius: 10.0, // Desenfoque de la sombra
+            offset: Offset(0, 5), // Desplazamiento de la sombra
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(8.0), // Espacio interno
       child: SizedBox(
         height: 190.0,
@@ -138,14 +142,23 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
                           'assets/lotties/status${index + 1}.json',
                           width: 72.0,
                           frameBuilder: (context, child, composition) {
-                            final durationInMilliseconds = composition?.duration.inMilliseconds;
-                            
+                            if (composition == null) {
+                              return const SizedBox
+                                  .shrink(); // or some other placeholder
+                            }
+
+                            final durationInMilliseconds =
+                                composition.duration.inMilliseconds;
+
                             // Especifica el frame como un porcentaje de la duración total
-                            final specificTime = durationInMilliseconds! * 1;
+                            final specificTime = durationInMilliseconds * 1;
 
                             _controllers[index].addListener(() {
-                              if (_controllers[index].value * durationInMilliseconds >= specificTime) {
-                                _controllers[index].stop(); // Detiene la animación en el tiempo específico
+                              if (_controllers[index].value *
+                                      durationInMilliseconds >=
+                                  specificTime) {
+                                _controllers[index]
+                                    .stop(); // Detiene la animación en el tiempo específico
                               }
                             });
 
@@ -167,7 +180,8 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
               return Align(
                 alignment: Alignment.centerLeft, // Alinea a la izquierda
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 1.0), // Ajusta el padding según tus necesidades
+                  padding: const EdgeInsets.only(
+                      left: 1.0), // Ajusta el padding según tus necesidades
                   child: Text(
                     widget.processes[index],
                     style: GoogleFonts.roboto(
@@ -211,7 +225,7 @@ class _TimelineWidgetState extends State<TimelineWidget> with TickerProviderStat
                     DotIndicator(
                       size: 25.0,
                       color: color,
-                     // child: child,
+                      // child: child,
                     ),
                   ],
                 );

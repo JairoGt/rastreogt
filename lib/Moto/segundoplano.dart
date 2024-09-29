@@ -111,7 +111,7 @@ Future<void> updateMotoristaLocation(
     });
   } catch (e) {
     // Handle the error
-    print('Error updating location: $e');
+    debugPrint('Error al actualizar la ubicación: $e');
   }
 }
 

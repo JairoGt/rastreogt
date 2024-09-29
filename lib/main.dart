@@ -43,20 +43,21 @@ void showNotification({required String title, required String body}) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await Firebase.initializeApp();
   // Pass all uncaught "fatal" errors from the framework to Crashlytics
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-  if (!kIsWeb) {
-    await PushNotifications.localNotiInit();
-  }
-
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
   // Listen to background notifications
   FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
 
   // on background notification tapped
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     if (message.notification != null) {
-      navigatorKey.currentState!.pushNamed("/message", arguments: message);
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushNamed("/message", arguments: message);
+      } else {
+        debugPrint('El navigatorKey no está listo todavía.');
+      }
     }
   });
 
@@ -100,9 +101,9 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         ChangeNotifierProvider(create: (_) => PedidosProvider()),
         ChangeNotifierProvider(create: (_) => UsuariosProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
       ],
       child: const MyApp(),
     ),
@@ -116,30 +117,29 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeNotifier>(
-      builder: (context, themeNotifier, child) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'RastreoGT',
-        theme: themeNotifier.currentTheme,
-        routes: {
-          '/asignacion': (context) => const AsignarPedidos(),
-          '/home': (context) => const Login(),
-          '/onboarding': (context) => const OnboardingScreen(),
-          '/splash': (context) => const SplashScreen(),
-          '/admin': (context) => const AdminPage(),
-          '/moto': (context) => const MotoristaScreen(),
-          //'/login' :(context) => const Login(),
-          //'/motoasignado' :(context) => const MotoPage(),
-          //'/cliente' :(context) => const ClientScreen(),
-          //'/tracking':(context) => const ClienteTrack(),
-          // '/otrosnegocios':(context) => OtrosNegociosPage(),
-          '/rolbuscar': (context) => const RolePage(),
-          '/editPedido': (context) => const EditPedidos(),
-          '/listapedidos': (context) => const PedidosPage(),
-          '/reasignar': (context) => const ReasignarPedidos(),
-          '/crearPedido': (context) => const CrearPedidoScreen(),
-        },
-        initialRoute: '/splash',
-      ),
+      builder: (context, themeNotifier, child) =>
+          Builder(builder: (BuildContext context) {
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'RastreoGT',
+          theme: themeNotifier.currentTheme,
+          routes: {
+            '/asignacion': (context) => const AsignarPedidos(),
+            '/home': (context) => const Login(),
+            '/onboarding': (context) => const OnboardingScreen(),
+            '/splash': (context) => const SplashScreen(),
+            '/admin': (context) => const AdminPage(),
+            '/moto': (context) => const MotoristaScreen(),
+            '/rolbuscar': (context) => const RolePage(),
+            '/editPedido': (context) => const EditPedidos(),
+            '/listapedidos': (context) => const PedidosPage(),
+            '/reasignar': (context) => const ReasignarPedidos(),
+            '/crearPedido': (context) => const CrearPedidoScreen(),
+          },
+          initialRoute: '/splash',
+        );
+      }),
     );
   }
 }

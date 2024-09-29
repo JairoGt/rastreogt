@@ -32,7 +32,7 @@ exports.notifyOnNewPedido = functions.firestore
       };
 
       try {
-        const response = await admin.messaging().sendMulticast(message);
+        const response = await admin.messaging().sendEachForMulticast(message);
         console.log("Notificaciones enviadas exitosamente:", response);
       } catch (error) {
         console.error("Error al enviar las notificaciones:", error);

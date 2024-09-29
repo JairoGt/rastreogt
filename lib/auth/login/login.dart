@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +10,8 @@ import 'package:rastreogt/auth/auth_service.dart';
 import 'package:rastreogt/auth/login/logingoogle.dart';
 import 'package:rastreogt/auth/password/resetpassword.dart';
 import 'package:rastreogt/auth/signup/signup.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -27,12 +28,14 @@ class _LoginState extends State<Login> {
   List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  bool _isPrivacyPolicyAccepted = false;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     initConnectivity();
+    _checkPrivacyPolicyAccepted();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
@@ -81,12 +84,131 @@ class _LoginState extends State<Login> {
     });
   }
 
+  Future<void> _checkPrivacyPolicyAccepted() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? isAccepted = prefs.getBool('privacyPolicyAccepted');
+    if (isAccepted == null || !isAccepted) {
+      _showPrivacyPolicyDialog();
+    } else {
+      setState(() {
+        _isPrivacyPolicyAccepted = true;
+      });
+    }
+  }
+
+  void _showPrivacyPolicyDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        bool isChecked = false;
+
+        return PopScope(
+          canPop: false, // Deshabilitar el botón de retroceso
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: Text(
+                  'Política de Privacidad',
+                  style: GoogleFonts.poppins(
+                    textStyle: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                content: SingleChildScrollView(
+                  child: Column(
+                    children: <Widget>[
+                      Lottie.asset(
+                        'assets/lotties/politi.json', // Asegúrate de tener este archivo en tu carpeta de assets
+                        width: 150,
+                        height: 150,
+                        animate: true,
+                        repeat: false,
+                        fit: BoxFit.cover,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Por favor, lee nuestra política de privacidad en el siguiente enlace:',
+                        style: GoogleFonts.poppins(),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          // Abre la política de privacidad en el navegador
+                          launchUrl(Uri(
+                            scheme: 'https',
+                            host: 'rastreogt.com',
+                            path: '/politicas.html',
+                          ));
+                        },
+                        child: const Text(
+                          'Política de Privacidad',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: <Widget>[
+                          Checkbox(
+                            value: isChecked,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                isChecked = value ?? false;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Text(
+                              'He leído y acepto la política de privacidad.',
+                              style: GoogleFonts.poppins(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: isChecked
+                        ? () async {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.setBool('privacyPolicyAccepted', true);
+                            setState(() {
+                              _isPrivacyPolicyAccepted = true;
+                            });
+                            Navigator.of(context).pop();
+                          }
+                        : null,
+                    child: Text(
+                      'Aceptar',
+                      style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       extendBodyBehindAppBar: true,
-      bottomNavigationBar: _signup(context),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -94,10 +216,12 @@ class _LoginState extends State<Login> {
       ),
       body: Stack(
         children: [
+          // Background color based on image blue
           Container(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[900]
-                  : Colors.grey[400]),
+            color:
+                const Color(0xFF141C2E), // A blue color similar to your image
+          ),
+
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -105,17 +229,21 @@ class _LoginState extends State<Login> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 50),
-                  const Icon(
-                    EvaIcons.personOutline,
-                    size: 100,
-                    // color: Colors.black,
+                  // Replacing the icon with your image
+                  SizedBox(
+                    height: 120, // Adjust the height if necessary
+                    child: Image.asset(
+                      'assets/images/oficial2.png', // Path to your image
+                      fit: BoxFit.contain, // Make sure it fits nicely
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Text(
                     'Bienvenido de Nuevo!',
                     style: GoogleFonts.poppins(
                       textStyle: const TextStyle(
-                        //color: Colors.black,
+                        color: Colors
+                            .white, // Changed to white for better contrast
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
                       ),
@@ -123,52 +251,57 @@ class _LoginState extends State<Login> {
                   ),
                   const SizedBox(height: 50),
                   _buildTextField(
-                      'Email',
-                      _emailController,
-                      false,
-                      const Icon(Icons.email, color: Colors.grey),
-                      TextInputType.emailAddress),
+                    'Email',
+                    _emailController,
+                    false,
+                    Icon(Icons.email,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black // Change to white for consistency
+                        ),
+                    TextInputType.emailAddress,
+                  ),
                   const SizedBox(height: 20),
                   _buildTextField(
-                      'Password',
-                      _passwordController,
-                      true,
-                      const Icon(Icons.lock_outline, color: Colors.grey),
-                      TextInputType.visiblePassword),
+                    'Password',
+                    _passwordController,
+                    true,
+                    Icon(Icons.lock_outline,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black),
+                    TextInputType.visiblePassword,
+                  ),
                   Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecuperarContrasenaScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Olvidaste tu contraseña?',
-                          style: GoogleFonts.poppins(
-                            textStyle: TextStyle(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? const Color.fromARGB(255, 136, 133, 133)
-                                  : Colors.black,
-                              fontSize: 16,
-                            ),
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const RecuperarContrasenaScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Olvidaste tu contraseña?',
+                        style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(
+                            color: Colors.white, // Text in white for contrast
+                            fontSize: 16,
                           ),
                         ),
-                      )),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 30),
                   _signin(context),
                   const SizedBox(height: 20),
-                  Text(
+                  const Text(
                     'O inicia sesión con',
                     style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color.fromARGB(255, 136, 133, 133)
-                          : Colors.black,
+                      color: Colors.white, // Change text to white
                       fontSize: 16,
                     ),
                   ),
@@ -183,14 +316,16 @@ class _LoginState extends State<Login> {
                           _hideLoading();
                         },
                         icon: SizedBox(
-                          width: 60, // Ajusta el ancho del icono
-                          height: 60, // Ajusta la altura del icono
+                          width: 60, // Adjust width of icon
+                          height: 60, // Adjust height of icon
                           child: Image.asset('assets/images/google.png'),
                         ),
-                        iconSize: 20, // Ajusta el tamaño del icono
+                        iconSize: 20, // Adjust icon size
                       ),
                     ],
                   ),
+                  const SizedBox(height: 90),
+                  _signup(context),
                 ],
               ),
             ),
@@ -202,10 +337,7 @@ class _LoginState extends State<Login> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                     child: Container(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
-                          : const Color.fromARGB(255, 255, 255, 255)
-                              .withOpacity(0.5),
+                      color: Colors.black.withOpacity(0.5),
                       child: Center(
                         child: Lottie.asset(
                           'assets/lotties/loading.json',
