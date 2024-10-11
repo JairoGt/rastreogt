@@ -42,6 +42,8 @@ void showNotification({required String title, required String body}) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await PushNotifications.localNotiInit();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Pass all uncaught "fatal" errors from the framework to Crashlytics
   FlutterError.onError = (errorDetails) {
@@ -78,6 +80,33 @@ Future<void> main() async {
     }
   });
 
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    if (message.notification != null) {
+      _addNotification(
+        message.notification!.title ?? 'Nueva notificación',
+        message.notification!.body ?? '',
+      );
+    }
+  });
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    String payloadData = jsonEncode(message.data);
+    if (message.notification != null) {
+      if (kIsWeb) {
+        showNotification(
+            title: message.notification!.title!,
+            body: message.notification!.body!);
+      } else {
+        PushNotifications.showSimpleNotification(
+            title: message.notification!.title!,
+            body: message.notification!.body!,
+            payload: payloadData);
+      }
+    }
+  });
+
+// Actualiza también _firebaseBackgroundMessage y el manejo de getInitialMessage de manera similar
+
   // for handling in terminated state
   final RemoteMessage? message =
       await FirebaseMessaging.instance.getInitialMessage();
@@ -108,6 +137,50 @@ Future<void> main() async {
       child: const MyApp(),
     ),
   );
+}
+
+List<Map<String, dynamic>> _pendingNotifications = [];
+
+Future<void> processPendingNotifications(String userEmail) async {
+  for (var notification in _pendingNotifications) {
+    await _saveNotificationToFirestore(userEmail, notification);
+  }
+  _pendingNotifications.clear();
+  print('Notificaciones pendientes procesadas');
+}
+
+Future<void> _addNotification(String message, String title) async {
+  final newNotification = {
+    'id': DateTime.now().millisecondsSinceEpoch.toString(),
+    'title': title,
+    'message': message,
+    'timestamp': DateTime.now(),
+  };
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null && user.email != null) {
+    // Usuario autenticado, guarda la notificación directamente
+    await _saveNotificationToFirestore(user.email!, newNotification);
+  } else {
+    // Usuario no autenticado, agrega a la cola pendiente
+    _pendingNotifications.add(newNotification);
+    print('Notificación añadida a la cola pendiente: ${newNotification['id']}');
+  }
+}
+
+Future<void> _saveNotificationToFirestore(
+    String userEmail, Map<String, dynamic> notification) async {
+  try {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userEmail)
+        .collection('notificaciones')
+        .doc(notification['id'])
+        .set(notification);
+    print('Notificación guardada en Firestore: ${notification['id']}');
+  } catch (e) {
+    print('Error al guardar notificación en Firestore: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {

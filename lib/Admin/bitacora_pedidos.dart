@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
@@ -65,28 +66,46 @@ class _PedidosPageState extends State<PedidosPage> {
     return total;
   }
 
-  Future<void> generatePDF(
+  Future<void> generateModernPDF(
       BuildContext context, List<DocumentSnapshot<Object?>> data) async {
     final pdf = pw.Document();
 
     // Filtrar los pedidos según las fechas seleccionadas
     final pedidos = data.where((pedido) {
-      final fechaCreacion = pedido['fechaCreacion'].toDate();
-      return pedido['negoname'] == nombreNegocio &&
-          (_fechaInicio == null || fechaCreacion.isAfter(_fechaInicio!)) &&
-          (_fechaFin == null ||
-              fechaCreacion
-                  .isBefore(_fechaFin!.add(const Duration(days: 1)))) &&
-          (_fechaInicio != null ||
-              _fechaFin != null ||
-              fechaCreacion.isAtSameMomentAs(_fechaFin!));
+      final fechaCreacion = pedido['fechaCreacion']?.toDate();
+      final negocio = pedido['negoname'] as String?;
+
+      if (fechaCreacion == null ||
+          negocio == null ||
+          negocio != nombreNegocio) {
+        return false;
+      }
+
+      bool dentroDeRango = true;
+
+      if (_fechaInicio != null) {
+        dentroDeRango = dentroDeRango && fechaCreacion.isAfter(_fechaInicio!);
+      }
+
+      if (_fechaFin != null) {
+        dentroDeRango = dentroDeRango &&
+            fechaCreacion.isBefore(_fechaFin!.add(const Duration(days: 1)));
+      }
+
+      return dentroDeRango;
     }).toList();
 
-    // Sumar el precio total de los pedidos entregados
+    // Contar pedidos entregados y cancelados
+    int pedidosEntregados = 0;
+    int pedidosCancelados = 0;
     double totalEntregado = 0;
+
     for (var pedido in pedidos) {
       if (pedido['estadoid'] == 4) {
+        pedidosEntregados++;
         totalEntregado += await calcularTotalPedido(pedido);
+      } else if (pedido['estadoid'] == 5) {
+        pedidosCancelados++;
       }
     }
 
@@ -94,157 +113,189 @@ class _PedidosPageState extends State<PedidosPage> {
     final tableRows = await Future.wait(pedidos.map((pedido) async {
       return pw.TableRow(
         children: <pw.Widget>[
-          pw.Text(pedido['idpedidos'].toString()),
-          pw.Text(pedido['direccion'] ?? ''),
-          pw.Text(pedido['estadoid'] == 1
-              ? ' CREADO '
-              : pedido['estadoid'] == 2
-                  ? ' DESPACHADO '
-                  : pedido['estadoid'] == 3
-                      ? ' EN CAMINO '
-                      : pedido['estadoid'] == 4
-                          ? ' ENTREGADO '
-                          : ''),
-          pw.Text('Q${await calcularTotalPedido(pedido)}'),
-          pw.Text(DateFormat('d/M/y').format(pedido['fechaCreacion'].toDate())),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(5),
+            child: pw.Text(pedido['idpedidos'].toString()),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(5),
+            child: pw.Text(pedido['direccion'] ?? ''),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(5),
+            child: pw.Text(
+              pedido['estadoid'] == 1
+                  ? 'CREADO'
+                  : pedido['estadoid'] == 2
+                      ? 'DESPACHADO'
+                      : pedido['estadoid'] == 3
+                          ? 'EN CAMINO'
+                          : pedido['estadoid'] == 4
+                              ? 'ENTREGADO'
+                              : pedido['estadoid'] == 5
+                                  ? 'CANCELADO'
+                                  : '',
+              style: pw.TextStyle(
+                color: pedido['estadoid'] == 4
+                    ? PdfColors.green
+                    : pedido['estadoid'] == 5
+                        ? PdfColors.red
+                        : pedido['estadoid'] == 3
+                            ? PdfColors.orange
+                            : pedido['estadoid'] == 2
+                                ? PdfColors.yellow
+                                : PdfColors.black,
+              ),
+            ),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(5),
+            child: pw.Text('Q${await calcularTotalPedido(pedido)}'),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(5),
+            child: pw.Text(
+                DateFormat('d/M/y').format(pedido['fechaCreacion'].toDate())),
+          ),
         ],
       );
     }).toList());
 
     pdf.addPage(
       pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
         build: (context) {
           return [
+            pw.Header(
+              level: 0,
+              child: pw.Text('Reporte de Pedidos',
+                  style: pw.TextStyle(
+                      fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.SizedBox(height: 20),
             pw.Container(
-              child: pw.Paragraph(
-                text: '   Lista de pedidos      ',
-                style: pw.TextStyle(
-                  fontSize: 24,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
+              padding: const pw.EdgeInsets.all(10),
               decoration: pw.BoxDecoration(
-                border: pw.Border.all(),
+                color: PdfColors.grey200,
+                borderRadius: pw.BorderRadius.circular(10),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Total de pedidos: ${pedidos.length}',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text('Pedidos entregados: $pedidosEntregados',
+                          style: const pw.TextStyle(color: PdfColors.green)),
+                      pw.Text('Pedidos cancelados: $pedidosCancelados',
+                          style: const pw.TextStyle(color: PdfColors.red)),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text('Total entregado:',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text('Q${totalEntregado.toStringAsFixed(2)}',
+                          style: pw.TextStyle(
+                              fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                ],
               ),
             ),
+            pw.SizedBox(height: 20),
             pw.Table(
-              border: pw.TableBorder.all(),
+              border: pw.TableBorder.all(color: PdfColors.grey400),
               columnWidths: {
-                0: const pw.IntrinsicColumnWidth(),
-                1: const pw.IntrinsicColumnWidth(),
-                2: const pw.IntrinsicColumnWidth(),
-                3: const pw.IntrinsicColumnWidth(),
-                4: const pw.IntrinsicColumnWidth(),
+                0: const pw.FlexColumnWidth(1),
+                1: const pw.FlexColumnWidth(2),
+                2: const pw.FlexColumnWidth(1),
+                3: const pw.FlexColumnWidth(1),
+                4: const pw.FlexColumnWidth(1),
               },
               children: <pw.TableRow>[
                 pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey300),
                   children: <pw.Widget>[
-                    pw.Text('Tracking '),
-                    pw.Text('Dirección'),
-                    pw.Text('Estado'),
-                    pw.Text('Total a pagar'),
-                    pw.Text('Fecha de Pedido'),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(5),
+                      child: pw.Text('Tracking',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(5),
+                      child: pw.Text('Dirección',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(5),
+                      child: pw.Text('Estado',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(5),
+                      child: pw.Text('Total',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(5),
+                      child: pw.Text('Fecha',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
                   ],
                 ),
                 ...tableRows,
               ],
             ),
-            pw.SizedBox(height: 20),
-            pw.Text('Total entregado: Q$totalEntregado'),
           ];
+        },
+        footer: (context) {
+          return pw.Container(
+            alignment: pw.Alignment.center,
+            margin: const pw.EdgeInsets.only(top: 10),
+            child: pw.Text(
+              'El camino hacia el éxito y el camino hacia el fracaso son exactamente el mismo camino',
+              style: pw.TextStyle(
+                fontSize: 10,
+                font: pw.Font.helveticaBold(),
+                color: PdfColors.grey700,
+              ),
+              textAlign: pw.TextAlign.center,
+            ),
+          );
         },
       ),
     );
-
     final bytes = await pdf.save();
 
-    await Printing.sharePdf(bytes: bytes);
+    // Imprimir el PDF
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+    );
 
-    // Obtener la ubicación de la carpeta de almacenamiento externo compartido
-    final externalDir = await getExternalStorageDirectory();
+    // Guardar el PDF en la carpeta de descargas
+    final downloadsDir = await getExternalStorageDirectory();
+    final file = File('${downloadsDir?.path}/reporte_pedidos.pdf');
+    await file.writeAsBytes(bytes);
 
-    if (externalDir != null) {
-      final pdfFile = File('${externalDir.path}/archivo.pdf');
-
-      // Guardar el PDF en la carpeta de almacenamiento externo compartido
-      await pdfFile.writeAsBytes(bytes);
-
-      // Verificar si el archivo se ha guardado correctamente
-      if (await pdfFile.exists()) {
-        if (context.mounted) {
-          // Mostrar un cuadro de diálogo de éxito
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Éxito'),
-                content: const Text('PDF guardado en la carpeta de Descargas'),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context)
-                          .pop(); // Cerrar el cuadro de diálogo
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              );
-            },
-          );
-        } else {
-          return;
-        }
-      } else {
-        // Verificar si el widget está montado antes de mostrar el cuadro de diálogo
-        if (context.mounted) {
-          // Mostrar un cuadro de diálogo de error
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Error'),
-                content: const Text('Error al guardar el PDF'),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context)
-                          .pop(); // Cerrar el cuadro de diálogo
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              );
-            },
-          );
-        } else {
-          return;
-        }
-      }
-    } else {
-      // Verificar si el widget está montado antes de mostrar el cuadro de diálogo
-      if (context.mounted) {
-        // Mostrar un cuadro de diálogo de error
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Error'),
-              content: const Text(
-                  'No se pudo acceder a la carpeta de almacenamiento externo'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Cerrar el cuadro de diálogo
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      } else {
-        return;
-      }
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('PDF generado'),
+          content: const Text(
+              'El reporte se ha guardado en la carpeta de Descargas y se ha abierto para imprimir.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -339,7 +390,7 @@ class _PedidosPageState extends State<PedidosPage> {
             onPressed: () async {
               final pedidos = await pedidosProvider.getPedidos(nombreNegocio!);
               // ignore: use_build_context_synchronously
-              generatePDF(context, pedidos);
+              generateModernPDF(context, pedidos);
             },
             icon: const Icon(Icons.picture_as_pdf),
           )
@@ -401,7 +452,8 @@ class _PedidosPageState extends State<PedidosPage> {
                                 DataCell(Text(pedido['direccion'] ?? '')),
                                 DataCell(pedido['estadoid'] == 1
                                     ? const Text('(CREADO)',
-                                        style: TextStyle(color: Colors.green))
+                                        style:
+                                            TextStyle(color: Colors.blueGrey))
                                     : pedido['estadoid'] == 2
                                         ? const Text('(DESPACHADO)',
                                             style: TextStyle(
@@ -414,8 +466,18 @@ class _PedidosPageState extends State<PedidosPage> {
                                             : pedido['estadoid'] == 4
                                                 ? const Text('(ENTREGADO)',
                                                     style: TextStyle(
-                                                        color: Colors.red))
-                                                : const Text('')),
+                                                        color: Color.fromARGB(
+                                                            255, 4, 137, 64)))
+                                                : pedido['estadoid'] == 5
+                                                    ? const Text('(CANCELADO)',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Color.fromARGB(
+                                                                    255,
+                                                                    112,
+                                                                    2,
+                                                                    2)))
+                                                    : const Text('')),
                                 DataCell(
                                   FutureBuilder<double>(
                                     future: calcularTotalPedido(pedido),

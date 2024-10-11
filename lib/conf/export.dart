@@ -14,5 +14,5 @@ export 'package:rastreogt/providers/pedidosprovider.dart';
 export 'package:firebase_messaging/firebase_messaging.dart';
 export 'package:google_sign_in/google_sign_in.dart';
 export 'package:rastreogt/Admin/admin_page.dart';
-export 'package:rastreogt/Cliente/client_page.dart';
+
 export 'package:rastreogt/Moto/moto_page.dart';

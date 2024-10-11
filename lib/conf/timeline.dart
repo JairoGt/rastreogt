@@ -142,20 +142,17 @@ class _TimelineWidgetState extends State<TimelineWidget>
                           'assets/lotties/status${index + 1}.json',
                           width: 72.0,
                           frameBuilder: (context, child, composition) {
-                            if (composition == null) {
-                              return const SizedBox
-                                  .shrink(); // or some other placeholder
-                            }
-
                             final durationInMilliseconds =
-                                composition.duration.inMilliseconds;
+                                composition?.duration.inMilliseconds;
 
                             // Especifica el frame como un porcentaje de la duración total
-                            final specificTime = durationInMilliseconds * 1;
+                            final specificTime = durationInMilliseconds != null
+                                ? durationInMilliseconds * 1
+                                : 0;
 
                             _controllers[index].addListener(() {
                               if (_controllers[index].value *
-                                      durationInMilliseconds >=
+                                      durationInMilliseconds! >=
                                   specificTime) {
                                 _controllers[index]
                                     .stop(); // Detiene la animación en el tiempo específico
@@ -195,7 +192,7 @@ class _TimelineWidgetState extends State<TimelineWidget>
             },
             indicatorBuilder: (context, index) {
               Color color;
-              Widget child;
+              Widget? child;
               if (index == widget.processIndex) {
                 color = inProgressColor;
                 child = const Padding(
@@ -225,7 +222,7 @@ class _TimelineWidgetState extends State<TimelineWidget>
                     DotIndicator(
                       size: 25.0,
                       color: color,
-                      // child: child,
+                      child: child,
                     ),
                   ],
                 );

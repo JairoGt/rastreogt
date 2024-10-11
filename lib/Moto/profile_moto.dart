@@ -27,37 +27,30 @@ class _UserMotoState extends State<UserMoto> {
 
   Future<void> _fetchUserInfo() async {
     try {
-DocumentSnapshot userInfo = await FirebaseFirestore.instance
-        .collection('motos')
-        .doc(widget.userEmail)
-        .get();
+      DocumentSnapshot userInfo = await FirebaseFirestore.instance
+          .collection('motos')
+          .doc(widget.userEmail)
+          .get();
 
-  if (userInfo.exists) {
-  Map<String, dynamic> data = userInfo.data() as Map<String, dynamic>;
-  setState(() {
-    _emailController.text = widget.userEmail!;
+      if (userInfo.exists) {
+        Map<String, dynamic> data = userInfo.data() as Map<String, dynamic>;
+        setState(() {
+          _emailController.text = widget.userEmail!;
 
-    _nameController.text = data['name'] ?? '';
-    _telefonoController.text = (data['telefono'] ?? 0).toString();
-    _emailController.text = widget.userEmail!;
-  });
-
-
-}
-    }catch (e) {
+          _nameController.text = data['name'] ?? '';
+          _telefonoController.text = (data['telefono'] ?? 0).toString();
+          _emailController.text = widget.userEmail!;
+        });
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(content: Text('Error al cargar la información $e')),
+        SnackBar(content: Text('Error al cargar la información $e')),
       );
     }
-    
   }
 
-
-Future<void> _saveUserInfo() async {
-  if (_formKey.currentState!.validate()) {
-   
-   
-
+  Future<void> _saveUserInfo() async {
+    if (_formKey.currentState!.validate()) {
       await FirebaseFirestore.instance
           .collection('motos')
           .doc(widget.userEmail)
@@ -65,62 +58,69 @@ Future<void> _saveUserInfo() async {
         'estadoid': 0,
         'name': _nameController.text,
         'telefono': _telefonoController.text,
-       
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Información actualizada')),
+        SnackBar(
+          content: const Text('Información actualizada'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {},
+          ),
+        ),
       );
-   
-  }
-}
-
-Future<void> _selectLocation() async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) =>  const Mapas2(),
-    ),
-  );
-
-  if (result != null) {
-    final coordinates = result.split(',');
-    final latitude = double.parse(coordinates[0]);
-    final longitude = double.parse(coordinates[1]);
-
-    try {
-      // Guardar las coordenadas originales
-
-
-      // Obtener la dirección a partir de las coordenadas
-      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-
-        // Manejar valores nulos y proporcionar valores predeterminados
-        String street = place.street ?? 'Calle desconocida';
-        String locality = place.locality ?? 'Localidad desconocida';
-
-        String formattedAddress = "$street, $locality";
-
-        setState(() {
-          _ubicacionController.text = formattedAddress;
-        });
-      } else {
-        setState(() {
-          _ubicacionController.text = 'Dirección no encontrada';
-        });
-      }
-    } catch (e) {
-      // Manejar cualquier excepción que ocurra durante la geocodificación inversa
-      setState(() {
-        _ubicacionController.text = 'Error al obtener la dirección';
-      });
-  
     }
   }
-}
-  
+
+  Future<void> _selectLocation() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const Mapas2(),
+      ),
+    );
+
+    if (result != null) {
+      final coordinates = result.split(',');
+      final latitude = double.parse(coordinates[0]);
+      final longitude = double.parse(coordinates[1]);
+
+      try {
+        // Guardar las coordenadas originales
+
+        // Obtener la dirección a partir de las coordenadas
+        List<Placemark> placemarks =
+            await placemarkFromCoordinates(latitude, longitude);
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks[0];
+
+          // Manejar valores nulos y proporcionar valores predeterminados
+          String street = place.street ?? 'Calle desconocida';
+          String locality = place.locality ?? 'Localidad desconocida';
+
+          String formattedAddress = "$street, $locality";
+
+          setState(() {
+            _ubicacionController.text = formattedAddress;
+          });
+        } else {
+          setState(() {
+            _ubicacionController.text = 'Dirección no encontrada';
+          });
+        }
+      } catch (e) {
+        // Manejar cualquier excepción que ocurra durante la geocodificación inversa
+        setState(() {
+          _ubicacionController.text = 'Error al obtener la dirección';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,7 +150,6 @@ Future<void> _selectLocation() async {
                   return null;
                 },
               ),
-  
               const SizedBox(height: 20),
               TextFormField(
                 controller: _telefonoController,

@@ -417,6 +417,19 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
         _isUserValidated = false;
       });
       ('El nickname $nickname no existe');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('El nickname  $nickname no existe'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {},
+          ),
+        ),
+      );
     }
   }
 
@@ -512,6 +525,7 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
       'ubicacionCliente': ubicacion,
       'ubicacionNegocio': _ubicacionNegocio,
       'negoname': contenido,
+      'observaciones': '',
       'nickname': _nicknameController.text,
       'nego': negoid,
     };
@@ -545,8 +559,16 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
     // Mostrar un mensaje de confirmación.
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pedido creado correctamente'),
+        SnackBar(
+          content: const Text('Pedido creado con éxito'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {},
+          ),
         ),
       );
     }

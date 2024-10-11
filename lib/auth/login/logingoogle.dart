@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:rastreogt/Cliente/client_page.dart';
 import 'package:rastreogt/conf/export.dart';
+import 'package:rastreogt/main.dart';
 
 String generateName(String email) {
   String localPart = email.split('@')[0];
@@ -70,8 +72,18 @@ class GoogleAuthService {
           }
           if (role == 'admin') {
             Navigator.of(context).pushReplacementNamed('/admin');
+            FirebaseAuth.instance.authStateChanges().listen((User? user) {
+              if (user != null && user.email != null) {
+                processPendingNotifications(user.email!);
+              }
+            });
           } else if (role == 'moto') {
             Navigator.of(context).pushReplacementNamed('/moto');
+            FirebaseAuth.instance.authStateChanges().listen((User? user) {
+              if (user != null && user.email != null) {
+                processPendingNotifications(user.email!);
+              }
+            });
           } else if (role == 'client') {
             Navigator.push(
               context,
@@ -82,6 +94,11 @@ class GoogleAuthService {
                 ),
               ),
             );
+            FirebaseAuth.instance.authStateChanges().listen((User? user) {
+              if (user != null && user.email != null) {
+                processPendingNotifications(user.email!);
+              }
+            });
           }
         } else {
           // Si la colección 'users' no tiene un documento con el email del usuario, crea uno

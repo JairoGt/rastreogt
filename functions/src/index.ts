@@ -52,28 +52,38 @@ const estados: { [key: number]: string } = {
   2: "En proceso",
   3: "En camino",
   4: "Entregado",
+  5: "Cancelado",
   // Agrega aquí los demás estados según necesites
 };
+
 exports.notificarCambioEstado = functions.firestore
   .document("pedidos/{idpedidos}")
   .onUpdate(async (change, context) => {
     const pedidoAnterior = change.before.data();
     const pedidoActual = change.after.data();
 
-
     // Verificar si el estado del pedido ha cambiado
     if (pedidoAnterior.estadoid !== pedidoActual.estadoid) {
-      // Obtener el ID del pedido y el nuevo estado
-
       const pedidoId = context.params.idpedidos;
       const nuevoEstadoId = pedidoActual.estadoid;
       const nuevoEstadoNombre = estados[nuevoEstadoId];
 
+      let titulo;
+      let cuerpo;
+
+      if (nuevoEstadoId === 5) {
+        titulo = `Tu pedido ${pedidoId} ha sido cancelado`;
+        cuerpo = "Pedido cancelado copia el id de historico y busca tu pedido";
+      } else {
+        titulo = `El estado de tu pedido ${pedidoId} ha cambiado`;
+        cuerpo = `Tu pedido ha sido marcado como ${nuevoEstadoNombre}`;
+      }
+
       // Crear la notificación
       const mensaje = {
         notification: {
-          title: `El estado de tu pedido ${pedidoId} ha cambiado`,
-          body: `Tu pedido ha sido marcado como ${nuevoEstadoNombre}`,
+          title: titulo,
+          body: cuerpo,
         },
         topic: `pedido_${pedidoId}`,
       };
@@ -81,6 +91,7 @@ exports.notificarCambioEstado = functions.firestore
       // Enviar la notificación
       try {
         await admin.messaging().send(mensaje);
+        console.log(`Notificación enviada para el pedido ${pedidoId}`);
       } catch (error) {
         console.error("Error al enviar la notificación:", error);
       }

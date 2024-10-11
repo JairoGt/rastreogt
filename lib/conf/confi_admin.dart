@@ -111,48 +111,6 @@ class _ConfiguracionAdminState extends State<ConfiguracionAdmin> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            SwitchListTile(
-                              title: const Text('Desbloqueo con huellas'),
-                              value: _isBiometricEnabled,
-                              onChanged: (bool value) {
-                                _setBiometricPreference(value);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(builder: (context) => SecondScreen()),
-                          // );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text(
-                          'Ir a otra pantalla',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),

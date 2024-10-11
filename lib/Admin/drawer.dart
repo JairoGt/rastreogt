@@ -96,14 +96,14 @@ class _ModernDrawerState extends State<ModernDrawer> {
                 accountName: Text(
                   user?.displayName ?? nombreUsuario,
                   style: GoogleFonts.roboto(
-                      fontSize: 20,
-                      color: Theme.of(context).colorScheme.onSecondary),
+                    fontSize: 20,
+                  ),
                 ),
                 accountEmail: Text(
                   user?.email ?? nombreUsuario,
                   style: GoogleFonts.roboto(
-                      fontSize: 15,
-                      color: Theme.of(context).colorScheme.onSecondary),
+                    fontSize: 15,
+                  ),
                 ),
                 currentAccountPicture: CircleAvatar(
                   backgroundImage: NetworkImage(user?.photoURL ?? imagenPerfil),

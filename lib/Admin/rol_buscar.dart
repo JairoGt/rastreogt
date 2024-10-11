@@ -266,6 +266,8 @@ class _RolePageState extends State<RolePage> {
         // Crear una colección 'motos' y un documento 'moto' dentro de ella
         Map<String, dynamic> motoData = {
           'idmoto': id,
+          'dialogid':
+              1, // Mensaje de solicitud (0 = sin solicitud, 1 = con solicitud)
           'estadoid':
               1, // Estado de la moto (0 = baja, 1 = Disponible, 2 = En ruta, etc.)
           'negoname': _currentUserNegoname,

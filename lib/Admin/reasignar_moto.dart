@@ -316,9 +316,17 @@ class _ReasignarPedidosState extends State<ReasignarPedidos> {
 // Mostrar un mensaje de error
             if (_idPedido == '0' || _idMotorista == '0') {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text('No se ha seleccionado ningún Motorista o Pedido'),
+                SnackBar(
+                  content: const Text(
+                      'No has seleccionado el Pedido o al motorista asegurate de seleccionar a los 2 '),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  action: SnackBarAction(
+                    label: 'OK',
+                    onPressed: () {},
+                  ),
                 ),
               );
               return;
@@ -344,9 +352,16 @@ class _ReasignarPedidosState extends State<ReasignarPedidos> {
 // Navegar a otra página
                 Navigator.popAndPushNamed(context, '/listapedidos');
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-// ignore: prefer_interpolation_to_compose_strings
-                    content: Text('Pedido Asignado'),
+                  SnackBar(
+                    content: const Text('Pedido reasignado correctamente'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    action: SnackBarAction(
+                      label: 'OK',
+                      onPressed: () {},
+                    ),
                   ),
                 );
               } catch (e) {

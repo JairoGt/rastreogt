@@ -58,7 +58,18 @@ class _EditPedidosState extends State<EditPedidos> {
     final idPedido = _idPedidoController.text.toUpperCase();
     if (idPedido.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Por favor ingrese un ID de pedido')));
+        SnackBar(
+          content: const Text('Ingrese un ID de pedido válido'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {},
+          ),
+        ),
+      );
       return;
     }
 
@@ -68,8 +79,19 @@ class _EditPedidosState extends State<EditPedidos> {
         .get();
     if (!mounted) return;
     if (!pedidoDoc.exists) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Pedido no encontrado')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('El pedido no existe'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {},
+          ),
+        ),
+      );
       return;
     }
     final pedidoData = pedidoDoc.data() as Map<String, dynamic>;
@@ -298,7 +320,18 @@ class _EditPedidosState extends State<EditPedidos> {
             }
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Datos guardados exitosamente')));
+              SnackBar(
+                content: const Text('Datos modificados exitosamente'),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                action: SnackBarAction(
+                  label: 'OK',
+                  onPressed: () {},
+                ),
+              ),
+            );
           } catch (e) {
             ('Error al guardar los datos: $e');
             ScaffoldMessenger.of(context).showSnackBar(

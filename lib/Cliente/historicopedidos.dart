@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
@@ -7,21 +5,25 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:rastreogt/conf/export.dart';
 
 class Pedido {
   final String numeroSeguimiento;
   final DateTime fecha;
   final double cantidadTotal;
+  final int? estado;
 
   Pedido({
     required this.numeroSeguimiento,
     required this.fecha,
     required this.cantidadTotal,
+    required this.estado,
   });
 
   factory Pedido.fromFirestore(
       Map<String, dynamic> data, double cantidadTotal) {
     return Pedido(
+      estado: data['estadoid'] ?? 'Desconocido',
       numeroSeguimiento: data['idpedidos'] ?? 'Desconocido',
       fecha: (data['fechadespacho'] as Timestamp?)?.toDate() ?? DateTime.now(),
       cantidadTotal: cantidadTotal,
@@ -38,47 +40,12 @@ class HistoricoPedidosScreen extends StatefulWidget {
   _HistoricoPedidosScreenState createState() => _HistoricoPedidosScreenState();
 }
 
-Future<List<Pedido>> obtenerPedidos(String email) async {
-  final querySnapshot = await FirebaseFirestore.instance
-      .collection('pedidos')
-      .where('idcliente', isEqualTo: email)
-      .get();
-
-  List<Pedido> pedidos = [];
-
-  for (var doc in querySnapshot.docs) {
-    final subCollectionSnapshot = await FirebaseFirestore.instance
-        .collection('pedidos')
-        .doc(doc.id)
-        .collection('Productos')
-        .get();
-
-    double cantidadTotal = 0.0;
-    for (var subDoc in subCollectionSnapshot.docs) {
-      cantidadTotal +=
-          (subDoc.data()['precioTotal'] as num?)?.toDouble() ?? 0.0;
-    }
-
-    pedidos.add(Pedido.fromFirestore(doc.data(), cantidadTotal));
-  }
-
-  return pedidos;
-}
-
-List<Pedido> filtrarPedidosPorFecha(
-    List<Pedido> pedidos, DateTime fechaInicio, DateTime fechaFin) {
-  return pedidos.where((pedido) {
-    return (pedido.fecha.isAfter(fechaInicio) ||
-            pedido.fecha.isAtSameMomentAs(fechaInicio)) &&
-        (pedido.fecha.isBefore(fechaFin) ||
-            pedido.fecha.isAtSameMomentAs(fechaFin));
-  }).toList();
-}
-
 class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
   late Future<List<Pedido>> _futurePedidos;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
+  final TextEditingController _fechaInicioController = TextEditingController();
+  final TextEditingController _fechaFinController = TextEditingController();
 
   @override
   void initState() {
@@ -86,30 +53,60 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
     _futurePedidos = obtenerPedidos(widget.email);
   }
 
-  Future<void> _selectFechaInicio(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _fechaInicio ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _fechaInicio) {
-      setState(() {
-        _fechaInicio = picked;
-      });
+  Future<List<Pedido>> obtenerPedidos(String email) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('pedidos')
+        .where('idcliente', isEqualTo: email)
+        .get();
+
+    List<Pedido> pedidos = [];
+
+    for (var doc in querySnapshot.docs) {
+      final subCollectionSnapshot = await FirebaseFirestore.instance
+          .collection('pedidos')
+          .doc(doc.id)
+          .collection('Productos')
+          .get();
+
+      double cantidadTotal = 0.0;
+      for (var subDoc in subCollectionSnapshot.docs) {
+        cantidadTotal +=
+            (subDoc.data()['precioTotal'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      pedidos.add(Pedido.fromFirestore(doc.data(), cantidadTotal));
     }
+
+    return pedidos;
   }
 
-  Future<void> _selectFechaFin(BuildContext context) async {
+  List<Pedido> filtrarPedidosPorFecha(
+      List<Pedido> pedidos, DateTime fechaInicio, DateTime fechaFin) {
+    return pedidos.where((pedido) {
+      return pedido.fecha
+              .isAfter(fechaInicio.subtract(const Duration(days: 1))) &&
+          pedido.fecha.isBefore(fechaFin.add(const Duration(days: 1)));
+    }).toList();
+  }
+
+  Future<void> _selectFecha(BuildContext context, bool esInicio) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _fechaFin ?? DateTime.now(),
+      initialDate: esInicio
+          ? _fechaInicio ?? DateTime.now()
+          : _fechaFin ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null && picked != _fechaFin) {
+    if (picked != null) {
       setState(() {
-        _fechaFin = picked;
+        if (esInicio) {
+          _fechaInicio = picked;
+          _fechaInicioController.text = DateFormat('dd/MM/yyyy').format(picked);
+        } else {
+          _fechaFin = picked;
+          _fechaFinController.text = DateFormat('dd/MM/yyyy').format(picked);
+        }
       });
     }
   }
@@ -118,13 +115,7 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
     setState(() {
       _futurePedidos = obtenerPedidos(widget.email).then((pedidos) {
         if (_fechaInicio != null && _fechaFin != null) {
-          // Ajustar horas de las fechas
-          final inicio = DateTime(
-              _fechaInicio!.day, _fechaInicio!.month, _fechaInicio!.year);
-          final fin = DateTime(
-              _fechaInicio!.day, _fechaInicio!.month, _fechaInicio!.year);
-
-          return filtrarPedidosPorFecha(pedidos, inicio, fin);
+          return filtrarPedidosPorFecha(pedidos, _fechaInicio!, _fechaFin!);
         }
         return pedidos;
       });
@@ -184,14 +175,27 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
             _buildResumenFinanciero(pedidos),
           ];
         },
-        footer: (context) => pw.Container(
-          alignment: pw.Alignment.centerRight,
-          margin: const pw.EdgeInsets.only(top: 1.0 * PdfPageFormat.cm),
-          child: pw.Text(
-            'Página ${context.pageNumber} de ${context.pagesCount}',
-            style: const pw.TextStyle(color: PdfColors.grey),
-          ),
-        ),
+        footer: (context) {
+          return pw.Container(
+            alignment: pw.Alignment.centerRight,
+            margin: const pw.EdgeInsets.only(top: 1.0 * PdfPageFormat.cm),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text(
+                  'Página ${context.pageNumber} de ${context.pagesCount}',
+                  style: const pw.TextStyle(color: PdfColors.grey),
+                ),
+                pw.SizedBox(height: 5),
+                pw.Text(
+                  'El camino hacia el éxito y el camino hacia el fracaso son exactamente el mismo camino.',
+                  style:
+                      const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
 
@@ -284,6 +288,32 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
     );
   }
 
+  Future<Map<String, dynamic>> _fetchProductDetails(String orderId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('pedidos')
+        .doc(orderId)
+        .collection('Productos')
+        .get();
+    double totalPrice = 0;
+    List<Map<String, dynamic>> products = [];
+    for (var producto in snapshot.docs) {
+      final data = producto.data();
+      for (int i = 1; i <= 5; i++) {
+        final nombreKey = 'producto$i';
+        final precioKey = 'precio$i';
+        if (data.containsKey(nombreKey) && data.containsKey(precioKey)) {
+          final nombre = data[nombreKey]?.toString() ?? '';
+          final precio = data[precioKey]?.toString() ?? '';
+          if (nombre.isNotEmpty && precio.isNotEmpty) {
+            products.add({'nombre': nombre, 'precio': double.parse(precio)});
+            totalPrice += double.parse(precio);
+          }
+        }
+      }
+    }
+    return {'products': products, 'totalPrice': totalPrice};
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -302,43 +332,68 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectFechaInicio(context),
-                    child: AbsorbPointer(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: _fechaInicio != null
-                              ? '${_fechaInicio!}'.split(' ')[0]
-                              : 'Fecha Inicio',
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Filtrar por fecha',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _fechaInicioController,
+                            decoration: InputDecoration(
+                              labelText: 'Fecha Inicio',
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.calendar_today),
+                                onPressed: () => _selectFecha(context, true),
+                              ),
+                            ),
+                            readOnly: true,
+                            onTap: () => _selectFecha(context, true),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _fechaFinController,
+                            decoration: InputDecoration(
+                              labelText: 'Fecha Fin',
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.calendar_today),
+                                onPressed: () => _selectFecha(context, false),
+                              ),
+                            ),
+                            readOnly: true,
+                            onTap: () => _selectFecha(context, false),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.search),
+                        label: const Text('Buscar'),
+                        onPressed: _filtrarPedidos,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectFechaFin(context),
-                    child: AbsorbPointer(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: _fechaFin != null
-                              ? '${_fechaFin!}'.split(' ')[0]
-                              : 'Fecha Fin',
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _filtrarPedidos,
-                ),
-              ],
+              ),
             ),
           ),
           Expanded(
@@ -351,43 +406,130 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
-                      child: Text('No hay pedidos disponibles.'));
+                    child: Text(
+                        'No hay pedidos disponibles para las fechas seleccionadas.'),
+                  );
                 } else {
                   final pedidos = snapshot.data!;
                   return ListView.builder(
                     itemCount: pedidos.length,
                     itemBuilder: (context, index) {
                       final pedido = pedidos[index];
+                      final isCancelled = pedido.estado == 5;
                       return Card(
                         margin: const EdgeInsets.symmetric(
-                            horizontal: 10.0, vertical: 5.0),
+                            horizontal: 16.0, vertical: 8.0),
+                        elevation: 3,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
-                        elevation: 5,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: 10.0),
+                        color: isCancelled
+                            ? Colors.red[300]
+                            : null, // Color rojo claro si está cancelado
+                        child: ExpansionTile(
                           title: Text(
-                            'Número de Seguimiento: ${pedido.numeroSeguimiento}',
+                            'Pedido #${pedido.numeroSeguimiento}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16.0,
+                              fontSize: 18.0,
                             ),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 5.0),
-                              Text('Fecha: ${pedido.fecha}'),
+                              const SizedBox(height: 8.0),
                               Text(
-                                  'Cantidad Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}'),
+                                'Fecha: ${DateFormat('dd/MM/yyyy').format(pedido.fecha)}',
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
+                              const SizedBox(height: 4.0),
+                              Text(
+                                'Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4.0),
+                              Text(
+                                'Estado: ${pedido.estado}',
+                                style: TextStyle(
+                                  color:
+                                      isCancelled ? Colors.red : Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                            // Acción al presionar sobre el pedido
-                          },
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(
+                                  text: pedido.numeroSeguimiento));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                      'Número de seguimiento copiado'),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          children: [
+                            FutureBuilder<Map<String, dynamic>>(
+                              future: _fetchProductDetails(
+                                  pedido.numeroSeguimiento),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                } else if (snapshot.hasError) {
+                                  return Center(
+                                      child: Text('Error: ${snapshot.error}'));
+                                } else if (!snapshot.hasData) {
+                                  return const Center(
+                                      child:
+                                          Text('No hay detalles disponibles'));
+                                } else {
+                                  final products = snapshot.data!['products']
+                                      as List<Map<String, dynamic>>;
+                                  return Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Detalles de Productos:',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        ...products.map((product) => Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 4.0),
+                                              child: Text(
+                                                '${product['nombre']}',
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            )),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       );
                     },

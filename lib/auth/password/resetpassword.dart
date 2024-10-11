@@ -1,7 +1,9 @@
-import 'package:rastreogt/conf/export.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RecuperarContrasenaScreen extends StatefulWidget {
-  const RecuperarContrasenaScreen({super.key});
+  const RecuperarContrasenaScreen({Key? key}) : super(key: key);
 
   @override
   _RecuperarContrasenaScreenState createState() =>
@@ -22,9 +24,17 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
         await FirebaseAuth.instance
             .sendPasswordResetEmail(email: _emailController.text);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Se ha enviado un correo para restablecer la contraseña.'),
+          SnackBar(
+            content: const Text(
+                'Se ha enviado un correo electrónico para restablecer tu contraseña'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -32,7 +42,16 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al enviar el correo de recuperación: $e'),
+            content: const Text(
+                'No se pudo enviar el correo electrónico para restablecer la contraseña'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -47,89 +66,142 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Recuperar Contraseña'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color.fromARGB(255, 25, 40, 67),
-              Color.fromARGB(255, 83, 108, 120)
+              Color(0xFF1A237E), // Deep blue
+              Color(0xFF0D47A1), // Rich blue
+              Color.fromARGB(255, 2, 66, 115), // Dark cyan
             ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Form(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.lock_reset,
+                    size: 100,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Recuperar Contraseña',
+                    style: GoogleFonts.raleway(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(
-                          Icons.lock_reset,
-                          size: 100,
-                          // color: Colors.blueAccent,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Recuperar Contraseña',
-                          style: GoogleFonts.aBeeZee(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            // color: Colors.blueAccent,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
+                          style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
                             labelText: 'Correo Electrónico',
+                            labelStyle: const TextStyle(color: Colors.white70),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                                  const BorderSide(color: Colors.white60),
                             ),
-                            prefixIcon: const Icon(Icons.email),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                                  const BorderSide(color: Colors.white60),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.white),
+                            ),
+                            prefixIcon:
+                                const Icon(Icons.email, color: Colors.white70),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                      'Por favor, ingresa un correo electrónico'),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  action: SnackBarAction(
+                                    label: 'OK',
+                                    onPressed: () {},
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
                               return 'Por favor, ingresa tu correo electrónico';
                             }
                             if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
                                 .hasMatch(value)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                      'Por favor, ingresa un correo electrónico válido'),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  action: SnackBarAction(
+                                    label: 'OK',
+                                    onPressed: () {},
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
                               return 'Por favor, ingresa un correo electrónico válido';
                             }
                             return null;
                           },
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _isLoading
-                            ? const Center(child: CircularProgressIndicator())
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                    color: Colors.white))
                             : ElevatedButton(
                                 onPressed: _recuperarContrasena,
                                 style: ElevatedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF1A237E),
+                                  backgroundColor: Colors.white,
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                                 child: Text(
                                   'Enviar',
-                                  style: GoogleFonts.aBeeZee(
-                                    fontSize: 20,
+                                  style: GoogleFonts.raleway(
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -137,7 +209,7 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
                       ],
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),

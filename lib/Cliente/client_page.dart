@@ -1,10 +1,41 @@
 import 'dart:async';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:rastreogt/Cliente/notipage.dart';
 import 'package:rastreogt/Cliente/pinfo.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
 import 'package:rastreogt/conf/export.dart';
+
+// Modelo de Notificación
+class Notification {
+  final String id;
+  final String message;
+  final String title;
+  final DateTime timestamp;
+
+  Notification(this.title,
+      {required this.id, required this.message, required this.timestamp});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'message': message,
+      'timestamp': timestamp,
+    };
+  }
+
+  static Notification fromMap(Map<String, dynamic> map) {
+    return Notification(
+      map['title'] ??
+          'Sin título', // Proporciona un valor por defecto si es nulo
+      id: map['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
+      message: map['message'] ?? 'Sin mensaje',
+      timestamp: map['timestamp']?.toDate() ?? DateTime.now(),
+    );
+  }
+}
 
 class ClientPage extends StatefulWidget {
   const ClientPage({super.key});
@@ -21,6 +52,7 @@ class _ClientPageState extends State<ClientPage> {
   List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   Future<void> _checkUserInfo() async {
     if (user != null) {
@@ -133,6 +165,41 @@ class _ClientPageState extends State<ClientPage> {
   final ScrollController _scrollController = ScrollController();
   Timer? _timer;
 
+  // En la clase _ClientPageState, agrega estas funciones:
+
+  List<Notification> _notifications = [];
+
+  Future<void> _loadNotifications() async {
+    final userEmail = user?.email ?? '';
+    final notificationsSnapshot = await firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection('notificaciones')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    setState(() {
+      _notifications = notificationsSnapshot.docs
+          .map((doc) => Notification.fromMap(doc.data()))
+          .toList();
+    });
+  }
+
+  Future<void> _deleteNotification(String notificationId) async {
+    final userEmail = user?.email ?? '';
+    await firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection('notificaciones')
+        .doc(notificationId)
+        .delete();
+
+    setState(() {
+      _notifications
+          .removeWhere((notification) => notification.id == notificationId);
+    });
+  }
+
   Future<void> obtenerNombreUsuario() async {
     DocumentSnapshot usuario = await FirebaseFirestore.instance
         .collection('users')
@@ -186,6 +253,23 @@ class _ClientPageState extends State<ClientPage> {
     }
   }
 
+  void _showNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NotificationsPage(
+          fetchNotifications: () async {
+            await _loadNotifications();
+            return _notifications;
+          },
+          onDelete: (String id) async {
+            await _deleteNotification(id);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -193,6 +277,7 @@ class _ClientPageState extends State<ClientPage> {
     obtenerNego();
     initConnectivity();
     obtenerNegoid();
+    _loadNotifications();
     _startAutoScroll();
     _checkUserInfo();
     _connectivitySubscription = _connectivity.onConnectivityChanged
@@ -246,383 +331,306 @@ class _ClientPageState extends State<ClientPage> {
             statusBarColor: Color.fromARGB(0, 206, 202, 202),
             statusBarIconBrightness: Brightness.light,
           ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Stack(children: [
-                  Builder(builder: (context) {
-                    return IconButton(
-                      alignment: Alignment.bottomRight,
-                      icon: const Icon(Icons.menu),
-                      onPressed: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                    );
-                  }),
-                ]),
-              ],
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => Scaffold.of(context).openDrawer(),
             ),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications, color: Colors.white),
+              onPressed: () => _showNotifications(),
+            ),
+          ],
         ),
         drawer: const ModernDrawer(),
-        body: Stack(children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                    ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
-                    : [const Color.fromARGB(255, 114, 130, 255), Colors.white],
-                begin: Alignment.center,
-                end: Alignment.bottomLeft,
-              ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: themeNotifier.currentTheme.brightness == Brightness.dark
+                  ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
+                  : [const Color.fromARGB(255, 114, 130, 255), Colors.white],
+              begin: Alignment.center,
+              end: Alignment.bottomLeft,
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.only(top: 100, left: 30),
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.9,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color.fromARGB(87, 57, 73, 113)
-                            .withOpacity(0.4) // Color para modo oscuro
-                        : Colors.white
-                            .withOpacity(0.5), // Color para modo claro
-                    borderRadius:
-                        BorderRadius.circular(10), // Bordes redondeados
-                  ),
-                  padding: const EdgeInsets.all(
-                      10), // Padding interno del contenedor
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bienvenido',
-                        style: GoogleFonts.poppins(
-                          fontSize: 23,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        nombreUsuario,
-                        style: GoogleFonts.poppins(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        obtenerSaludo(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 50, left: 50),
-            child: Container(
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Tu ID de cliente es: $nickname',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Column(
-            children: [
-              const SizedBox(
-                height: 300,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .secondary
-                        .withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color.fromARGB(155, 0, 0, 0)
-                                .withOpacity(0.5)
-                            : Colors.deepPurple.withOpacity(0.5),
-                        blurRadius: 4,
-                        offset: const Offset(2, 2),
-                      ),
-                    ],
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProcessTimelinePage(
-                            idPedidos: '',
-                          ),
-                        ),
-                      );
-                    },
-                    child: Row(
+          child: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.search),
-                        const SizedBox(width: 20),
-                        Text(
-                          'ID PEDIDO',
-                          style: GoogleFonts.zillaSlab(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        _buildWelcomeCard(context),
+                        const SizedBox(height: 20),
+                        _buildClientIdCard(context),
+                        const SizedBox(height: 20),
+                        _buildSearchBar(context),
+                        const SizedBox(height: 20),
+                        Expanded(child: _buildActiveOrdersSection(context)),
                       ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Material(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color.fromARGB(155, 0, 0, 0).withOpacity(0.5)
-                        : const Color.fromARGB(255, 165, 131, 224)
-                            .withOpacity(0.5),
-                    child: InkWell(
-                      onTap: () {
-                        Clipboard.setData(ClipboardData(text: nickname));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Código de cliente copiado al portapapeles'),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Recuerda compartir tu ID de cliente, toca aqui para copiarlo',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 0),
-                  child: Text(
-                    'Mis Pedidos en curso',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('pedidos')
-                    .where('nickname', isEqualTo: nickname)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  var data = snapshot.data;
-                  if (data == null) {
-                    return const Center(
-                      child: Text('No hay datos disponibles'),
-                    );
-                  }
-
-                  var pedidos = data.docs;
-                  var pedidosFiltrados = pedidos.where((pedido) {
-                    var pedidoData = pedido.data() as Map<String, dynamic>;
-                    return pedidoData['nickname'] == nickname &&
-                        pedidoData['estadoid'] < 4;
-                  }).toList();
-
-                  if (pedidosFiltrados.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Lottie.asset(
-                            "assets/lotties/stopM.json",
-                            animate: true,
-                            repeat: false,
-                          ), // Imagen
-                          const SizedBox(
-                              height: 20), // Espacio entre la imagen y el texto
-                          Text('No tienes pedidos asignados',
-                              style: GoogleFonts.poppins(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold)), // Texto
-                        ],
-                      ),
-                    );
-                  }
-
-                  return SizedBox(
-                    height: 200,
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: pedidosFiltrados.length,
-                      itemBuilder: (context, index) {
-                        var pedido = pedidosFiltrados[index].data()
-                            as Map<String, dynamic>;
-                        var idPedido = pedido['idpedidos'];
-                        var fecha =
-                            (pedido['fechaCreacion'] as Timestamp).toDate();
-
-                        var ahora = DateTime.now();
-                        var diferencia = ahora.difference(fecha);
-                        var minutosTranscurridos = diferencia.inMinutes;
-
-                        String tiempoTranscurrido;
-                        if (minutosTranscurridos < 60) {
-                          tiempoTranscurrido = '$minutosTranscurridos minutos';
-                        } else if (minutosTranscurridos < 1440) {
-                          var horasTranscurridas = diferencia.inHours;
-                          tiempoTranscurrido = '$horasTranscurridas horas';
-                        } else {
-                          var diasTranscurridos = diferencia.inDays;
-                          tiempoTranscurrido = '$diasTranscurridos días';
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ProcessTimelinePage(idPedidos: idPedido),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              width: 200,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .secondary
-                                    .withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(15.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? const Color.fromARGB(155, 0, 0, 0)
-                                        : Colors.deepPurple.withOpacity(0.5),
-                                    blurRadius: 10.0,
-                                    spreadRadius: 2.0,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      'Pedido #$idPedido',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      'Fecha: ${fecha.day}/${fecha.month}/${fecha.year}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      'Creado hace:',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 1, left: 8),
-                                    child: Text(
-                                      tiempoTranscurrido,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              )
-            ],
-          )
-        ]),
+              ],
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildWelcomeCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color.fromARGB(87, 57, 73, 113).withOpacity(0.4)
+            : Colors.white.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bienvenido',
+              style: GoogleFonts.poppins(fontSize: 23),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              nombreUsuario,
+              style: GoogleFonts.poppins(
+                  fontSize: 25, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              obtenerSaludo(),
+              style: GoogleFonts.poppins(
+                  fontSize: 30, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClientIdCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Tu ID de cliente es: $nickname',
+                style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.copy, color: Colors.white),
+              onPressed: () =>
+                  Clipboard.setData(ClipboardData(text: nickname)).then((_) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('ID de cliente copiado al portapapeles'),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.search, color: Colors.white),
+        title: Text(
+          'ID PEDIDO',
+          style: GoogleFonts.zillaSlab(
+              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProcessTimelinePage(idPedidos: ''),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActiveOrdersSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Mis Pedidos en curso',
+          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('pedidos')
+                .where('nickname', isEqualTo: nickname)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              var data = snapshot.data;
+              if (data == null) {
+                return const Center(child: Text('No hay datos disponibles'));
+              }
+
+              var pedidosFiltrados = data.docs.where((pedido) {
+                var pedidoData = pedido.data() as Map<String, dynamic>;
+                return pedidoData['nickname'] == nickname &&
+                    pedidoData['estadoid'] < 4;
+              }).toList();
+
+              if (pedidosFiltrados.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Lottie.asset(
+                        "assets/lotties/stopM.json",
+                        animate: true,
+                        repeat: false,
+                        height: 250,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'No tienes pedidos asignados',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                itemCount: pedidosFiltrados.length,
+                itemBuilder: (context, index) {
+                  var pedido =
+                      pedidosFiltrados[index].data() as Map<String, dynamic>;
+                  return _buildOrderCard(context, pedido);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderCard(BuildContext context, Map<String, dynamic> pedido) {
+    var idPedido = pedido['idpedidos'];
+    var fecha = (pedido['fechaCreacion'] as Timestamp).toDate();
+    var tiempoTranscurrido = _calcularTiempoTranscurrido(fecha);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProcessTimelinePage(idPedidos: idPedido),
+          ),
+        );
+      },
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.only(right: 16, bottom: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Pedido #$idPedido',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Fecha: ${fecha.day}/${fecha.month}/${fecha.year}',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Creado hace:',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSecondary,
+                ),
+              ),
+              Text(
+                tiempoTranscurrido,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _calcularTiempoTranscurrido(DateTime fecha) {
+    var ahora = DateTime.now();
+    var diferencia = ahora.difference(fecha);
+    var minutosTranscurridos = diferencia.inMinutes;
+
+    if (minutosTranscurridos < 60) {
+      return '$minutosTranscurridos minutos';
+    } else if (minutosTranscurridos < 1440) {
+      var horasTranscurridas = diferencia.inHours;
+      return '$horasTranscurridas horas';
+    } else {
+      var diasTranscurridos = diferencia.inDays;
+      return '$diasTranscurridos días';
+    }
   }
 }

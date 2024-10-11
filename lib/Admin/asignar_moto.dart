@@ -94,7 +94,6 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
             ),
           ),
         ),
-        
         SingleChildScrollView(
           child: Column(
             children: [
@@ -326,9 +325,16 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
 // Mostrar un mensaje de error
             if (_idPedido == '0' || _idMotorista == '0') {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text('No se ha seleccionado ningún Motorista o Pedido'),
+                SnackBar(
+                  content: const Text('Alerta estas dejando un campo vacio'),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  action: SnackBarAction(
+                    label: 'OK',
+                    onPressed: () {},
+                  ),
                 ),
               );
               return;
@@ -344,9 +350,16 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
 
                 Navigator.popAndPushNamed(context, '/admin');
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-// ignore: prefer_interpolation_to_compose_strings
-                    content: Text('Pedido Asignado'),
+                  SnackBar(
+                    content: const Text('Pedido asignado correctamente'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    action: SnackBarAction(
+                      label: 'OK',
+                      onPressed: () {},
+                    ),
                   ),
                 );
               } catch (e) {
@@ -365,9 +378,17 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
 
 // Mostrar un mensaje de error
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                    'Error no has seleccionado el Pedido o al motorista asegurate de seleccionar a los 2 '),
+              SnackBar(
+                content:
+                    const Text('Error al asignar el pedido, intente de nuevo'),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                action: SnackBarAction(
+                  label: 'OK',
+                  onPressed: () {},
+                ),
               ),
             );
           }

@@ -2,13 +2,15 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rastreogt/Cliente/client_page.dart';
 import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class AuthService {
   String generateName(String email) {
     String localPart = email.split('@')[0];
-    String firstThreeLetters = localPart.length >= 3 ? localPart.substring(0, 3) : localPart;
+    String firstThreeLetters =
+        localPart.length >= 3 ? localPart.substring(0, 3) : localPart;
     int randomNumber = Random().nextInt(90) + 10;
     return "$firstThreeLetters$randomNumber";
   }
@@ -20,7 +22,8 @@ class AuthService {
     required BuildContext context,
   }) async {
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -46,7 +49,10 @@ class AuthService {
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
         token = newToken;
         // Actualizar el token en Firestore
-        await FirebaseFirestore.instance.collection('users').doc(email).update({'token': newToken});
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(email)
+            .update({'token': newToken});
       });
 
       // Guardar la información del usuario en Firestore
@@ -92,21 +98,20 @@ class AuthService {
           await userDocument.update({'role': 'client'});
         }
       }
-      if(context.mounted){
-           Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => const AnimatedSwitcher(
-            duration: Duration(milliseconds: 200),
-            child: Login(),
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (_) => const AnimatedSwitcher(
+              duration: Duration(milliseconds: 200),
+              child: Login(),
+            ),
           ),
-        ),
-      );
-      }else{
+        );
+      } else {
         return;
       }
       // Redirigir a la pantalla de inicio de sesión
-   
     } on FirebaseAuthException catch (e) {
       String message = "";
       if (e.code == 'weak-password') {
@@ -141,129 +146,135 @@ class AuthService {
       );
     }
   }
+
 // Método para iniciar sesión
-Future<void> signin({
-  required String email,
-  required String password,
-  required BuildContext context,
-}) async {
-  if (email.isEmpty || password.isEmpty) {
-    Fluttertoast.showToast(
-      msg: 'Por favor, ingrese su correo y contraseña.',
-      webPosition: "center",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 2,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      fontSize: 16.0,
-    );
-    return;
-  }
-
-  try {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    await Future.delayed(const Duration(seconds: 1));
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference users = firestore.collection('users');
-
-    // Obtener el documento del usuario actual
-    DocumentReference userDocument = users.doc(email);
-
-    // Obtener el token de FCM
-    String? token = await FirebaseMessaging.instance.getToken();
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      token = newToken;
-      // Actualizar el token en Firestore
-      await userDocument.update({'token': newToken});
-    });
-
-    // Intentar obtener el documento del usuario actual
-    DocumentSnapshot snapshot = await userDocument.get();
-
-    if (snapshot.exists) {
-      var role = snapshot['role'];
-
-      // Verifica si el token ha cambiado o no existe
-      if (snapshot['token'] != token) {
-        // Actualiza el token en la base de datos
-        userDocument.update({'token': token});
-      }
-
-      if (role == 'admin') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: AdminPage(),
-            ),
-          ),
-        );
-      } else if (role == 'moto') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: MotoristaScreen(),
-            ),
-          ),
-        );
-      } else if (role == 'client') {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const AnimatedSwitcher(
-              duration: Duration(milliseconds: 200),
-              child: ClientPage(),
-            ),
-          ),
-        );
-      }
+  Future<void> signin({
+    required String email,
+    required String password,
+    required BuildContext context,
+  }) async {
+    if (email.isEmpty || password.isEmpty) {
+      Fluttertoast.showToast(
+        msg: 'Por favor, ingrese su correo y contraseña.',
+        webPosition: "center",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 2,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+      return;
     }
-  } on FirebaseAuthException catch (e) {
-    String message = '';
-    if (e.code == 'invalid-email') {
-      message = 'No se encontró un usuario con ese correo electrónico.';
-    } else if (e.code == 'invalid-credential') {
-      message = 'Contraseña incorrecta proporcionada para ese usuario.';
-    } else if (e.code == 'user-not-found') {
-      message = 'No se encontró un usuario con ese correo electrónico.';
-    } else if (e.code == 'wrong-password') {
-      message = 'Contraseña incorrecta proporcionada para ese usuario.';
-    } else if (e.code == 'user-disabled') {
-      message = 'El usuario con ese correo electrónico ha sido deshabilitado.';
-    } else if (e.code == 'too-many-requests') {
-      message = 'Demasiados intentos de inicio de sesión fallidos. Intente nuevamente más tarde.';
-    } else if (e.code == 'operation-not-allowed') {
-      message = 'El inicio de sesión con correo electrónico y contraseña no está habilitado.';
-    } else if (e.code == 'network-request-failed') {
-      message = 'Error de red. Por favor, inténtelo de nuevo.';
-    } else if (e.code == 'user-mismatch') {
-      message = 'Las credenciales proporcionadas no coinciden con las credenciales existentes.';
-    } else if (e.code == 'invalid-verification-code') {
-      message = 'El código de verificación proporcionado no es válido.';
-    } else if (e.code == 'invalid-verification-id') {
-      message = 'El ID de verificación proporcionado no es válido.';
-    } else if (e.code == 'session-expired') {
-      message = 'La sesión ha expirado. Por favor, inicie sesión nuevamente.';
-    } else {
-      message = e.message ?? 'Error desconocido';
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await Future.delayed(const Duration(seconds: 1));
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      CollectionReference users = firestore.collection('users');
+
+      // Obtener el documento del usuario actual
+      DocumentReference userDocument = users.doc(email);
+
+      // Obtener el token de FCM
+      String? token = await FirebaseMessaging.instance.getToken();
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        token = newToken;
+        // Actualizar el token en Firestore
+        await userDocument.update({'token': newToken});
+      });
+
+      // Intentar obtener el documento del usuario actual
+      DocumentSnapshot snapshot = await userDocument.get();
+
+      if (snapshot.exists) {
+        var role = snapshot['role'];
+
+        // Verifica si el token ha cambiado o no existe
+        if (snapshot['token'] != token) {
+          // Actualiza el token en la base de datos
+          userDocument.update({'token': token});
+        }
+
+        if (role == 'admin') {
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (_) => const AnimatedSwitcher(
+                duration: Duration(milliseconds: 200),
+                child: AdminPage(),
+              ),
+            ),
+          );
+        } else if (role == 'moto') {
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (_) => const AnimatedSwitcher(
+                duration: Duration(milliseconds: 200),
+                child: MotoristaScreen(),
+              ),
+            ),
+          );
+        } else if (role == 'client') {
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (_) => const AnimatedSwitcher(
+                duration: Duration(milliseconds: 200),
+                child: ClientPage(),
+              ),
+            ),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = '';
+      if (e.code == 'invalid-email') {
+        message = 'No se encontró un usuario con ese correo electrónico.';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Contraseña incorrecta proporcionada para ese usuario.';
+      } else if (e.code == 'user-not-found') {
+        message = 'No se encontró un usuario con ese correo electrónico.';
+      } else if (e.code == 'wrong-password') {
+        message = 'Contraseña incorrecta proporcionada para ese usuario.';
+      } else if (e.code == 'user-disabled') {
+        message =
+            'El usuario con ese correo electrónico ha sido deshabilitado.';
+      } else if (e.code == 'too-many-requests') {
+        message =
+            'Demasiados intentos de inicio de sesión fallidos. Intente nuevamente más tarde.';
+      } else if (e.code == 'operation-not-allowed') {
+        message =
+            'El inicio de sesión con correo electrónico y contraseña no está habilitado.';
+      } else if (e.code == 'network-request-failed') {
+        message = 'Error de red. Por favor, inténtelo de nuevo.';
+      } else if (e.code == 'user-mismatch') {
+        message =
+            'Las credenciales proporcionadas no coinciden con las credenciales existentes.';
+      } else if (e.code == 'invalid-verification-code') {
+        message = 'El código de verificación proporcionado no es válido.';
+      } else if (e.code == 'invalid-verification-id') {
+        message = 'El ID de verificación proporcionado no es válido.';
+      } else if (e.code == 'session-expired') {
+        message = 'La sesión ha expirado. Por favor, inicie sesión nuevamente.';
+      } else {
+        message = e.message ?? 'Error desconocido';
+      }
+      Fluttertoast.showToast(
+        msg: message,
+        webPosition: "center",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 2,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
     }
-    Fluttertoast.showToast(
-      msg: message,
-      webPosition: "center",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 2,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      fontSize: 16.0,
-    );
   }
-}}
+}

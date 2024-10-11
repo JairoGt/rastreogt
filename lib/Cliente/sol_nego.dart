@@ -37,15 +37,38 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _codigoManualController = TextEditingController();
   final User? user = FirebaseAuth.instance.currentUser;
   final _formKey = GlobalKey<FormState>();
-
+  String nick = '';
   String? _originalCoordinates;
   bool _codigoManual = false;
+
+  Future<void> _fetchUserInfo() async {
+    try {
+      DocumentSnapshot userInfo = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user?.email)
+          .collection('userData')
+          .doc('pInfo')
+          .get();
+
+      if (userInfo.exists) {
+        Map<String, dynamic> data = userInfo.data() as Map<String, dynamic>;
+        setState(() {
+          nick = data['nickname'];
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar la información $e')),
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _nombreNegocioController.addListener(_actualizarCodigo);
     _actualizarCodigo(); // Inicializar el código
+    _fetchUserInfo();
   }
 
   void _limpiarCampos() {
@@ -93,10 +116,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _enviarDatos() async {
     try {
-      final gsheets =
-          GSheets(_credentials); // Asegúrate de definir _credentials
-      final ss = await gsheets
-          .spreadsheet(_spreadsheetId); // Asegúrate de definir _spreadsheetId
+      final gsheets = GSheets(_credentials);
+      final ss = await gsheets.spreadsheet(_spreadsheetId);
       var sheet = ss.worksheetByTitle('rastreogt');
       sheet ??= await ss.addWorksheet('rastreogt');
 
@@ -140,7 +161,69 @@ class _MyHomePageState extends State<MyHomePage> {
 
       final result = await sheet.values.appendRow(data);
       if (result) {
-        _limpiarCampos();
+        // Guardar en Firebase
+        final firestore = FirebaseFirestore.instance;
+        final userEmail = user?.email ?? '';
+        final negocioIdBase = userEmail.split('@')[0];
+        String negocioId = negocioIdBase;
+        int counter = 1;
+
+        while ((await firestore
+                .collection('users')
+                .doc(userEmail)
+                .collection('negocios')
+                .doc(negocioId)
+                .get())
+            .exists) {
+          negocioId = '$negocioIdBase$counter';
+          counter++;
+        }
+
+        Map<String, dynamic> firestoreData = {
+          'email': user?.email,
+          'nego': _nombreNegocioController.text,
+          'negoname': codigo,
+          'estadoid': 0,
+          'direccion': _direccionController.text,
+          'idBussiness': negocioId,
+          'fechaSolicitud': DateTime.now().toIso8601String(),
+        };
+
+        // Agregar coordenadas si están disponibles
+        if (_originalCoordinates != null && _originalCoordinates!.isNotEmpty) {
+          final coordinates = _originalCoordinates!.split(',');
+          if (coordinates.length == 2) {
+            try {
+              final latitude = double.parse(coordinates[0]);
+              final longitude = double.parse(coordinates[1]);
+              firestoreData['ubicacionnego'] = GeoPoint(latitude, longitude);
+            } catch (e) {
+              print('Error al parsear las coordenadas: $e');
+            }
+          }
+        }
+
+        try {
+          await firestore
+              .collection('users')
+              .doc(userEmail)
+              .collection('negocios')
+              .doc(negocioId)
+              .set(firestoreData);
+
+          print('Datos enviados a Firebase correctamente');
+          print('Dirección guardada: ${firestoreData['direccion']}');
+          print('Ubicación guardada: ${firestoreData['ubicacionnego']}');
+        } catch (e) {
+          print('Error al enviar datos a Firebase: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al enviar datos a Firebase: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -159,51 +242,25 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         );
 
-        if (_originalCoordinates != null) {
-          final coordinates = _originalCoordinates!.split(',');
-          final latitude = double.parse(coordinates[0]);
-          final longitude = double.parse(coordinates[1]);
-
-          final firestore = FirebaseFirestore.instance;
-          final userEmail = user?.email ?? '';
-          final negocioIdBase = userEmail.split('@')[0];
-          String negocioId = negocioIdBase;
-          int counter = 1;
-
-          while ((await firestore
-                  .collection('users')
-                  .doc(userEmail)
-                  .collection('negocios')
-                  .doc(negocioId)
-                  .get())
-              .exists) {
-            negocioId = '$negocioIdBase$counter';
-            counter++;
-          }
-
-          await firestore
-              .collection('users')
-              .doc(userEmail)
-              .collection('negocios')
-              .doc(negocioId)
-              .set({
-            'email': user?.email,
-            'nego': _nombreNegocioController.text,
-            'negoname': codigo, // Usar el código generado como negoname
-            'estadoid': 0,
-            'direccion': _direccionController.text,
-            'idBussiness': negocioId,
-            'ubicacionnego': GeoPoint(latitude, longitude),
-            'fechaSolicitud': DateTime.now().toIso8601String(),
-          });
-        } else {
+        if (_originalCoordinates == null || _originalCoordinates!.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Por favor, selecciona una ubicación')),
+            SnackBar(
+              content:
+                  const Text('Advertencia: No se seleccionó una ubicación'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              action: SnackBarAction(
+                label: 'OK',
+                onPressed: () {},
+              ),
+            ),
           );
         }
       }
     } catch (e) {
+      print('Error general al enviar los datos: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al enviar los datos: $e'),
@@ -211,6 +268,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
+    _limpiarCampos();
   }
 
   Future<void> _selectLocation() async {
@@ -288,10 +346,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       const InputDecoration(labelText: 'Nombre del Negocio'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'No Puede estar vacío';
-                    } else if (!RegExp(r'^[a-zA-Z]+( [a-zA-Z]+)*$')
+                      return 'No puede estar vacío';
+                    } else if (!RegExp(
+                            r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+([ ]*[a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$')
                         .hasMatch(value)) {
-                      return 'El nombre solo puede contener letras y sin espacios al inicio, final o dobles';
+                      return 'El nombre debe comenzar y terminar con letras, y solo puede \ncontener letras, espacios y acentos';
                     }
                     return null;
                   },
@@ -365,7 +424,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       // Si el formulario es válido, muestra un snackbar o realiza alguna acción
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Formulario válido')),
+                        SnackBar(
+                          content: const Text('Enviando datos...'),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          action: SnackBarAction(
+                            label: 'OK',
+                            onPressed: () {},
+                          ),
+                        ),
                       );
                       await _enviarDatos();
                     } else {

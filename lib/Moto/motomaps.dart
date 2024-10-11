@@ -124,7 +124,22 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
     if (await canLaunch(wazeUrl)) {
       await launch(wazeUrl);
     } else {
-      throw 'No se pudo abrir Waze';
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text(
+                'No se pudo abrir Waze. ¿Tienes la aplicación instalada?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Aceptar'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
