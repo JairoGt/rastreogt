@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rastreogt/providers/themenoti.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../Cliente/sol_nego.dart';
 
 class ConfiguracionAdmin extends StatefulWidget {
@@ -13,12 +11,9 @@ class ConfiguracionAdmin extends StatefulWidget {
 }
 
 class _ConfiguracionAdminState extends State<ConfiguracionAdmin> {
-  bool _isBiometricEnabled = false;
-
   @override
   void initState() {
     super.initState();
-    _loadBiometricPreference();
   }
 
   @override
@@ -119,20 +114,5 @@ class _ConfiguracionAdminState extends State<ConfiguracionAdmin> {
         ],
       ),
     );
-  }
-
-  Future<void> _loadBiometricPreference() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isBiometricEnabled = prefs.getBool('biometricEnabled') ?? false;
-    });
-  }
-
-  Future<void> _setBiometricPreference(bool value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('biometricEnabled', value);
-    setState(() {
-      _isBiometricEnabled = value;
-    });
   }
 }

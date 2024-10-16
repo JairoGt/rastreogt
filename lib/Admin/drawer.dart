@@ -210,6 +210,53 @@ class _ModernDrawerState extends State<ModernDrawer> {
               },
             ),
           ],
+          if (role == 'adminjr') ...[
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Perfil'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            UserInfoScreen(userEmail: user?.email)));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.motorcycle),
+              title: const Text('Asignar moto'),
+              onTap: () {
+                Navigator.pop(context); // Cierra el drawer
+                Navigator.pushNamed(context, '/asignacion');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delivery_dining_outlined),
+              title: const Text('Reasignar motorista'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const ReasignarPedidos()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.card_giftcard),
+              title: const Text('Listado de Pedidos en Camino'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PedidosCamino(negoname: negoname),
+                  ),
+                );
+              },
+            ),
+          ],
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Configuración'),

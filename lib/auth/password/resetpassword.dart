@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RecuperarContrasenaScreen extends StatefulWidget {
-  const RecuperarContrasenaScreen({Key? key}) : super(key: key);
+  const RecuperarContrasenaScreen({super.key});
 
   @override
   _RecuperarContrasenaScreenState createState() =>

@@ -6,81 +6,99 @@ class OtrosNegociosPage extends StatelessWidget {
   final String negoname;
   final Function onNegocioChanged;
 
-  const OtrosNegociosPage({super.key, 
+  const OtrosNegociosPage({
+    super.key,
     required this.userEmail,
     required this.nickname,
-    required this.onNegocioChanged, required this.negoname,
+    required this.onNegocioChanged,
+    required this.negoname,
   });
 
   @override
   Widget build(BuildContext context) {
-       final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
+    final Color primaryColor = isDarkMode
+        ? const Color.fromARGB(255, 1, 47, 87)
+        : const Color(0xFFDDE8F0);
+    final Color secondaryColor = isDarkMode
+        ? const Color.fromARGB(255, 0, 90, 122)
+        : const Color(0xFF97CBDC);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Otros Negocios'),
+        backgroundColor: primaryColor.withOpacity(0.6),
+        centerTitle: true,
+        leading: IconButton(
+          color: isDarkMode ? Colors.white : Colors.black,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text('Otros Negocios',
+            style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black)),
       ),
       body: Stack(
         children: [
           Container(
-            decoration:  BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: themeNotifier.currentTheme.brightness == Brightness.dark
-              ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
-                      :
-                  [const Color.fromARGB(255, 114, 130, 255), Colors.white],
+                colors: [primaryColor, secondaryColor],
                 begin: Alignment.center,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
-          Lottie.asset(
-            'assets/lotties/estelas.json', // Asegúrate de que el archivo Lottie esté en la carpeta assets
-            fit: BoxFit.cover,
-            animate: true,
-            repeat: false,
-          ),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
-      .collection('users')
-      .doc(userEmail)
-      .collection('negocios')
-      .where('nickname', isEqualTo: nickname)
-      .where('negoname', isNotEqualTo: negoname)
-      .where('estadoid', isEqualTo: 1)
-      .snapshots(),
-  builder: (context, snapshot) {
-    if (snapshot.hasError) {
-      return  Center(child: Text('Error al cargar los negocios',
-        style: GoogleFonts.roboto(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: themeNotifier.currentTheme.brightness == Brightness.dark
-              ? Colors.white
-              : Colors.black,
-      ),
-      ));
-    }
+                .collection('users')
+                .doc(userEmail)
+                .collection('negocios')
+                .where('nickname', isEqualTo: nickname)
+                .where('negoname', isNotEqualTo: negoname)
+                .where('estadoid', isEqualTo: 1)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                    child: Text(
+                  'Error al cargar los negocios',
+                  style: GoogleFonts.roboto(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        themeNotifier.currentTheme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                  ),
+                ));
+              }
 
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
-    }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-    if (snapshot.data == null || snapshot.data!.docs.isEmpty) {
-      return  Center(child: Text('No se encontraron negocios',
-      style: GoogleFonts.roboto(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: themeNotifier.currentTheme.brightness == Brightness.dark
-              ? Colors.white
-              : Colors.black,
-      ),
-      ));
-    }
+              if (snapshot.data == null || snapshot.data!.docs.isEmpty) {
+                return Center(
+                    child: Text(
+                  'No se encontraron negocios',
+                  style: GoogleFonts.roboto(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        themeNotifier.currentTheme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                  ),
+                ));
+              }
 
               return ListView(
                 children: snapshot.data!.docs.map((doc) {
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 15),
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
@@ -106,31 +124,29 @@ class OtrosNegociosPage extends StatelessWidget {
                           await FirebaseFirestore.instance
                               .collection('users')
                               .doc(userEmail)
-                              .update({'negoname': doc['negoname']
-                              ,
-                            'nego':doc['nego'],
-                            'idBussiness':doc['idBussiness'],
-                              });
+                              .update({
+                            'negoname': doc['negoname'],
+                            'nego': doc['nego'],
+                            'idBussiness': doc['idBussiness'],
+                          });
 
                           // Llama a la función para actualizar el negocio actual en la UI
-                        
-                          onNegocioChanged(doc.id);
-                        if(context.mounted){
-                          Navigator.pop(context);
-                        }
-                          
-                        } catch (e) {
 
-                          if(context.mounted){
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error al actualizar el negocio $e'),
-                            ),
-                          );
-                          }else{
+                          onNegocioChanged(doc.id);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text('Error al actualizar el negocio $e'),
+                              ),
+                            );
+                          } else {
                             return;
                           }
-                        
                         }
                       },
                     ),

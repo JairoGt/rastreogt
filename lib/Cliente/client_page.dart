@@ -301,11 +301,17 @@ class _ClientPageState extends State<ClientPage> {
       if (_scrollController.hasClients) {
         final maxScrollExtent = _scrollController.position.maxScrollExtent;
         final currentScrollPosition = _scrollController.position.pixels;
-        final newScrollPosition = currentScrollPosition + 200;
 
-        if (newScrollPosition >= maxScrollExtent) {
-          _scrollController.jumpTo(0);
+        // Verificar si ya estamos al final del scroll
+        if (currentScrollPosition >= maxScrollExtent) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
         } else {
+          final newScrollPosition =
+              (currentScrollPosition + 200).clamp(0.0, maxScrollExtent);
           _scrollController.animateTo(
             newScrollPosition,
             duration: const Duration(seconds: 1),
@@ -358,21 +364,31 @@ class _ClientPageState extends State<ClientPage> {
           child: SafeArea(
             child: CustomScrollView(
               slivers: [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildWelcomeCard(context),
-                        const SizedBox(height: 20),
-                        _buildClientIdCard(context),
-                        const SizedBox(height: 20),
-                        _buildSearchBar(context),
-                        const SizedBox(height: 20),
-                        Expanded(child: _buildActiveOrdersSection(context)),
-                      ],
+                SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildWelcomeCard(context),
+                      const SizedBox(height: 20),
+                      _buildClientIdCard(context),
+                      const SizedBox(height: 20),
+                      _buildSearchBar(context),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Mis Pedidos en curso',
+                        style: GoogleFonts.poppins(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                    ]),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 200, // Ajusta esta altura según tus necesidades
+                      child: _buildActiveOrdersSection(context),
                     ),
                   ),
                 ),
@@ -482,74 +498,61 @@ class _ClientPageState extends State<ClientPage> {
   }
 
   Widget _buildActiveOrdersSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Mis Pedidos en curso',
-          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('pedidos')
-                .where('nickname', isEqualTo: nickname)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              var data = snapshot.data;
-              if (data == null) {
-                return const Center(child: Text('No hay datos disponibles'));
-              }
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('pedidos')
+          .where('nickname', isEqualTo: nickname)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        var data = snapshot.data;
+        if (data == null) {
+          return const Center(child: Text('No hay datos disponibles'));
+        }
 
-              var pedidosFiltrados = data.docs.where((pedido) {
-                var pedidoData = pedido.data() as Map<String, dynamic>;
-                return pedidoData['nickname'] == nickname &&
-                    pedidoData['estadoid'] < 4;
-              }).toList();
+        var pedidosFiltrados = data.docs.where((pedido) {
+          var pedidoData = pedido.data() as Map<String, dynamic>;
+          return pedidoData['nickname'] == nickname &&
+              pedidoData['estadoid'] < 4;
+        }).toList();
 
-              if (pedidosFiltrados.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Lottie.asset(
-                        "assets/lotties/stopM.json",
-                        animate: true,
-                        repeat: false,
-                        height: 250,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'No tienes pedidos asignados',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+        if (pedidosFiltrados.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  "assets/lotties/stopM.json",
+                  animate: true,
+                  repeat: false,
+                  height: 200, // Ajustado para que quepa mejor
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'No tienes pedidos asignados',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              }
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
 
-              return ListView.builder(
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                itemCount: pedidosFiltrados.length,
-                itemBuilder: (context, index) {
-                  var pedido =
-                      pedidosFiltrados[index].data() as Map<String, dynamic>;
-                  return _buildOrderCard(context, pedido);
-                },
-              );
-            },
-          ),
-        ),
-      ],
+        return ListView.builder(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          itemCount: pedidosFiltrados.length,
+          itemBuilder: (context, index) {
+            var pedido = pedidosFiltrados[index].data() as Map<String, dynamic>;
+            return _buildOrderCard(context, pedido);
+          },
+        );
+      },
     );
   }
 

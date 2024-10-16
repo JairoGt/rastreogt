@@ -134,43 +134,6 @@ class _MotoristaScreenState extends State<MotoristaScreen>
     });
   }
 
-  // void iniciarEscuchaEstadoMotorista() {
-  //   User? user = _auth.currentUser;
-  //   if (user == null) {
-  //     showDialog(
-  //       context: context,
-  //       builder: (BuildContext context) {
-  //         return AlertDialog(
-  //           title: const Text('Error de Autenticación'),
-  //           content: const Text('No se ha podido obtener el usuario actual'),
-  //           actions: <Widget>[
-  //             TextButton(
-  //               onPressed: () {
-  //                 Navigator.of(context).pop();
-  //               },
-  //               child: const Text('Ok'),
-  //             ),
-  //           ],
-  //         );
-  //       },
-  //     );
-  //     return;
-  //   }
-
-  //   String userEmail = user.email!;
-  //   obtenerMotoristaStream(userEmail).listen((DocumentSnapshot userDoc) async {
-  //     if (userDoc.exists && userDoc['estadoid'] == 2) {
-  //       print('El estado de la moto es 2');
-  //       // Aquí puedes actualizar la ubicación del motorista
-  //       Position position = await Geolocator.getCurrentPosition(
-  //           desiredAccuracy: LocationAccuracy.high);
-  //       actualizarUbicacionMotorista(position);
-  //     } else {
-  //       print('El estado de la moto no es 2');
-  //     }
-  //   });
-  // }
-
   Future<void> actualizarUbicacionMotorista(Position position) async {
     try {
       User? user = _auth.currentUser;

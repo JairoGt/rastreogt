@@ -91,8 +91,8 @@ class _TimelineWidgetState extends State<TimelineWidget>
         color: Theme.of(context).brightness == Brightness.dark
             ? const Color.fromARGB(
                 115, 9, 9, 22) // Azul oscuro para modo oscuro
-            : const Color.fromARGB(
-                148, 109, 58, 131), // Color actual para modo claro
+            : const Color.fromRGBO(
+                189, 148, 223, 0.782), // Color actual para modo claro
         borderRadius: BorderRadius.circular(10.0), // Bordes redondeados
         boxShadow: const [
           BoxShadow(

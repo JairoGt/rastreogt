@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:rastreogt/Admin/admin_pagejr.dart';
 import 'package:rastreogt/Admin/asignar_moto.dart';
 import 'package:rastreogt/Admin/bitacora_pedidos.dart';
 import 'package:rastreogt/Admin/create_pedidos.dart';
 import 'package:rastreogt/Admin/edit_pedidos.dart';
+import 'package:rastreogt/Admin/listapedidos.dart';
 import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Admin/rol_buscar.dart';
 import 'package:rastreogt/Home/onboarding.dart';
@@ -146,7 +148,7 @@ Future<void> processPendingNotifications(String userEmail) async {
     await _saveNotificationToFirestore(userEmail, notification);
   }
   _pendingNotifications.clear();
-  print('Notificaciones pendientes procesadas');
+  debugPrint('Notificaciones pendientes procesadas');
 }
 
 Future<void> _addNotification(String message, String title) async {
@@ -164,7 +166,8 @@ Future<void> _addNotification(String message, String title) async {
   } else {
     // Usuario no autenticado, agrega a la cola pendiente
     _pendingNotifications.add(newNotification);
-    print('Notificación añadida a la cola pendiente: ${newNotification['id']}');
+    debugPrint(
+        'Notificación añadida a la cola pendiente: ${newNotification['id']}');
   }
 }
 
@@ -177,9 +180,9 @@ Future<void> _saveNotificationToFirestore(
         .collection('notificaciones')
         .doc(notification['id'])
         .set(notification);
-    print('Notificación guardada en Firestore: ${notification['id']}');
+    debugPrint('Notificación guardada en Firestore: ${notification['id']}');
   } catch (e) {
-    print('Error al guardar notificación en Firestore: $e');
+    debugPrint('Error al guardar notificación en Firestore: $e');
   }
 }
 
@@ -209,6 +212,8 @@ class MyApp extends StatelessWidget {
             '/listapedidos': (context) => const PedidosPage(),
             '/reasignar': (context) => const ReasignarPedidos(),
             '/crearPedido': (context) => const CrearPedidoScreen(),
+            '/pedidoscola': (context) => const ListaPedidos(),
+            '/adminjr': (context) => const AdminPagejr(),
           },
           initialRoute: '/splash',
         );

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rastreogt/auth/auth_service.dart';
 import 'package:rastreogt/auth/login/logingoogle.dart';
 import 'package:rastreogt/auth/password/resetpassword.dart';
@@ -28,13 +30,16 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   // ignore: unused_field
   bool _isPrivacyPolicyAccepted = false;
   bool _isLoading = false;
+  bool _isLocationPermissionGranted = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
     initConnectivity();
     _checkPrivacyPolicyAccepted();
+    _checkLocationPermission();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
     _animationController = AnimationController(
@@ -45,6 +50,44 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    var status = await Permission.location.status;
+    setState(() {
+      _isLocationPermissionGranted = status.isGranted;
+    });
+    if (!status.isGranted) {
+      _showLocationPermissionDialog();
+    }
+  }
+
+  void _showLocationPermissionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Permiso de Ubicación',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          content: Text(
+            'Esta aplicación necesita acceso a tu ubicación para funcionar correctamente. Por favor, concede el permiso de ubicación.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Conceder Permiso',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await Geolocator.requestPermission();
+                _checkLocationPermission();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> initConnectivity() async {
@@ -461,7 +504,8 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
               width: 2,
             ),
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           filled: true,
           fillColor: Theme.of(context).brightness == Brightness.dark
               ? Colors.white.withOpacity(0.1)

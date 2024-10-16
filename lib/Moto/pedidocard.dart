@@ -191,13 +191,13 @@ class _PedidoCardState extends State<PedidoCard> {
       elevation: 4,
       margin: const EdgeInsets.all(8),
       child: ExpansionTile(
-        leading: Icon(Icons.motorcycle,
-            color: Theme.of(context).colorScheme.secondary),
+        leading: const Icon(
+          Icons.motorcycle,
+        ),
         title: Text(widget.pedido['idpedidos'] ?? 'Sin ID',
             style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         subtitle: Text(obtenerDescripcionEstado(widget.pedido['estadoid']),
-            style: GoogleFonts.poppins(
-                color: Theme.of(context).colorScheme.secondary)),
+            style: GoogleFonts.poppins()),
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -280,8 +280,6 @@ class _PedidoCardState extends State<PedidoCard> {
       label: Text(label, style: GoogleFonts.poppins(fontSize: 12)),
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        backgroundColor: Theme.of(context).colorScheme.primary,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
     );
@@ -335,7 +333,7 @@ class _PedidoCardState extends State<PedidoCard> {
   }
 
   void _marcarEnCamino(BuildContext context) async {
-    // Implementar lógica para marcar como en camino
+    // lógica para marcar como en camino
     await actualizarPedidoEnCamino(widget.pedido['idpedidos']);
     setState(() {
       _enCamino = true;
@@ -344,7 +342,7 @@ class _PedidoCardState extends State<PedidoCard> {
   }
 
   void _marcarEntregado(BuildContext context) async {
-    // Implementar lógica para marcar como entregado
+    //lógica para marcar como entregado
     await marcarPedidoComoEntregado(
         widget.pedido['idpedidos'], widget.pedido['idMotorista']);
     widget.onEstadoChanged();

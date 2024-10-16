@@ -77,6 +77,13 @@ class GoogleAuthService {
                 processPendingNotifications(user.email!);
               }
             });
+          } else if (role == 'adminjr') {
+            Navigator.of(context).pushReplacementNamed('/adminjr');
+            FirebaseAuth.instance.authStateChanges().listen((User? user) {
+              if (user != null && user.email != null) {
+                processPendingNotifications(user.email!);
+              }
+            });
           } else if (role == 'moto') {
             Navigator.of(context).pushReplacementNamed('/moto');
             FirebaseAuth.instance.authStateChanges().listen((User? user) {

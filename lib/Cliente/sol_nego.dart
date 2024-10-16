@@ -198,7 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
               final longitude = double.parse(coordinates[1]);
               firestoreData['ubicacionnego'] = GeoPoint(latitude, longitude);
             } catch (e) {
-              print('Error al parsear las coordenadas: $e');
+              debugPrint('Error al parsear las coordenadas: $e');
             }
           }
         }
@@ -211,11 +211,11 @@ class _MyHomePageState extends State<MyHomePage> {
               .doc(negocioId)
               .set(firestoreData);
 
-          print('Datos enviados a Firebase correctamente');
-          print('Dirección guardada: ${firestoreData['direccion']}');
-          print('Ubicación guardada: ${firestoreData['ubicacionnego']}');
+          debugPrint('Datos enviados a Firebase correctamente');
+          debugPrint('Dirección guardada: ${firestoreData['direccion']}');
+          debugPrint('Ubicación guardada: ${firestoreData['ubicacionnego']}');
         } catch (e) {
-          print('Error al enviar datos a Firebase: $e');
+          debugPrint('Error al enviar datos a Firebase: $e');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error al enviar datos a Firebase: $e'),
@@ -260,7 +260,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
     } catch (e) {
-      print('Error general al enviar los datos: $e');
+      debugPrint('Error general al enviar los datos: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al enviar los datos: $e'),

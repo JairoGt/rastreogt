@@ -1,11 +1,7 @@
 // Importamos las bibliotecas necesarias
 // ignore_for_file: use_build_context_synchronously, unnecessary_null_comparison, iterable_contains_unrelated_type
 import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../conf/export.dart';
 
 // Inicializamos Cloud Firestore
 final firebaseFirestore = FirebaseFirestore.instance.collection('pedidos');
@@ -83,180 +79,227 @@ class _ReasignarPedidosState extends State<ReasignarPedidos> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
+    final Color primaryColor = isDarkMode
+        ? const Color.fromARGB(255, 1, 47, 87)
+        : const Color(0xFFDDE8F0);
+    final Color secondaryColor = isDarkMode
+        ? const Color.fromARGB(255, 0, 90, 122)
+        : const Color(0xFF97CBDC);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reasignar pedidos'),
+        leading: IconButton(
+          color: isDarkMode ? Colors.white : Colors.black,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        centerTitle: true,
+        backgroundColor: primaryColor.withOpacity(0.8),
+        title: Text('Reasignar pedidos',
+            style: GoogleFonts.roboto(
+              textStyle: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            )),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Text(
-              'SELECCIONA UN PEDIDO',
-              textAlign: TextAlign.start,
-              overflow: TextOverflow.ellipsis,
+      body: Stack(children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                primaryColor,
+                secondaryColor,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: 300,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Card(
-                  borderOnForeground: true,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              const Text(
+                'SELECCIONA UN PEDIDO',
+                textAlign: TextAlign.start,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                height: 300,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Card(
+                    color: secondaryColor.withOpacity(0.8),
+                    borderOnForeground: true,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(12)),
                     ),
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  ),
-                  child: FutureBuilder<List<DocumentSnapshot>>(
-                    future: _fetchPedidos(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      } else if (snapshot.hasError) {
-                        return const Text('Error al cargar los pedidos');
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Text(
-                          ' No se encontraron pedidos',
-                          style: GoogleFonts.roboto(
-                            textStyle: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
+                    child: FutureBuilder<List<DocumentSnapshot>>(
+                      future: _fetchPedidos(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return const Text('Error al cargar los pedidos');
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return Text(
+                            ' No se encontraron pedidos',
+                            style: GoogleFonts.roboto(
+                              textStyle: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        );
-                      } else {
-                        pedidos = snapshot.data!;
-                        return ListView.separated(
-                          separatorBuilder: (BuildContext context, int index) =>
-                              const Divider(),
-                          physics: const ClampingScrollPhysics(),
-                          itemCount: pedidos.length,
-                          itemBuilder: (context, index) {
-                            return FutureBuilder<DocumentSnapshot>(
-                              future: pedidosRef
-                                  .doc(pedidos[index].id)
-                                  .collection('Productos')
-                                  .doc(pedidos[index].id)
-                                  .get(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const CircularProgressIndicator();
-                                } else if (snapshot.hasError) {
-                                  return const Text(
-                                      '  Error al cargar el precio total');
-                                } else if (!snapshot.hasData ||
-                                    !snapshot.data!.exists) {
-                                  // Agrega un print statement para depurar
-                                  debugPrint(
-                                      'Documento no encontrado: ${pedidos[index].id}');
-                                  return Text(
-                                    '  No se encontraron datos correctos del pedido',
-                                    style: GoogleFonts.roboto(
-                                      textStyle: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  final preciototal =
-                                      snapshot.data!['precioTotal'];
-                                  return CheckboxListTile(
-                                    title: Text(
-                                      pedidos[index]['idpedidos'] +
-                                          ' \n Entrega en: ' +
-                                          pedidos[index]['direccion'],
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: RichText(
-                                      text: TextSpan(
-                                        text: 'Total: ',
-                                        style: const TextStyle(
-                                          // color: Colors.black,
-                                          fontSize: 16,
+                          );
+                        } else {
+                          pedidos = snapshot.data!;
+                          return ListView.separated(
+                            separatorBuilder:
+                                (BuildContext context, int index) =>
+                                    const Divider(),
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: pedidos.length,
+                            itemBuilder: (context, index) {
+                              return FutureBuilder<DocumentSnapshot>(
+                                future: pedidosRef
+                                    .doc(pedidos[index].id)
+                                    .collection('Productos')
+                                    .doc(pedidos[index].id)
+                                    .get(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  } else if (snapshot.hasError) {
+                                    return const Text(
+                                        '  Error al cargar el precio total');
+                                  } else if (!snapshot.hasData ||
+                                      !snapshot.data!.exists) {
+                                    // Agrega un print statement para depurar
+                                    debugPrint(
+                                        'Documento no encontrado: ${pedidos[index].id}');
+                                    return Text(
+                                      '  No se encontraron datos correctos del pedido',
+                                      style: GoogleFonts.roboto(
+                                        textStyle: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                        children: <TextSpan>[
-                                          TextSpan(
-                                            text: 'Q${preciototal.toString()}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text:
-                                                '  -  ${pedidos[index]['nickname']}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
                                       ),
-                                    ),
-                                    value: _idPedido == pedidos[index].id,
-                                    onChanged: (value) {
-                                      _idPedido =
-                                          value! ? pedidos[index].id : '';
-                                      setState(() {});
-                                    },
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        );
-                      }
-                    },
+                                    );
+                                  } else {
+                                    final preciototal =
+                                        snapshot.data!['precioTotal'];
+                                    return CheckboxListTile(
+                                      title: Text(
+                                        pedidos[index]['idpedidos'] +
+                                            ' \n Entrega en: ' +
+                                            pedidos[index]['direccion'],
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: RichText(
+                                        text: TextSpan(
+                                          text: 'Total: ',
+                                          style: TextStyle(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black,
+                                            fontSize: 16,
+                                          ),
+                                          children: <TextSpan>[
+                                            TextSpan(
+                                              text:
+                                                  'Q${preciototal.toString()}',
+                                              style: TextStyle(
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  '  -  ${pedidos[index]['nickname']}',
+                                              style: TextStyle(
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      value: _idPedido == pedidos[index].id,
+                                      onChanged: (value) {
+                                        _idPedido =
+                                            value! ? pedidos[index].id : '';
+                                        setState(() {});
+                                      },
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            const Text(
-              'SELECCIONA AL MOTORISTA ',
-              textAlign: TextAlign.start,
-              overflow: TextOverflow.ellipsis,
-            ),
-            // Lista de motoristas
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: 300,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Card(
-                        borderOnForeground: true,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
+              const Text(
+                'SELECCIONA AL MOTORISTA ',
+                textAlign: TextAlign.start,
+                overflow: TextOverflow.ellipsis,
+              ),
+              // Lista de motoristas
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: 300,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Card(
+                          color: primaryColor.withOpacity(0.8),
+                          borderOnForeground: true,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(12)),
                           ),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(12)),
-                        ),
-                        child: FutureBuilder<List<DocumentSnapshot>>(
-                          future: _fetchMotoristas(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              return ListView.separated(
-                                separatorBuilder:
-                                    (BuildContext context, int index) =>
-                                        const Divider(),
-                                itemCount: snapshot.data!.length,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    // height: 50,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .inversePrimary,
-                                    child: CheckboxListTile(
+                          child: FutureBuilder<List<DocumentSnapshot>>(
+                            future: _fetchMotoristas(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return ListView.separated(
+                                  separatorBuilder:
+                                      (BuildContext context, int index) =>
+                                          const Divider(),
+                                  itemCount: snapshot.data!.length,
+                                  itemBuilder: (context, index) {
+                                    return CheckboxListTile(
                                       title: Text(
                                         snapshot.data![index]['name'],
                                         style: const TextStyle(
@@ -264,7 +307,7 @@ class _ReasignarPedidosState extends State<ReasignarPedidos> {
                                             fontWeight: FontWeight.bold),
                                       ),
                                       subtitle:
-                                          Text(snapshot.data![index]['email']),
+                                          Text(snapshot.data![index]['idmoto']),
                                       value: _idMotorista ==
                                           snapshot.data![index]['idmoto']
                                               .toString(),
@@ -279,29 +322,30 @@ class _ReasignarPedidosState extends State<ReasignarPedidos> {
                                           setState(() {});
                                         }
                                       },
-                                    ),
-                                  );
-                                },
-                                physics: const ClampingScrollPhysics(),
-                                shrinkWrap: true,
-                                primary: false,
-                              );
-                            } else {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                          },
+                                    );
+                                  },
+                                  physics: const ClampingScrollPhysics(),
+                                  shrinkWrap: true,
+                                  primary: false,
+                                );
+                              } else {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
+      ]),
       bottomNavigationBar: BottomAppBar(
+        color: primaryColor.withOpacity(0.8),
         shape: const CircularNotchedRectangle(),
         child: Container(height: 50.0),
       ),

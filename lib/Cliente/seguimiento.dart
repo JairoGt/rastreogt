@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
-import 'package:rastreogt/Cliente/mapascliente.dart';
+import 'package:rastreogt/Cliente/mapasuy.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'package:intl/intl.dart';
 import 'package:rastreogt/conf/timeline.dart';
@@ -234,7 +234,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                           Brightness.dark
                       ? [const Color.fromARGB(255, 23, 41, 72), Colors.blueGrey]
                       : [
-                          const Color.fromARGB(255, 114, 130, 255),
+                          const Color.fromARGB(255, 122, 129, 188),
                           Colors.white
                         ],
                   begin: Alignment.center,
@@ -264,7 +264,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                               decoration: InputDecoration(
                                 labelStyle: GoogleFonts.poppins(
                                   color:
-                                      Theme.of(context).colorScheme.onSurface,
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                                 filled: true,
                                 fillColor:
@@ -367,7 +367,8 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                                               ? const Color.fromARGB(
                                                       155, 0, 0, 0)
                                                   .withOpacity(0.5)
-                                              : Colors.deepPurple
+                                              : const Color.fromARGB(
+                                                      255, 176, 149, 223)
                                                   .withOpacity(0.5),
                                           blurRadius: 5.0,
                                           spreadRadius: 2.0,
@@ -491,8 +492,12 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
                                       style: GoogleFonts.roboto(
                                         fontSize: 20.0,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color.fromARGB(
-                                            255, 15, 64, 19),
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? const Color.fromARGB(
+                                                255, 6, 139, 75)
+                                            : const Color.fromARGB(
+                                                255, 1, 57, 7),
                                       ),
                                     ),
                                     const SizedBox(height: 10.0),

@@ -5,7 +5,7 @@ import 'package:rastreogt/auth/auth_service.dart';
 import 'package:rastreogt/auth/login/login.dart';
 
 class Signup extends StatelessWidget {
-  Signup({Key? key}) : super(key: key);
+  Signup({super.key});
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();

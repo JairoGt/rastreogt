@@ -166,39 +166,81 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
+    final Color primaryColor = isDarkMode
+        ? const Color.fromARGB(255, 1, 47, 87)
+        : const Color(0xFFDDE8F0);
+    final Color secondaryColor = isDarkMode
+        ? const Color.fromARGB(255, 0, 90, 122)
+        : const Color(0xFF97CBDC);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear Pedido'),
+        leading: IconButton(
+          color: isDarkMode
+              ? const Color.fromARGB(255, 255, 255, 255)
+              : const Color.fromARGB(255, 0, 0, 0),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        centerTitle: true,
+        backgroundColor: primaryColor.withOpacity(0.5),
+        title: Text('Crear Pedido',
+            style: GoogleFonts.roboto(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 0, 0, 0),
+            )),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // Muestra el saludo y el nombre del usuario.
-                //Llamamos todas las funciones que necesitamos para el pedido
-                _buildNicknameField(),
-                const SizedBox(height: 20.0),
-                _buildValidarButton(),
-                const SizedBox(height: 20),
-                if (_isUserValidated) ...[
-                  _buildDireccionField(),
-                  const SizedBox(height: 20),
-                  ..._buildProductoPrecioFields(),
-                  const SizedBox(height: 20),
-                  _buildAgregarProductoButton(),
-                  const SizedBox(height: 20),
-                  _buildSumaTotalField(),
-                  const SizedBox(height: 20),
-                  _buildCrearPedidoButton(),
-                ],
+      body: Stack(children: [
+        // Fondo degradado
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                primaryColor,
+                secondaryColor,
               ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
           ),
         ),
-      ),
+        // Contenido de la pantalla
+        SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // Muestra el saludo y el nombre del usuario.
+                  //Llamamos todas las funciones que necesitamos para el pedido
+                  _buildNicknameField(),
+                  const SizedBox(height: 20.0),
+                  _buildValidarButton(),
+                  const SizedBox(height: 20),
+                  if (_isUserValidated) ...[
+                    _buildDireccionField(),
+                    const SizedBox(height: 20),
+                    ..._buildProductoPrecioFields(),
+                    const SizedBox(height: 20),
+                    _buildAgregarProductoButton(),
+                    const SizedBox(height: 20),
+                    _buildSumaTotalField(),
+                    const SizedBox(height: 20),
+                    _buildCrearPedidoButton(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 

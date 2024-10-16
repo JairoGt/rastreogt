@@ -60,9 +60,19 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
+    final Color primaryColor = isDarkMode
+        ? const Color.fromARGB(255, 1, 47, 87)
+        : const Color(0xFFDDE8F0);
+    final Color secondaryColor = isDarkMode
+        ? const Color.fromARGB(255, 0, 90, 122)
+        : const Color(0xFF97CBDC);
+
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: primaryColor.withOpacity(0.7),
         leading: IconButton(
+          color: isDarkMode ? Colors.white : Colors.black,
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.of(context).pop();
@@ -72,9 +82,10 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
         title: Text(
           'Asignar pedidos',
           style: GoogleFonts.roboto(
-            textStyle: const TextStyle(
+            textStyle: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
+              color: isDarkMode ? Colors.white : Colors.black,
             ),
           ),
         ),
@@ -83,12 +94,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: themeNotifier.currentTheme.brightness == Brightness.dark
-                  ? [
-                      const Color.fromARGB(255, 95, 107, 143),
-                      const Color.fromARGB(255, 171, 170, 197)
-                    ]
-                  : [const Color.fromARGB(255, 114, 130, 255), Colors.white],
+              colors: [primaryColor, secondaryColor],
               begin: Alignment.centerLeft,
               end: Alignment.bottomCenter,
             ),
@@ -108,6 +114,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Card(
+                    color: primaryColor.withOpacity(0.7),
                     borderOnForeground: true,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -184,24 +191,38 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
                                       subtitle: RichText(
                                         text: TextSpan(
                                           text: 'Total: ',
-                                          style: const TextStyle(
-                                            // color: Colors.black,
+                                          style: GoogleFonts.roboto(
+                                              textStyle: TextStyle(
                                             fontSize: 16,
-                                          ),
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          )),
                                           children: <TextSpan>[
                                             TextSpan(
                                               text:
                                                   'Q${preciototal.toString()}',
-                                              style: const TextStyle(
+                                              style: GoogleFonts.roboto(
+                                                  textStyle: TextStyle(
+                                                fontSize: 16,
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
                                                 fontWeight: FontWeight.bold,
-                                              ),
+                                              )),
                                             ),
                                             TextSpan(
                                               text:
                                                   '  -  ${pedidos[index]['nickname']}',
-                                              style: const TextStyle(
+                                              style: GoogleFonts.roboto(
+                                                  textStyle: TextStyle(
+                                                fontSize: 16,
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
                                                 fontWeight: FontWeight.bold,
-                                              ),
+                                              )),
                                             ),
                                           ],
                                         ),
@@ -240,6 +261,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Card(
+                          color: primaryColor.withOpacity(0.7),
                           borderOnForeground: true,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -259,35 +281,29 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
                                           const Divider(),
                                   itemCount: snapshot.data!.length,
                                   itemBuilder: (context, index) {
-                                    return Container(
-                                      // height: 50,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .inversePrimary,
-                                      child: CheckboxListTile(
-                                        title: Text(
-                                          snapshot.data![index]['name'],
-                                          style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        subtitle: Text(
-                                            snapshot.data![index]['email']),
-                                        value: _idMotorista ==
-                                            snapshot.data![index]['idmoto']
-                                                .toString(),
-                                        onChanged: (value) {
-                                          // Actualiza el valor de _idMotorista
-                                          _idMotorista = value!
-                                              ? snapshot.data![index]['idmoto']
-                                                  .toString()
-                                              : '';
-                                          // Actualiza el widget
-                                          if (mounted) {
-                                            setState(() {});
-                                          }
-                                        },
+                                    return CheckboxListTile(
+                                      title: Text(
+                                        snapshot.data![index]['name'],
+                                        style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
                                       ),
+                                      subtitle:
+                                          Text(snapshot.data![index]['idmoto']),
+                                      value: _idMotorista ==
+                                          snapshot.data![index]['idmoto']
+                                              .toString(),
+                                      onChanged: (value) {
+                                        // Actualiza el valor de _idMotorista
+                                        _idMotorista = value!
+                                            ? snapshot.data![index]['idmoto']
+                                                .toString()
+                                            : '';
+                                        // Actualiza el widget
+                                        if (mounted) {
+                                          setState(() {});
+                                        }
+                                      },
                                     );
                                   },
                                   physics: const ClampingScrollPhysics(),
@@ -311,6 +327,7 @@ class _AsignarPedidosState extends State<AsignarPedidos> {
         ),
       ]),
       bottomNavigationBar: BottomAppBar(
+        color: primaryColor.withOpacity(0.7),
         shape: const CircularNotchedRectangle(),
         child: Container(height: 50.0),
       ),

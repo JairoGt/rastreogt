@@ -281,16 +281,6 @@ class _RolePageState extends State<RolePage> {
       }
 
       if (role == 'client') {
-        // Crear una colección 'motos' y un documento 'moto' dentro de ella
-        CollectionReference motos = _firestore.collection('motos');
-        DocumentReference motoDocument = motos.doc(email);
-
-        Map<String, dynamic> motoData = {
-          'estadoid':
-              3, // Estado de la moto (0 = inactivo, 1 = Disponible, 2 = En ruta, 3 = baja, etc.)
-        };
-
-        await motoDocument.update(motoData);
         CollectionReference users = _firestore.collection('users');
         DocumentReference userDocument = users.doc(email);
         Map<String, dynamic> userData = {
@@ -302,17 +292,51 @@ class _RolePageState extends State<RolePage> {
         await userDocument.update(userData);
       }
 
-      if (role == 'admin') {
-        CollectionReference users = _firestore.collection('users');
-        DocumentReference userDocument = users.doc(email);
-        Map<String, dynamic> userData = {
-          'role': role,
-          'estadoid': 0,
-          'negoname': _currentUserNegoname,
-          'nego': nego,
-        };
-        await userDocument.update(userData);
+      if (role == 'adminjr') {
+        // Obtener el documento del usuario que está siendo promovido
+        DocumentSnapshot newAdminSnapshot = await userDocument.get();
+        String newAdminIdBusiness = newAdminSnapshot['idBussiness'];
+
+        // Obtener el documento específico del negocio del usuario actual
+        DocumentSnapshot businessDoc = await _firestore
+            .collection('users')
+            .doc(user!.email)
+            .collection('negocios')
+            .doc(newAdminIdBusiness)
+            .get();
+
+        if (businessDoc.exists) {
+          // Crear una referencia para el nuevo documento en la colección del nuevo admin
+          DocumentReference newAdminBusinessDocRef = _firestore
+              .collection('users')
+              .doc(email)
+              .collection('negocios')
+              .doc(newAdminIdBusiness);
+
+          // Iniciar una transacción para asegurar la consistencia de los datos
+          await _firestore.runTransaction((transaction) async {
+            // Transferir el documento del negocio
+            transaction.set(newAdminBusinessDocRef, businessDoc.data()!);
+
+            // Actualizar el documento del usuario con la información del negocio
+            Map<String, dynamic> businessData =
+                businessDoc.data() as Map<String, dynamic>;
+            data['negoname'] = businessData['negoname'];
+            data['nego'] = businessData['nego'];
+            data['idBussiness'] = newAdminIdBusiness;
+
+            // Actualizar el rol y la información del negocio en el documento del usuario
+            transaction.update(userDocument, data);
+          });
+
+          print('Documento de negocio transferido y rol actualizado con éxito');
+        } else {
+          throw Exception('No se encontró el documento del negocio');
+        }
       }
+
+      await userDocument.update(data);
+      _getUsers1();
 
       await userDocument.update(data);
       _getUsers1();
@@ -336,115 +360,147 @@ class _RolePageState extends State<RolePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
+    final Color primaryColor = isDarkMode
+        ? const Color.fromARGB(255, 1, 47, 87)
+        : const Color(0xFFDDE8F0);
+    final Color secondaryColor = isDarkMode
+        ? const Color.fromARGB(255, 0, 90, 122)
+        : const Color(0xFF97CBDC);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cambio de Roles'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _getUsers(),
-              decoration: InputDecoration(
-                labelText: 'Buscar por nickname',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                prefixIcon: const Icon(Icons.search),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _filteredUsersList.length,
-                itemBuilder: (context, index) {
-                  DocumentSnapshot user = _filteredUsersList[index];
-                  return Card(
-                    elevation: 4.0,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text(user['name']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Role: ${user['role']}'),
-                          Text('Nickname: ${user['nickname']}'),
-                        ],
-                      ),
-                      trailing: PopupMenuButton(
-                        icon: const Icon(Icons.more_vert),
-                        itemBuilder: (BuildContext context) => [
-                          const PopupMenuItem(
-                            value: 'admin',
-                            child: Text('Admin'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'client',
-                            child: Text('Cliente'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'moto',
-                            child: Text('Moto'),
-                          ),
-                        ],
-                        onSelected: (role) {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(
-                                  '¿Desea enviar solicitud de cambio? a $role'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text(
-                                    'Cancelar',
-                                    style: GoogleFonts.aBeeZee(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .inverseSurface,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    _updateRole(user['email'], role);
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text(
-                                    'Aceptar',
-                                    style: GoogleFonts.aBeeZee(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .inverseSurface,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+        centerTitle: true,
+        leading: IconButton(
+          color: isDarkMode ? Colors.white : Colors.black,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
+        title: Text(
+          'Cambio de Roles',
+          style: GoogleFonts.poppins(
+            color: isDarkMode ? Colors.white : Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: primaryColor.withOpacity(0.9),
       ),
+      body: Stack(children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [primaryColor, secondaryColor],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _getUsers(),
+                decoration: InputDecoration(
+                  labelText: 'Buscar por nickname',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  prefixIcon: const Icon(Icons.search),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _filteredUsersList.length,
+                  itemBuilder: (context, index) {
+                    DocumentSnapshot user = _filteredUsersList[index];
+                    return Card(
+                      elevation: 4.0,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: ListTile(
+                        title: Text(user['name']),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Role: ${user['role']}'),
+                            Text('Nickname: ${user['nickname']}'),
+                          ],
+                        ),
+                        trailing: PopupMenuButton(
+                          icon: const Icon(Icons.more_vert),
+                          itemBuilder: (BuildContext context) => [
+                            const PopupMenuItem(
+                              value: 'adminjr',
+                              child: Text('Admin'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'client',
+                              child: Text('Cliente'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'moto',
+                              child: Text('Moto'),
+                            ),
+                          ],
+                          onSelected: (role) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                    '¿Desea enviar solicitud de cambio? a $role'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      'Cancelar',
+                                      style: GoogleFonts.aBeeZee(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .inverseSurface,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      _updateRole(user['email'], role);
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      'Aceptar',
+                                      style: GoogleFonts.aBeeZee(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .inverseSurface,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ]),
       floatingActionButton: FloatingActionButton(
         onPressed: _getUsers,
-        backgroundColor: Colors.teal,
+        backgroundColor: secondaryColor,
         child: const Icon(Icons.search),
       ),
     );

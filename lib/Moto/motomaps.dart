@@ -14,6 +14,7 @@ class MotoristaMapScreen extends StatefulWidget {
     super.key,
     required this.ubicacionCliente,
     required this.ubicacionNegocio,
+
     // required this.ubicacionM,
   });
 
@@ -105,24 +106,26 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
   void _abrirGoogleMaps() async {
     if (_ubicacionActual == null) return;
 
+    // Intenta con Google Maps primero
     final String googleMapsUrl =
-        'https://www.google.com/maps/dir/?api=1&origin=${_ubicacionActual!.latitude},${_ubicacionActual!.longitude}&destination=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&travelmode=driving';
+        'google.navigation:q=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&mode=d';
 
-    if (await canLaunch(googleMapsUrl)) {
-      await launch(googleMapsUrl);
-    } else {
-      throw 'No se pudo abrir Google Maps';
+    final Uri googleUri = Uri.parse(googleMapsUrl);
+
+    if (await canLaunchUrl(googleUri)) {
+      await launchUrl(googleUri);
     }
   }
 
   void _abrirWaze() async {
     if (_ubicacionActual == null) return;
-
     final String wazeUrl =
-        'https://waze.com/ul?ll=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&navigate=yes';
+        'waze://?ll=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&navigate=yes';
 
-    if (await canLaunch(wazeUrl)) {
-      await launch(wazeUrl);
+    final Uri wazeUri = Uri.parse(wazeUrl);
+
+    if (await canLaunchUrl(wazeUri)) {
+      await launchUrl(wazeUri);
     } else {
       showDialog(
         context: context,

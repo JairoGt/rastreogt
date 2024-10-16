@@ -1,7 +1,8 @@
 import 'package:rastreogt/conf/export.dart';
 
 class EditPedidos extends StatefulWidget {
-  const EditPedidos({super.key});
+  final String? idPedido;
+  const EditPedidos({super.key, this.idPedido});
 
   @override
   _EditPedidosState createState() => _EditPedidosState();
@@ -15,6 +16,7 @@ class _EditPedidosState extends State<EditPedidos> {
   var _sumaTotal = 0.0;
   bool _isPedidoLoaded = false;
   final List<Map<String, String>> _productos = [];
+
   void mostrarDialogo(
       BuildContext context, String titulo, String mensaje, bool esExitoso) {
     showDialog(
@@ -344,39 +346,72 @@ class _EditPedidosState extends State<EditPedidos> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.idPedido != null) {
+      _idPedidoController.text = widget.idPedido!;
+      _buscarPedido();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
+    final Color primaryColor = isDarkMode
+        ? const Color.fromARGB(255, 1, 47, 87)
+        : const Color(0xFFDDE8F0);
+    final Color secondaryColor = isDarkMode
+        ? const Color.fromARGB(255, 0, 90, 122)
+        : const Color(0xFF97CBDC);
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: primaryColor.withOpacity(0.9),
         title: const Text('Editar Pedido'),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                _buildIdPedidoField(),
-                const SizedBox(height: 20),
-                _buildBuscarButton(),
-                if (_isPedidoLoaded) ...[
-                  const SizedBox(height: 20),
-                  ..._buildProductoPrecioFields(),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _agregarProducto,
-                    child: const Text('Agregar más'),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTotalField(),
-                  const SizedBox(height: 20),
-                  _buildGuardarButton(),
-                ],
+      body: Stack(children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                primaryColor,
+                secondaryColor,
               ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
           ),
         ),
-      ),
+        SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  _buildIdPedidoField(),
+                  const SizedBox(height: 20),
+                  _buildBuscarButton(),
+                  if (_isPedidoLoaded) ...[
+                    const SizedBox(height: 20),
+                    ..._buildProductoPrecioFields(),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _agregarProducto,
+                      child: const Text('Agregar más'),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildTotalField(),
+                    const SizedBox(height: 20),
+                    _buildGuardarButton(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }

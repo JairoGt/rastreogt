@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:rastreogt/conf/export.dart';
 
-class AdminPage extends StatefulWidget {
-  const AdminPage({super.key});
+class AdminPagejr extends StatefulWidget {
+  const AdminPagejr({super.key});
 
   @override
-  _AdminPageState createState() => _AdminPageState();
+  _AdminPageStatejr createState() => _AdminPageStatejr();
 }
 
-class _AdminPageState extends State<AdminPage>
+class _AdminPageStatejr extends State<AdminPagejr>
     with SingleTickerProviderStateMixin {
   String nombreUsuario = 'Mister';
   String nombreNegocio = 'Mi Negocio';
@@ -94,11 +94,11 @@ class _AdminPageState extends State<AdminPage>
   String obtenerSaludo() {
     final horaActual = DateTime.now().hour;
     if (horaActual < 12) {
-      return 'Buen día';
+      return 'Buenos días';
     } else if (horaActual < 18) {
-      return 'Buena tarde';
+      return 'Buenas tardes';
     } else {
-      return 'Buena noche';
+      return 'Buenas noches';
     }
   }
 
@@ -107,47 +107,43 @@ class _AdminPageState extends State<AdminPage>
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkMode = themeNotifier.currentTheme.brightness == Brightness.dark;
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        drawer: const ModernDrawer(),
-        body: Builder(
-          builder: (BuildContext context) {
-            return Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDarkMode
-                      ? [
-                          const Color.fromARGB(
-                              255, 1, 47, 87), // Color más oscuro de la paleta
-                          const Color.fromARGB(
-                              255, 0, 90, 122), // Segundo color de la paleta
-                          const Color(
-                              0xFF012442), // Color más oscuro de la paleta
-                        ]
-                      : [
-                          const Color(
-                              0xFFDDE8F0), // Color más claro de la paleta
-                          const Color(0xFF97CBDC), // Tercer color de la paleta
-                        ],
-                ),
+    return Scaffold(
+      drawer: const ModernDrawer(),
+      body: Builder(
+        builder: (BuildContext context) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDarkMode
+                    ? [
+                        const Color.fromARGB(
+                            255, 1, 47, 87), // Color más oscuro de la paleta
+                        const Color.fromARGB(
+                            255, 0, 90, 122), // Segundo color de la paleta
+                        const Color(
+                            0xFF012442), // Color más oscuro de la paleta
+                      ]
+                    : [
+                        const Color(0xFFDDE8F0), // Color más claro de la paleta
+                        const Color(0xFF97CBDC), // Tercer color de la paleta
+                      ],
               ),
-              child: SafeArea(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context, isDarkMode),
-                    Expanded(
-                      child: _buildModernGrid(isDarkMode),
-                    ),
-                  ],
-                ),
+            ),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, isDarkMode),
+                  Expanded(
+                    child: _buildModernGrid(isDarkMode),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -296,11 +292,6 @@ class _AdminPageState extends State<AdminPage>
         'icon': EvaIcons.editOutline,
         'title': 'Editar Pedido',
         'route': '/pedidoscola'
-      },
-      {
-        'icon': EvaIcons.personOutline,
-        'title': 'Buscar y Cambiar Roles',
-        'route': '/rolbuscar'
       },
       {
         'icon': EvaIcons.fileTextOutline,
