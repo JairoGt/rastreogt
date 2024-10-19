@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:rastreogt/Moto/motomaps.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rastreogt/Cliente/mapasuy.dart'; // Asegúrate de que esta importación sea correcta
 
 class PedidosCamino extends StatelessWidget {
   final String negoname;
@@ -70,7 +69,7 @@ class PedidosCamino extends StatelessWidget {
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.map),
-                      label: const Text('Ver ubicación del motorista'),
+                      label: const Text('Ver ubicaciones'),
                       onPressed: () {
                         _abrirMapa(context, pedido);
                       },
@@ -87,28 +86,25 @@ class PedidosCamino extends StatelessWidget {
 
   void _abrirMapa(BuildContext context, DocumentSnapshot pedido) async {
     try {
-      // Obtener el email del usuario actual
-      final userEmail = FirebaseAuth.instance.currentUser?.email;
-      if (userEmail == null) {
-        throw Exception('No se ha podido obtener el email del usuario');
-      }
-
-      // Obtener la ubicación del motorista
+      // Obtener los detalles del motorista
       final motoristaDoc = await FirebaseFirestore.instance
           .collection('motos')
-          .doc(userEmail)
+          .doc(pedido['idMotorista'])
           .get();
 
-      if (!motoristaDoc.exists || motoristaDoc.data()?['ubicacionM'] == null) {
-        throw Exception('No se ha podido encontrar la ubicación del motorista');
+      if (!motoristaDoc.exists) {
+        throw Exception(
+            'No se ha podido encontrar la información del motorista');
       }
 
-      final ubicacionMotorista = motoristaDoc.data()!['ubicacionM'] as GeoPoint;
+      final motoristaDetails = motoristaDoc.data()!;
 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MotoristaMapScreen(
+          builder: (context) => MapScreen(
+            emailM: motoristaDetails['email'],
+            idMotorista: pedido['idMotorista'],
             ubicacionCliente: LatLng(
               pedido['ubicacionCliente'].latitude,
               pedido['ubicacionCliente'].longitude,
@@ -116,6 +112,10 @@ class PedidosCamino extends StatelessWidget {
             ubicacionNegocio: LatLng(
               pedido['ubicacionNegocio'].latitude,
               pedido['ubicacionNegocio'].longitude,
+            ),
+            ubicacionM: LatLng(
+              motoristaDetails['latitude'] ?? 0.0,
+              motoristaDetails['longitude'] ?? 0.0,
             ),
           ),
         ),
@@ -174,7 +174,7 @@ class DetallePedido extends StatelessWidget {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.map),
-                  label: const Text('Ver ubicación del motorista'),
+                  label: const Text('Ver ubicaciones'),
                   onPressed: () {
                     Navigator.of(context).pop();
                     _abrirMapa(context, pedido);
@@ -190,28 +190,25 @@ class DetallePedido extends StatelessWidget {
 
   void _abrirMapa(BuildContext context, DocumentSnapshot pedido) async {
     try {
-      // Obtener el email del usuario actual
-      final userEmail = FirebaseAuth.instance.currentUser?.email;
-      if (userEmail == null) {
-        throw Exception('No se ha podido obtener el email del usuario');
-      }
-
-      // Obtener la ubicación del motorista
+      // Obtener los detalles del motorista
       final motoristaDoc = await FirebaseFirestore.instance
-          .collection('moto')
-          .doc(userEmail)
+          .collection('motos')
+          .doc(pedido['idMotorista'])
           .get();
 
-      if (!motoristaDoc.exists || motoristaDoc.data()?['ubicacionM'] == null) {
-        throw Exception('No se ha podido encontrar la ubicación del motorista');
+      if (!motoristaDoc.exists) {
+        throw Exception(
+            'No se ha podido encontrar la información del motorista');
       }
 
-      final ubicacionMotorista = motoristaDoc.data()!['ubicacionM'] as GeoPoint;
+      final motoristaDetails = motoristaDoc.data()!;
 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MotoristaMapScreen(
+          builder: (context) => MapScreen(
+            emailM: motoristaDetails['email'],
+            idMotorista: pedido['idMotorista'],
             ubicacionCliente: LatLng(
               pedido['ubicacionCliente'].latitude,
               pedido['ubicacionCliente'].longitude,
@@ -219,6 +216,10 @@ class DetallePedido extends StatelessWidget {
             ubicacionNegocio: LatLng(
               pedido['ubicacionNegocio'].latitude,
               pedido['ubicacionNegocio'].longitude,
+            ),
+            ubicacionM: LatLng(
+              motoristaDetails['latitude'] ?? 0.0,
+              motoristaDetails['longitude'] ?? 0.0,
             ),
           ),
         ),

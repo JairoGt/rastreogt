@@ -430,39 +430,32 @@ class _MotoristaScreenState extends State<MotoristaScreen>
               const Text('¿Quieres aceptar la solicitud para ser motorista?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 // El usuario seleccionó "No"
                 actualizarUsuarioARolCliente();
                 Navigator.of(context).pop(); // Cierra el diálogo
                 try {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FutureBuilder(
-                        future: cerrarSesion(context),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            // Una vez que se complete el cierre de sesión, navega a la pantalla de inicio
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              Navigator.popUntil(
-                                  context, ModalRoute.withName('/'));
-                            });
-                            return Container(); // Pantalla vacía mientras se navega
-                          } else {
-                            // Muestra un indicador de carga mientras se cierra la sesión
-                            return const Scaffold(
-                              // backgroundColor: Color.fromARGB(125, 255, 255, 255),
-                              body: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  );
+                  await FirebaseFirestore.instance
+                      .terminate(); // Termina todas las conexiones con Firestore
+                  debugPrint('Conexiones con Firestore terminadas.');
+                  // Cerrar sesión de Google
+                  await GoogleSignIn().signOut();
+                  debugPrint('Usuario de Google ha cerrado sesión.');
+
+                  // Cerrar sesión de Firebase
+                  await FirebaseAuth.instance.signOut();
+                  debugPrint('Usuario ha cerrado sesión de Firebase.');
+
+                  // Navegar a la pantalla de login y limpiar la pila de navegación
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const Login()),
+                      (Route<dynamic> route) => false,
+                    );
+                  });
                 } catch (e) {
+                  debugPrint('Error al cerrar sesión: $e');
+                  // Mostrar un SnackBar con el error
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error al cerrar sesión: $e'),

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:rastreogt/Cliente/notipage.dart';
 import 'package:rastreogt/Cliente/pinfo.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
+import 'package:rastreogt/conf/animatedNoti.dart';
 import 'package:rastreogt/conf/export.dart';
 
 // Modelo de Notificación
@@ -53,6 +54,7 @@ class _ClientPageState extends State<ClientPage> {
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   FirebaseMessaging messaging = FirebaseMessaging.instance;
+  final _notificationController = StreamController<void>.broadcast();
 
   Future<void> _checkUserInfo() async {
     if (user != null) {
@@ -293,6 +295,7 @@ class _ClientPageState extends State<ClientPage> {
     _timer?.cancel();
     _scrollController.dispose();
     _connectivitySubscription.cancel();
+    _notificationController.close();
     super.dispose();
   }
 
@@ -344,9 +347,9 @@ class _ClientPageState extends State<ClientPage> {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.notifications, color: Colors.white),
+            AnimatedNotificationIcon(
               onPressed: () => _showNotifications(),
+              notificationStream: _notificationController.stream,
             ),
           ],
         ),

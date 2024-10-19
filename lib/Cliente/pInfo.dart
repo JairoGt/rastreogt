@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter/services.dart';
 import 'package:rastreogt/Cliente/map.dart';
 
 class UserInfoScreen extends StatefulWidget {
@@ -14,11 +14,19 @@ class UserInfoScreen extends StatefulWidget {
 
 class _UserInfoScreenState extends State<UserInfoScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _direccionController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _telefonoController = TextEditingController();
-  final TextEditingController _ubicacionController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _direccionController = TextEditingController();
+  final TextEditingController _ubicacionController = TextEditingController();
+
+  Map<String, Map<String, dynamic>> addresses = {
+    'Casa': {'direccion': '', 'ubicacion': const GeoPoint(0, 0)},
+    'Trabajo': {'direccion': '', 'ubicacion': const GeoPoint(0, 0)},
+    'Otros': {'direccion': '', 'ubicacion': const GeoPoint(0, 0)},
+  };
+
+  String? selectedAddressType;
 
   @override
   void initState() {
@@ -39,28 +47,33 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         Map<String, dynamic> data = userInfo.data() as Map<String, dynamic>;
         setState(() {
           _emailController.text = widget.userEmail!;
-          _direccionController.text = data['direccion'] ?? '';
           _nameController.text = data['name'] ?? '';
           _telefonoController.text = (data['telefono'] ?? 0).toString();
-          _emailController.text = widget.userEmail!;
+          _direccionController.text = data['direccion'] ?? '';
+          GeoPoint ubicacion = data['ubicacion'] ?? const GeoPoint(0, 0);
+          _ubicacionController.text = _formatGeoPoint(ubicacion);
         });
 
-        // Lee las coordenadas de Firestore
-        GeoPoint geoPoint = (data['ubicacion']) ?? const GeoPoint(0, 0);
-        double latitude = geoPoint.latitude;
-        double longitude = geoPoint.longitude;
+        QuerySnapshot addressesSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.userEmail)
+            .collection('userData')
+            .doc('pInfo')
+            .collection('misDirecciones')
+            .get();
 
-        // Utiliza el paquete geocoding para convertir las coordenadas en una dirección
-
-        List<Placemark> placemarks =
-            await placemarkFromCoordinates(latitude, longitude);
-        if (placemarks.isNotEmpty) {
-          Placemark placemark = placemarks.first;
-          setState(() {
-            _ubicacionController.text =
-                '${placemark.street}, ${placemark.locality}, ${placemark.country}';
-          });
-        }
+        setState(() {
+          for (var doc in addressesSnapshot.docs) {
+            String type = doc.id;
+            Map<String, dynamic> addressData =
+                doc.data() as Map<String, dynamic>;
+            addresses[type] = {
+              'direccion': addressData['direccion'] ?? '',
+              'ubicacion':
+                  addressData['ubicacion'] as GeoPoint? ?? const GeoPoint(0, 0),
+            };
+          }
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,61 +82,107 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     }
   }
 
-  String? _originalCoordinates;
-
   Future<void> _saveUserInfo() async {
     if (_formKey.currentState!.validate()) {
-      if (_originalCoordinates != null) {
-        final coordinates = _originalCoordinates!.split(',');
-        final latitude = double.parse(coordinates[0]);
-        final longitude = double.parse(coordinates[1]);
-
+      try {
         await FirebaseFirestore.instance
             .collection('users')
             .doc(widget.userEmail)
             .collection('userData')
             .doc('pInfo')
             .update({
-          'direccion': _direccionController.text,
-          'estadoid': 1,
           'name': _nameController.text,
           'telefono': _telefonoController.text,
-          'ubicacion': GeoPoint(latitude, longitude),
+          'direccion': _direccionController.text,
+          'ubicacion': _parseGeoPoint(_ubicacionController.text),
         });
 
+        for (var entry in addresses.entries) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(widget.userEmail)
+              .collection('userData')
+              .doc('pInfo')
+              .collection('misDirecciones')
+              .doc(entry.key)
+              .set(entry.value);
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Información actualizada correctamente'),
+          const SnackBar(
+            content: Text('Información actualizada correctamente'),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            action: SnackBarAction(
-              label: 'OK',
-              onPressed: () {},
-            ),
           ),
         );
-      } else {
-        // Manejar el caso en que no se hayan seleccionado coordenadas
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Por favor, selecciona una ubicación'),
+            content: Text('Error al guardar la información: $e'),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            action: SnackBarAction(
-              label: 'OK',
-              onPressed: () {},
-            ),
           ),
         );
       }
     }
   }
 
-  Future<void> _selectLocation() async {
+  void _showEditDialog(String addressType) {
+    TextEditingController dialogDireccionController = TextEditingController(
+        text: addresses[addressType]!['direccion'] as String);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Editar $addressType'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: dialogDireccionController,
+                  decoration: const InputDecoration(labelText: 'Dirección'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _selectLocation(addressType);
+                    setState(
+                        () {}); // Actualizar el diálogo para mostrar la nueva ubicación
+                  },
+                  child: const Text('Seleccionar Ubicación'),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                    'Ubicación actual: ${_formatGeoPoint(addresses[addressType]!['ubicacion'] as GeoPoint)}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    addresses[addressType]!['direccion'] =
+                        dialogDireccionController.text;
+                    if (selectedAddressType == addressType) {
+                      _direccionController.text =
+                          dialogDireccionController.text;
+                      _updateUbicacionController(addressType);
+                    }
+                  });
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  Future<void> _selectLocation(String addressType) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -136,37 +195,41 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       final latitude = double.parse(coordinates[0]);
       final longitude = double.parse(coordinates[1]);
 
-      try {
-        // Guardar las coordenadas originales
-        _originalCoordinates = result;
-
-        // Obtener la dirección a partir de las coordenadas
-        List<Placemark> placemarks =
-            await placemarkFromCoordinates(latitude, longitude);
-        if (placemarks.isNotEmpty) {
-          Placemark place = placemarks[0];
-
-          // Manejar valores nulos y proporcionar valores predeterminados
-          String street = place.street ?? 'Calle desconocida';
-          String locality = place.locality ?? 'Localidad desconocida';
-
-          String formattedAddress = "$street, $locality";
-
-          setState(() {
-            _ubicacionController.text = formattedAddress;
-          });
-        } else {
-          setState(() {
-            _ubicacionController.text = 'Dirección no encontrada';
-          });
+      setState(() {
+        addresses[addressType]!['ubicacion'] = GeoPoint(latitude, longitude);
+        if (selectedAddressType == addressType) {
+          _ubicacionController.text =
+              _formatGeoPoint(GeoPoint(latitude, longitude));
         }
-      } catch (e) {
-        // Manejar cualquier excepción que ocurra durante la geocodificación inversa
-        setState(() {
-          _ubicacionController.text = 'Error al obtener la dirección';
-        });
-      }
+      });
     }
+  }
+
+  void _updateSelectedAddress(String? newValue) {
+    setState(() {
+      selectedAddressType = newValue;
+      if (newValue != null) {
+        _direccionController.text = addresses[newValue]!['direccion'] as String;
+        _updateUbicacionController(newValue);
+      }
+    });
+  }
+
+  void _updateUbicacionController(String addressType) {
+    GeoPoint geoPoint = addresses[addressType]!['ubicacion'] as GeoPoint;
+    _ubicacionController.text = _formatGeoPoint(geoPoint);
+  }
+
+  String _formatGeoPoint(GeoPoint geoPoint) {
+    return '${geoPoint.latitude.toStringAsFixed(6)}, ${geoPoint.longitude.toStringAsFixed(6)}';
+  }
+
+  GeoPoint _parseGeoPoint(String text) {
+    List<String> parts = text.split(',');
+    return GeoPoint(
+      double.parse(parts[0].trim()),
+      double.parse(parts[1].trim()),
+    );
   }
 
   @override
@@ -175,9 +238,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Información del Usuario'),
       ),
@@ -187,9 +248,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              const SizedBox(height: 50),
               TextFormField(
-                keyboardType: TextInputType.emailAddress,
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
                 enabled: false,
@@ -207,43 +266,72 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               ),
               const SizedBox(height: 20),
               TextFormField(
-                controller: _direccionController,
-                decoration: const InputDecoration(labelText: 'Dirección'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese una dirección';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
                 controller: _telefonoController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Teléfono'),
+                inputFormatters: [
+                  FilteringTextInputFormatter
+                      .digitsOnly, // Permite solo números
+                  LengthLimitingTextInputFormatter(8),
+                ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese un teléfono';
                   }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                enabled: false,
-                controller: _ubicacionController,
-                decoration: const InputDecoration(labelText: 'Ubicación'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Selecciona una ubicación';
+                  if (value.length != 8) {
+                    return 'El número debe tener 8 dígitos';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _selectLocation,
-                child: const Text('Seleccionar Ubicación'),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedAddressType,
+                      decoration:
+                          const InputDecoration(labelText: 'Tipo de Dirección'),
+                      items: addresses.keys.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: _updateSelectedAddress,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: selectedAddressType != null
+                        ? () => _showEditDialog(selectedAddressType!)
+                        : null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _direccionController,
+                decoration: const InputDecoration(labelText: 'Dirección'),
+                enabled: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'No se puede quedar vacio, porfavor revise';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _ubicacionController,
+                decoration: const InputDecoration(labelText: 'Ubicación'),
+                enabled: false,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor seleccione una ubicacion';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
               ElevatedButton(

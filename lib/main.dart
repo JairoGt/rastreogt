@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -12,6 +13,7 @@ import 'package:rastreogt/Admin/reasignar_moto.dart';
 import 'package:rastreogt/Admin/rol_buscar.dart';
 import 'package:rastreogt/Home/onboarding.dart';
 import 'package:rastreogt/Home/splash.dart';
+import 'package:rastreogt/conf/admon.dart';
 import 'package:rastreogt/conf/noti_api.dart';
 import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/firebase_options.dart';
@@ -214,6 +216,7 @@ class MyApp extends StatelessWidget {
             '/crearPedido': (context) => const CrearPedidoScreen(),
             '/pedidoscola': (context) => const ListaPedidos(),
             '/adminjr': (context) => const AdminPagejr(),
+            '/adminfull': (context) => const BusinessConfirmationScreen()
           },
           initialRoute: '/splash',
         );

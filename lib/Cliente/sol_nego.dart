@@ -53,13 +53,15 @@ class _MyHomePageState extends State<MyHomePage> {
       if (userInfo.exists) {
         Map<String, dynamic> data = userInfo.data() as Map<String, dynamic>;
         setState(() {
-          nick = data['nickname'];
+          nick = data['nickname'] ??
+              'Sin apodo'; // Proveer valor por defecto si es null
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al cargar la información $e')),
       );
+      debugPrint("$e");
     }
   }
 

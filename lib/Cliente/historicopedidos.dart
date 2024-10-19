@@ -44,6 +44,23 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
   final TextEditingController _fechaInicioController = TextEditingController();
   final TextEditingController _fechaFinController = TextEditingController();
 
+  String getEstadoDescripcion(int? estado) {
+    switch (estado) {
+      case 1:
+        return 'Creado';
+      case 2:
+        return 'Despachado';
+      case 3:
+        return 'En camino';
+      case 4:
+        return 'Entregado';
+      case 5:
+        return 'Cancelado';
+      default:
+        return 'Desconocido';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -246,7 +263,7 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'Resumen Financiero',
+            'Resumen de Gastos',
             style: pw.TextStyle(
               fontSize: 18,
               fontWeight: pw.FontWeight.bold,
@@ -413,122 +430,55 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                     itemBuilder: (context, index) {
                       final pedido = pedidos[index];
                       final isCancelled = pedido.estado == 5;
+                      final estadoDescripcion =
+                          getEstadoDescripcion(pedido.estado);
                       return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        color: isCancelled
-                            ? Colors.red[300]
-                            : null, // Color rojo claro si está cancelado
-                        child: ExpansionTile(
-                          title: Text(
-                            'Pedido #${pedido.numeroSeguimiento}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18.0,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 8.0),
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          color: isCancelled
+                              ? Colors.red[300]
+                              : null, // Color rojo claro si está cancelado
+                          child: ExpansionTile(
+                            title: Text(
+                              'Pedido #${pedido.numeroSeguimiento}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18.0,
+                              ),
                             ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 8.0),
-                              Text(
-                                'Fecha: ${DateFormat('dd/MM/yyyy').format(pedido.fecha)}',
-                                style: TextStyle(color: Colors.grey[700]),
-                              ),
-                              const SizedBox(height: 4.0),
-                              Text(
-                                'Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  'Fecha: ${DateFormat('dd/MM/yyyy').format(pedido.fecha)}',
+                                  style: TextStyle(color: Colors.grey[700]),
                                 ),
-                              ),
-                              const SizedBox(height: 4.0),
-                              Text(
-                                'Estado: ${pedido.estado}',
-                                style: TextStyle(
-                                  color:
-                                      isCancelled ? Colors.red : Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.copy),
-                            onPressed: () {
-                              Clipboard.setData(ClipboardData(
-                                  text: pedido.numeroSeguimiento));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text(
-                                      'Número de seguimiento copiado'),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
+                                const SizedBox(height: 4.0),
+                                Text(
+                                  'Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-                          children: [
-                            FutureBuilder<Map<String, dynamic>>(
-                              future: _fetchProductDetails(
-                                  pedido.numeroSeguimiento),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                } else if (snapshot.hasError) {
-                                  return Center(
-                                      child: Text('Error: ${snapshot.error}'));
-                                } else if (!snapshot.hasData) {
-                                  return const Center(
-                                      child:
-                                          Text('No hay detalles disponibles'));
-                                } else {
-                                  final products = snapshot.data!['products']
-                                      as List<Map<String, dynamic>>;
-                                  return Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Detalles de Productos:',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        ...products.map((product) => Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 4.0),
-                                              child: Text(
-                                                '${product['nombre']}',
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            )),
-                                      ],
-                                    ),
-                                  );
-                                }
-                              },
+                                const SizedBox(height: 4.0),
+                                Text(
+                                  'Estado: $estadoDescripcion',
+                                  style: TextStyle(
+                                    color:
+                                        isCancelled ? Colors.red : Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
+                          ));
                     },
                   );
                 }
