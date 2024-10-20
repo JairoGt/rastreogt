@@ -4,7 +4,6 @@ import 'package:rastreogt/Cliente/mapacentral.dart';
 import 'package:rastreogt/conf/export.dart';
 
 //Aqui van credenciales de googlesheets
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
