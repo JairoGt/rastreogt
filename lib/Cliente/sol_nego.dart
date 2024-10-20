@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:gsheets/gsheets.dart';
 import 'package:rastreogt/Cliente/mapacentral.dart';
 import 'package:rastreogt/conf/export.dart';
 
-//Aqui van credenciales de googlesheets
+String _credentials = dotenv.env['GOOGLE_CREDENTIALS']!;
+
+String _spreadsheetId = dotenv.env['GOOGLE_SHEET_ID']!;
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -100,6 +105,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _enviarDatos() async {
+    if (_credentials != null) {
+      try {
+        // Reemplaza \" con "
+        String unescapedCredentials = _credentials.replaceAll(r'\"', '"');
+
+        // Decodifica el JSON sin escapar
+        var credentialsJson = jsonDecode(unescapedCredentials);
+        print("Credenciales decodificadas: $credentialsJson");
+      } catch (e) {
+        print("Error al decodificar las credenciales: $e");
+      }
+    } else {
+      print("No se encontró GOOGLE_CREDENTIALS en el archivo .env");
+    }
+
+    print("Spreadsheet ID: $_spreadsheetId");
     try {
       final gsheets = GSheets(_credentials);
       final ss = await gsheets.spreadsheet(_spreadsheetId);
@@ -444,7 +465,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _mostrarEstadoNegocio() async {
     try {
-      final gsheets = GSheets(_credentials); // Define _credentials
+      // Reemplaza \" con "
+      String unescapedCredentials = _credentials.replaceAll(r'\"', '"');
+
+      // Decodifica el JSON sin escapar
+      var credentialsJson = jsonDecode(unescapedCredentials);
+      final gsheets = GSheets(credentialsJson); // Define _credentials
       final ss = await gsheets.spreadsheet(_spreadsheetId);
       var sheet = ss.worksheetByTitle('rastreogt');
 
@@ -534,6 +560,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
       );
     } catch (e) {
+      debugPrint('$e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al obtener los datos: $e'),
