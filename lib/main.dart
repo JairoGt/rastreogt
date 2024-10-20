@@ -3,21 +3,11 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
-import 'package:rastreogt/Admin/admin_pagejr.dart';
-import 'package:rastreogt/Admin/asignar_moto.dart';
-import 'package:rastreogt/Admin/bitacora_pedidos.dart';
-import 'package:rastreogt/Admin/create_pedidos.dart';
-import 'package:rastreogt/Admin/edit_pedidos.dart';
-import 'package:rastreogt/Admin/listapedidos.dart';
-import 'package:rastreogt/Admin/reasignar_moto.dart';
-import 'package:rastreogt/Admin/rol_buscar.dart';
-import 'package:rastreogt/Home/onboarding.dart';
-import 'package:rastreogt/Home/splash.dart';
-import 'package:rastreogt/conf/admon.dart';
-import 'package:rastreogt/conf/noti_api.dart';
-import 'package:rastreogt/auth/login/login.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:rastreogt/firebase_options.dart';
 import 'package:rastreogt/conf/export.dart';
+import 'Admin/create_pedidos.dart';
+import 'Admin/reasignar_moto.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -44,103 +34,115 @@ void showNotification({required String title, required String body}) {
   );
 }
 
+//@pragma('vm:entry-point')
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await PushNotifications.localNotiInit();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Pass all uncaught "fatal" errors from the framework to Crashlytics
-  FlutterError.onError = (errorDetails) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-  };
-  // Listen to background notifications
-  FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
+  try {
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+    print("Firebase initialized successfully in main");
 
-  // on background notification tapped
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    if (message.notification != null) {
-      if (navigatorKey.currentState != null) {
-        navigatorKey.currentState!.pushNamed("/message", arguments: message);
-      } else {
-        debugPrint('El navigatorKey no está listo todavía.');
-      }
-    }
-  });
+    await PushNotifications.localNotiInit();
 
-// to handle foreground notifications
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    String payloadData = jsonEncode(message.data);
-    if (message.notification != null) {
-      if (kIsWeb) {
-        showNotification(
-            title: message.notification!.title!,
-            body: message.notification!.body!);
-      } else {
-        PushNotifications.showSimpleNotification(
-            title: message.notification!.title!,
-            body: message.notification!.body!,
-            payload: payloadData);
-      }
-    }
-  });
+    // Configuración de Crashlytics
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
 
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    if (message.notification != null) {
-      _addNotification(
-        message.notification!.title ?? 'Nueva notificación',
-        message.notification!.body ?? '',
-      );
-    }
-  });
+    // Configuración de Messaging
+    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
+    await _setupForegroundMessaging();
+    await _setupInitialMessage();
 
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    String payloadData = jsonEncode(message.data);
-    if (message.notification != null) {
-      if (kIsWeb) {
-        showNotification(
-            title: message.notification!.title!,
-            body: message.notification!.body!);
-      } else {
-        PushNotifications.showSimpleNotification(
-            title: message.notification!.title!,
-            body: message.notification!.body!,
-            payload: payloadData);
-      }
-    }
-  });
-
-// Actualiza también _firebaseBackgroundMessage y el manejo de getInitialMessage de manera similar
-
-  // for handling in terminated state
-  final RemoteMessage? message =
-      await FirebaseMessaging.instance.getInitialMessage();
-
-  if (message != null) {
-    Future.delayed(const Duration(seconds: 1), () {
-      navigatorKey.currentState!.pushNamed("/message", arguments: message);
-    });
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+          ChangeNotifierProvider(create: (_) => PedidosProvider()),
+          ChangeNotifierProvider(create: (_) => UsuariosProvider()),
+        ],
+        child: const MyApp(),
+      ),
+    );
+  } catch (e) {
+    print("Error initializing Firebase: $e");
+    // Considera mostrar un diálogo de error al usuario aquí
   }
+}
 
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-  FlutterError.onError = (errorDetails) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-  };
-  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+Future<void> _setupForegroundMessaging() async {
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    _handleForegroundMessage(message);
+  });
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
-        ChangeNotifierProvider(create: (_) => PedidosProvider()),
-        ChangeNotifierProvider(create: (_) => UsuariosProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    _handleMessageOpenedApp(message);
+  });
+}
+
+Future<void> initializeFirebase() async {
+  try {
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+    print("Firebase initialized successfully");
+  } catch (e) {
+    print("Error initializing Firebase: $e");
+    // Considera lanzar una excepción aquí si quieres que el error se propague
+  }
+}
+
+Future<void> _setupInitialMessage() async {
+  RemoteMessage? initialMessage =
+      await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    _handleInitialMessage(initialMessage);
+  }
+}
+
+void _handleForegroundMessage(RemoteMessage message) {
+  String payloadData = jsonEncode(message.data);
+  if (message.notification != null) {
+    if (kIsWeb) {
+      showNotification(
+          title: message.notification!.title!,
+          body: message.notification!.body!);
+    } else {
+      PushNotifications.showSimpleNotification(
+          title: message.notification!.title!,
+          body: message.notification!.body!,
+          payload: payloadData);
+    }
+    _addNotification(
+      message.notification!.title ?? 'Nueva notificación',
+      message.notification!.body ?? '',
+    );
+  }
+}
+
+void _handleMessageOpenedApp(RemoteMessage message) {
+  if (message.notification != null) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamed("/message", arguments: message);
+    } else {
+      debugPrint('El navigatorKey no está listo todavía.');
+    }
+  }
+}
+
+void _handleInitialMessage(RemoteMessage message) {
+  Future.delayed(const Duration(seconds: 1), () {
+    navigatorKey.currentState!.pushNamed("/message", arguments: message);
+  });
+}
+
+@pragma('vm:entry-point')
+void onStart(ServiceInstance service) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeFirebase();
+  // ... resto de tu código onStart
 }
 
 List<Map<String, dynamic>> _pendingNotifications = [];

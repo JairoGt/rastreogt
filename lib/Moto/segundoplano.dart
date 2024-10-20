@@ -6,20 +6,19 @@ import 'package:geolocator/geolocator.dart';
 import 'package:firebase_core/firebase_core.dart'; // Importa firebase_core
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rastreogt/firebase_options.dart';
 
 Future<void> initializeBackgroundService() async {
   final service = FlutterBackgroundService();
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'my_foreground',
+    'MY FOREGROUND SERVICE',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.low,
+  );
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
-
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'my_foreground', // id
-    'MY FOREGROUND SERVICE', // title
-    description:
-        'This channel is used for important notifications.', // description
-    importance: Importance.low, // importance must be at low or higher level
-  );
 
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(
@@ -42,7 +41,6 @@ Future<void> initializeBackgroundService() async {
       initialNotificationTitle: 'Servicio de localización',
       initialNotificationContent: 'Servicio de localización activado',
       foregroundServiceNotificationId: 888,
-      foregroundServiceTypes: [AndroidForegroundType.location],
     ),
     iosConfiguration: IosConfiguration(
       autoStart: true,
@@ -62,20 +60,32 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final FirebaseAuth auth = FirebaseAuth.instance;
-  final FirebaseFirestore db = FirebaseFirestore.instance;
 
-  if (service is AndroidServiceInstance) {
-    service.on('stopService').listen((event) {
-      service.stopSelf();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase initialized successfully in background service");
+
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+
+    if (service is AndroidServiceInstance) {
+      service.on('stopService').listen((event) async {
+        await service.stopSelf();
+        print("Servicio en segundo plano detenido desde el manejador");
+      });
+    }
+
+    Timer.periodic(const Duration(seconds: 30), (timer) async {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      await updateMotoristaLocation(position, auth, db);
     });
+  } catch (e) {
+    print("Error initializing Firebase in background service: $e");
+    // Aquí podrías implementar alguna lógica para manejar el error, como reintentar la inicialización
   }
-
-  Timer.periodic(const Duration(seconds: 30), (timer) async {
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-    await updateMotoristaLocation(position, auth, db);
-  });
 }
 
 Future<void> updateMotoristaLocation(

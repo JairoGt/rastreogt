@@ -1,5 +1,4 @@
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:rastreogt/Moto/segundoplano.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rastreogt/Cliente/detalle_pedido.dart';
@@ -80,36 +79,76 @@ class _PedidoCardState extends State<PedidoCard> {
   Future<void> marcarPedidoComoEntregado(
       String idPedido, String motoristaEmail) async {
     try {
-      // Actualizar el estado del pedido a "Entregado"
-      DocumentReference pedidoDocument =
-          _firestore.collection('pedidos').doc(idPedido);
-      await pedidoDocument.update({'estadoid': 4});
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Primero, realizamos todas las operaciones de lectura
+        DocumentReference pedidoDocument =
+            _firestore.collection('pedidos').doc(idPedido);
+        DocumentSnapshot pedidoSnapshot = await transaction.get(pedidoDocument);
+
+        User? user = _auth.currentUser;
+        if (user == null || user.email == null) {
+          throw FirebaseException(
+            plugin: 'firebase_auth',
+            message: 'No hay un usuario autenticado.',
+          );
+        }
+        String userEmail = user.email!;
+
+        DocumentReference userDocRef = _db.collection('users').doc(userEmail);
+        DocumentSnapshot userDoc = await transaction.get(userDocRef);
+
+        if (!userDoc.exists) {
+          throw FirebaseException(
+            plugin: 'cloud_firestore',
+            message: 'El usuario con email $userEmail no existe.',
+          );
+        }
+
+        String idmoto = userDoc.get('idmoto');
+
+        QuerySnapshot pedidosSnapshot = await _db
+            .collection('pedidos')
+            .where('idMotorista', isEqualTo: idmoto)
+            .where('estadoid', whereIn: [2, 3]).get();
+
+        // Ahora realizamos las operaciones de escritura
+        transaction.update(pedidoDocument, {'estadoid': 4});
+
+        if (pedidosSnapshot.docs.isEmpty) {
+          DocumentReference motoristaDocument =
+              _firestore.collection('motos').doc(userEmail);
+          transaction.update(motoristaDocument, {'estadoid': 1});
+        }
+
+        return;
+      });
+
+      print(
+          "Pedido marcado como entregado y estado del motorista actualizado si es necesario");
+
+      // Detener el servicio en segundo plano si no hay más pedidos activos
       User? user = _auth.currentUser;
-      String userEmail = user!.email!;
-      DocumentSnapshot userDoc =
-          await _db.collection('users').doc(userEmail).get();
-
-      if (!userDoc.exists) {
-        throw FirebaseException(
-          plugin: 'cloud_firestore',
-          message: 'El usuario con email $userEmail no existe.',
-        );
+      if (user != null && user.email != null) {
+        DocumentSnapshot motoristaDoc =
+            await _firestore.collection('motos').doc(user.email).get();
+        if (motoristaDoc.exists && motoristaDoc.get('estadoid') == 1) {
+          stopBackgroundService();
+          print("Servicio en segundo plano detenido");
+        }
       }
 
-      String idmoto = userDoc['idmoto'];
-      // Actualizar el estado del motorista a "Disponible"
-      QuerySnapshot pedidosSnapshot = await _db
-          .collection('pedidos')
-          .where('idMotorista', isEqualTo: idmoto)
-          .where('estadoid', isNotEqualTo: 4) // Excluir pedidos con estadoid 4
-          .get();
-      if (pedidosSnapshot.docs.isEmpty) {
-        DocumentReference motoristaDocument =
-            _firestore.collection('motos').doc(user.email);
-        await motoristaDocument.update({'estadoid': 1});
-        stopBackgroundService();
-      }
+      // Mostrar un mensaje de éxito al usuario
+      Fluttertoast.showToast(
+        msg: 'Pedido marcado como entregado exitosamente',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 4,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
     } catch (error) {
+      print("Error al marcar el pedido como entregado: $error");
       Fluttertoast.showToast(
         msg: 'Error al marcar el pedido como entregado: $error',
         toastLength: Toast.LENGTH_LONG,

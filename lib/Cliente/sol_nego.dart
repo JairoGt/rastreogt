@@ -3,23 +3,7 @@ import 'package:gsheets/gsheets.dart';
 import 'package:rastreogt/Cliente/mapacentral.dart';
 import 'package:rastreogt/conf/export.dart';
 
-const _credentials = r'''
-{
-  "type": "service_account",
-  "project_id": "apprastreogt",
-  "private_key_id": "7215d1829f2189de2698ae2a3813d9f6f496bd8c",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDHFh6b24lhLYPY\n55f4rjuGgWpCLJBuQrKFZxjzxdYyS58XwZjTJbXxBejIlSbzo8rhGYMiJhwYHvrC\nGG+Ff8rrzX5WakpgSoRhxvXIJ/gH7NbiMSv1+Cu4TYscwOq3kEplmffo0gk4x/pt\nanPdCYNle16JnMA+jzTcpxrXYKcHc6pJEV9AnBgInOL0Ey3pYghalaivjLIMEKmK\nlOAWhSR3ptwfX9C0Duz7520V8NCIjKjG/K2bk70K1CXnNRNy5P9FliLFTJtBl6mC\ndtIxjFv+IuQDviBPsZp97utsrSKSkmcSiBIO0i7etmD6BdoR6Ag3yBfnmLrf/oSZ\nQTeoJ6EnAgMBAAECggEATXe8el5PU0qQMu9PUduOWxTxoYVQwC7g44sOCRFy+0g0\nxFw3WPYkGYD4p1Bug0C5eaThQ4D7zqEDZ1J11sc20VG5duvOPDDS2W8/hV6UI5VT\nully5zfl30YBOzOQQdR6NpXWgzhzkS4zsq7JHfoNMIh0bWza250C71dw2N0JsZpu\neKOkdfxoI+B3irHfI0lytI1VaAY4aJO61y5MWCMZbcRY2u1bvjVGz6ThUYSViCLH\n7epnAuW8fDAn1pVhKGl1eqn1H8zkijo06NZr0iL+nxwRjfY4Kc6qW4PMb+jb6KxW\nWNrJsP7y5KCS0bTXJTTs2n99tIVTbRvDoeWoBjzYXQKBgQD3iEgxNnmmYtRzxfZ9\nc/8sLhfA/GkB1cDjFgidA0wR0GobCWNuAJP3BwhjCqFcTC99FztZBChbVBurZHuK\n9h1qRzHqtsf+jreeN65XDvSawggWdzXCWIGPgOAXOHtp/vspd2m8s1AGzutoN+Tw\nMH6fn4BCzW72TwG682k3ukCzJQKBgQDN5ZTP9hlJlepzdHf44W+hF2pTPW4j9aQz\nbOmBamTXMiJNHe8wJVpveEjzvpDpECfdadU1KFRdQytrqT7rQSi3gqLNSIaqprX9\nrea0qTAAxzpkkJDCEgru+VJt9BCD2nS7kEultrunYXzOdniK0HNmw3ks3WEEFNZ+\nMN2jH483WwKBgAvQfWGb8AJ5BRrhf/pM5wj8yjVz1q83vJUaIB8eYSsYf3f64rwF\nWwqXU1cm0rzNBhc6XKLLCAIT6Z4slZj0VkMUUtWZE8KanTj3/2I4XIRmbmxkFDTK\ndKScyhVRpNJSUTqRcIKJLHCmv6WhxVORfPmxazXFCF7JNpPtuj/mq9/hAoGAG7gX\nw7OXDfAP40E/0ZLQC3jyiIhRpqewVngIK7MeJlaKhaVNCUdOGImyEJaMPcQ+CbHw\n0To/uVqMou7jGJrqF2KP9mEYOCs/fwqFb7cDTmeD9fv8cRQqwqdwMHtWKdokMwgn\nFwU12D/opIcQjWeo0aHpU1/uarU/dzeu7wIVrtcCgYEAyjm4sEET2bZuEujBilEi\nJURE2Cvphl5nH/ZoK9/4KpbbvgICGm8a7xCS0DAjI5ilrLdsjcPhA+eLm4UgBwpg\ntodRqhMVIjWR8LZUUddvoZZbTBCzUQfXPNfDB0GsZ1eEXemgmcrBpgv+L9YfTH79\n35kOjIC1OgcDiXRJrkdPF6w=\n-----END PRIVATE KEY-----\n",
-  "client_email": "apprastreogt@appspot.gserviceaccount.com",
-  "client_id": "106104842321893788745",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/apprastreogt%40appspot.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
-''';
-
-const _spreadsheetId = '1JKDGcrfI9BGsFMraGEwI3CGFh9msBcur500Jp9OKpHo';
+//Aqui van credenciales de googlesheets
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});

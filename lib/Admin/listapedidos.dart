@@ -1,5 +1,4 @@
 import 'package:rastreogt/conf/export.dart';
-import 'edit_pedidos.dart';
 
 class ListaPedidos extends StatefulWidget {
   const ListaPedidos({super.key});

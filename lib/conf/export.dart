@@ -14,5 +14,16 @@ export 'package:rastreogt/providers/pedidosprovider.dart';
 export 'package:firebase_messaging/firebase_messaging.dart';
 export 'package:google_sign_in/google_sign_in.dart';
 export 'package:rastreogt/Admin/admin_page.dart';
-
 export 'package:rastreogt/Moto/moto_page.dart';
+export 'package:rastreogt/Admin/admin_pagejr.dart';
+export 'package:rastreogt/Admin/asignar_moto.dart';
+export 'package:rastreogt/Admin/bitacora_pedidos.dart';
+export 'package:rastreogt/Admin/edit_pedidos.dart';
+export 'package:rastreogt/Admin/listapedidos.dart';
+export 'package:rastreogt/Admin/rol_buscar.dart';
+export 'package:rastreogt/Home/onboarding.dart';
+export 'package:rastreogt/Home/splash.dart';
+export 'package:rastreogt/Moto/segundoplano.dart';
+export 'package:rastreogt/conf/admon.dart';
+export 'package:rastreogt/conf/noti_api.dart';
+export 'package:rastreogt/auth/login/login.dart';

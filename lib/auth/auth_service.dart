@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:rastreogt/Cliente/client_page.dart';
-import 'package:rastreogt/auth/login/login.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'package:rastreogt/main.dart';
 

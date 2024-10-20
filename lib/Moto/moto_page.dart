@@ -3,8 +3,6 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:rastreogt/Moto/pedidocard.dart';
-import 'package:rastreogt/Moto/segundoplano.dart';
-import '../auth/login/login.dart';
 import '../conf/export.dart';
 
 class MotoristaScreen extends StatefulWidget {
@@ -73,8 +71,15 @@ class _MotoristaScreenState extends State<MotoristaScreen>
     super.dispose();
   }
 
-  void stopBackgroundService() {
-    FlutterBackgroundService().invoke("stopService");
+  Future<void> stopBackgroundService() async {
+    final service = FlutterBackgroundService();
+    var isRunning = await service.isRunning();
+    if (isRunning) {
+      service.invoke("stopService");
+      print("Servicio en segundo plano detenido");
+    } else {
+      print("El servicio en segundo plano ya estaba detenido");
+    }
   }
 
   Stream<DocumentSnapshot> obtenerMotoristaStream(String motoristaEmail) {
@@ -82,11 +87,26 @@ class _MotoristaScreenState extends State<MotoristaScreen>
   }
 
   void iniciarActualizacionPeriodica() {
+    _timer?.cancel(); // Cancela el timer existente si lo hay
     _timer = Timer.periodic(const Duration(seconds: 30), (Timer timer) async {
+      await _checkAndUpdateLocation();
+    });
+  }
+
+  Future<void> _checkAndUpdateLocation() async {
+    User? user = _auth.currentUser;
+    if (user == null || user.email == null) return;
+
+    DocumentSnapshot motoristaDoc =
+        await _db.collection('motos').doc(user.email).get();
+    if (!motoristaDoc.exists) return;
+
+    int estadoId = motoristaDoc['estadoid'] ?? 0;
+    if (estadoId == 2) {
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
-      actualizarUbicacionMotorista(position);
-    });
+      await actualizarUbicacionMotorista(position);
+    }
   }
 
   void iniciarEscuchaUbicacion() {
@@ -119,16 +139,20 @@ class _MotoristaScreenState extends State<MotoristaScreen>
   }
 
   void iniciarEscuchaEstadoMotorista() {
-    obtenerMotoristaStream(user!.email!)
-        .listen((DocumentSnapshot motoristaDoc) async {
-      if (motoristaDoc.exists) {
-        int estadoId = motoristaDoc['estadoid'];
+    User? user = _auth.currentUser;
+    if (user == null || user.email == null) return;
+
+    _motoristaSubscription = _db
+        .collection('motos')
+        .doc(user.email)
+        .snapshots()
+        .listen((DocumentSnapshot snapshot) {
+      if (snapshot.exists) {
+        int estadoId = snapshot['estadoid'] ?? 0;
         if (estadoId == 2) {
-          // El estado del motorista es 2, inicia el servicio de actualización de ubicación
-          initializeBackgroundService();
-        } else if (estadoId == 1) {
-          // El estado del motorista es 4, detener el servicio
-          stopBackgroundService();
+          iniciarActualizacionPeriodica();
+        } else {
+          _timer?.cancel();
         }
       }
     });
@@ -212,19 +236,68 @@ class _MotoristaScreenState extends State<MotoristaScreen>
 
   Future<List<Map<String, dynamic>>> obtenerPedidosAsignados() async {
     User? user = _auth.currentUser;
-    String userEmail = user!.email!;
-    DocumentSnapshot userDoc =
-        await _db.collection('users').doc(userEmail).get();
-    String idmoto = userDoc['idmoto'];
-    QuerySnapshot pedidosSnapshot = await _db
-        .collection('pedidos')
-        .where('idMotorista', isEqualTo: idmoto)
-        .where('estadoid', isLessThanOrEqualTo: 3)
-        .get();
+    if (user == null || user.email == null) {
+      throw FirebaseException(
+        plugin: 'firebase_auth',
+        message: 'No hay un usuario autenticado.',
+      );
+    }
+    String userEmail = user.email!;
 
-    if (pedidosSnapshot.docs.isEmpty) {
+    try {
+      // Obtener el documento del usuario
+      DocumentSnapshot userDoc =
+          await _db.collection('users').doc(userEmail).get();
+      if (!userDoc.exists) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          message: 'El usuario con email $userEmail no existe.',
+        );
+      }
+      String idmoto = userDoc['idmoto'];
+
+      // Obtener los pedidos asignados
+      QuerySnapshot pedidosSnapshot = await _db
+          .collection('pedidos')
+          .where('idMotorista', isEqualTo: idmoto)
+          .where('estadoid',
+              whereIn: [1, 2, 3]) // Pedidos creados, en proceso o en camino
+          .get();
+
+      if (pedidosSnapshot.docs.isEmpty) {
+        // No hay pedidos asignados, actualizar el estado del motorista a 1 (Disponible)
+        await _db.collection('motos').doc(userEmail).update({'estadoid': 1});
+        stopBackgroundService();
+        print(
+            "No hay pedidos asignados. Estado del motorista actualizado a Disponible.");
+        Fluttertoast.showToast(
+          msg: 'No tienes pedidos asignados. Estado actualizado a Disponible.',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 4,
+          backgroundColor: Colors.blue,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      } else {
+        Fluttertoast.showToast(
+            msg:
+                'Se encontraron ${pedidosSnapshot.docs.length} pedidos asignados.',
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 4,
+            backgroundColor: Colors.blue,
+            textColor: Colors.white,
+            fontSize: 16);
+      }
+
+      return pedidosSnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      print("Error en obtenerPedidosAsignados: $e");
       Fluttertoast.showToast(
-        msg: 'No tienes pedidos asignados',
+        msg: 'Error al obtener pedidos asignados: $e',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         timeInSecForIosWeb: 4,
@@ -232,12 +305,8 @@ class _MotoristaScreenState extends State<MotoristaScreen>
         textColor: Colors.white,
         fontSize: 16.0,
       );
-      stopBackgroundService();
+      return [];
     }
-
-    return pedidosSnapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
   }
 
   Future<void> actualizarPedidoEnCamino(String pedidoId) async {
@@ -294,36 +363,58 @@ class _MotoristaScreenState extends State<MotoristaScreen>
   Future<void> marcarPedidoComoEntregado(
       String idPedido, String motoristaEmail) async {
     try {
-      // Actualizar el estado del pedido a "Entregado"
-      DocumentReference pedidoDocument =
-          _firestore.collection('pedidos').doc(idPedido);
-      await pedidoDocument.update({'estadoid': 4});
-      User? user = _auth.currentUser;
-      String userEmail = user!.email!;
-      DocumentSnapshot userDoc =
-          await _db.collection('users').doc(userEmail).get();
+      // Obtener una referencia a la transacción
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Actualizar el estado del pedido a "Entregado"
+        DocumentReference pedidoDocument =
+            _firestore.collection('pedidos').doc(idPedido);
+        transaction.update(pedidoDocument, {'estadoid': 4});
 
-      if (!userDoc.exists) {
-        throw FirebaseException(
-          plugin: 'cloud_firestore',
-          message: 'El usuario con email $userEmail no existe.',
-        );
-      }
+        // Obtener el documento del usuario (motorista)
+        User? user = _auth.currentUser;
+        if (user == null || user.email == null) {
+          throw FirebaseException(
+            plugin: 'firebase_auth',
+            message: 'No hay un usuario autenticado.',
+          );
+        }
+        String userEmail = user.email!;
+        DocumentReference userDocRef = _db.collection('users').doc(userEmail);
+        DocumentSnapshot userDoc = await transaction.get(userDocRef);
 
-      String idmoto = userDoc['idmoto'];
-      // Actualizar el estado del motorista a "Disponible"
-      QuerySnapshot pedidosSnapshot = await _db
-          .collection('pedidos')
-          .where('idMotorista', isEqualTo: idmoto)
-          .where('estadoid', isNotEqualTo: 4) // Excluir pedidos con estadoid 4
-          .get();
-      if (pedidosSnapshot.docs.isEmpty) {
-        DocumentReference motoristaDocument =
-            _firestore.collection('motos').doc(user.email);
-        await motoristaDocument.update({'estadoid': 1});
-        stopBackgroundService();
-      }
+        if (!userDoc.exists) {
+          throw FirebaseException(
+            plugin: 'cloud_firestore',
+            message: 'El usuario con email $userEmail no existe.',
+          );
+        }
+
+        String idmoto = userDoc.get('idmoto');
+
+        // Verificar si hay otros pedidos activos para este motorista
+        QuerySnapshot pedidosSnapshot = await _db
+            .collection('pedidos')
+            .where('idMotorista', isEqualTo: idmoto)
+            .where('estadoid',
+                whereIn: [2, 3]) // Pedidos en proceso o en camino
+            .get();
+
+        // Si no hay más pedidos activos, actualizar el estado del motorista a "Disponible"
+        if (pedidosSnapshot.docs.isEmpty) {
+          DocumentReference motoristaDocument =
+              _firestore.collection('motos').doc(userEmail);
+          transaction.update(motoristaDocument, {'estadoid': 1});
+
+          // Detener el servicio en segundo plano
+          stopBackgroundService();
+          print("Servicio en segundo plano detenido");
+        }
+      });
+
+      print(
+          "Pedido marcado como entregado y estado del motorista actualizado si es necesario");
     } catch (error) {
+      print("Error al marcar el pedido como entregado: $error");
       Fluttertoast.showToast(
         msg: 'Error al marcar el pedido como entregado: $error',
         toastLength: Toast.LENGTH_LONG,
@@ -534,6 +625,7 @@ class _MotoristaScreenState extends State<MotoristaScreen>
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              stopBackgroundService();
               return const Center(child: Text('No hay pedidos asignados'));
             }
 

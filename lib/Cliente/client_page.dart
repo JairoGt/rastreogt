@@ -365,39 +365,35 @@ class _ClientPageState extends State<ClientPage> {
             ),
           ),
           child: SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildWelcomeCard(context),
-                      const SizedBox(height: 20),
-                      _buildClientIdCard(context),
-                      const SizedBox(height: 20),
-                      _buildSearchBar(context),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Mis Pedidos en curso',
-                        style: GoogleFonts.poppins(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 10),
-                    ]),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 200, // Ajusta esta altura según tus necesidades
-                      child: _buildActiveOrdersSection(context),
+              child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildWelcomeCard(context),
+                    const SizedBox(height: 20),
+                    _buildClientIdCard(context),
+                    const SizedBox(height: 20),
+                    _buildSearchBar(context),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Mis Pedidos en curso',
+                      style: GoogleFonts.poppins(
+                          fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                  ]),
                 ),
-              ],
-            ),
-          ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(
+                  child: _buildActiveOrdersSection(context),
+                ),
+              ),
+            ],
+          )),
         ),
       ),
     );
@@ -522,38 +518,55 @@ class _ClientPageState extends State<ClientPage> {
         }).toList();
 
         if (pedidosFiltrados.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Lottie.asset(
-                  "assets/lotties/stopM.json",
-                  animate: true,
-                  repeat: false,
-                  height: 200, // Ajustado para que quepa mejor
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'No tienes pedidos asignados',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Usa una altura fija basada en el tamaño de la pantalla
+              final screenHeight = MediaQuery.of(context).size.height;
+              final contentHeight =
+                  screenHeight * 0.3; // 60% de la altura de la pantalla
+
+              return SizedBox(
+                height: contentHeight,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Lottie.asset(
+                        "assets/lotties/stopM.json",
+                        animate: true,
+                        repeat: false,
+                        height: contentHeight *
+                            0.8, // 60% de la altura del contenido
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'No tienes pedidos asignados',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ],
-            ),
+              );
+            },
           );
         }
 
-        return ListView.builder(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          itemCount: pedidosFiltrados.length,
-          itemBuilder: (context, index) {
-            var pedido = pedidosFiltrados[index].data() as Map<String, dynamic>;
-            return _buildOrderCard(context, pedido);
-          },
+        return SizedBox(
+          height: 200, // Altura fija para cuando hay pedidos
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            itemCount: pedidosFiltrados.length,
+            itemBuilder: (context, index) {
+              var pedido =
+                  pedidosFiltrados[index].data() as Map<String, dynamic>;
+              return _buildOrderCard(context, pedido);
+            },
+          ),
         );
       },
     );
