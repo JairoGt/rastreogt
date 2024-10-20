@@ -120,7 +120,7 @@ class _MotoristaMapScreenState extends State<MotoristaMapScreen> {
   void _abrirWaze() async {
     if (_ubicacionActual == null) return;
     final String wazeUrl =
-        'waze://?ll=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&navigate=yes';
+        'https://waze.com/ul?ll=${widget.ubicacionCliente.latitude},${widget.ubicacionCliente.longitude}&navigate=yes';
 
     final Uri wazeUri = Uri.parse(wazeUrl);
 

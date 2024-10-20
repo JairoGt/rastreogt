@@ -83,7 +83,6 @@ class _PedidoCardState extends State<PedidoCard> {
         // Primero, realizamos todas las operaciones de lectura
         DocumentReference pedidoDocument =
             _firestore.collection('pedidos').doc(idPedido);
-        DocumentSnapshot pedidoSnapshot = await transaction.get(pedidoDocument);
 
         User? user = _auth.currentUser;
         if (user == null || user.email == null) {
@@ -314,6 +313,32 @@ class _PedidoCardState extends State<PedidoCard> {
     required String label,
     required VoidCallback? onPressed,
   }) {
+    // Si el botón es "Ver ubicación", añadimos una lógica especial
+    if (label == 'Ver ubicación') {
+      return ElevatedButton.icon(
+        icon: Icon(icon, size: 18),
+        label: Text(label, style: GoogleFonts.poppins(fontSize: 12)),
+        onPressed: widget.pedido['estadoid'] == 3
+            ? onPressed
+            : () {
+                Fluttertoast.showToast(
+                  msg:
+                      'Debes marcar el pedido como "En camino" para ver la ubicación',
+                  toastLength: Toast.LENGTH_LONG,
+                  gravity: ToastGravity.BOTTOM,
+                  timeInSecForIosWeb: 4,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
+                  fontSize: 16.0,
+                );
+              },
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        ),
+      );
+    }
+
+    // Para los demás botones, mantenemos el comportamiento original
     return ElevatedButton.icon(
       icon: Icon(icon, size: 18),
       label: Text(label, style: GoogleFonts.poppins(fontSize: 12)),

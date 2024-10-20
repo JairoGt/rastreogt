@@ -30,7 +30,6 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   // ignore: unused_field
   bool _isPrivacyPolicyAccepted = false;
   bool _isLoading = false;
-  bool _isLocationPermissionGranted = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -54,9 +53,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
 
   Future<void> _checkLocationPermission() async {
     var status = await Permission.location.status;
-    setState(() {
-      _isLocationPermissionGranted = status.isGranted;
-    });
+    setState(() {});
     if (!status.isGranted) {
       _showLocationPermissionDialog();
     }

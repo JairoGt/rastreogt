@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -11,14 +10,21 @@ import 'package:rastreogt/conf/export.dart';
 import 'Admin/create_pedidos.dart';
 import 'Admin/reasignar_moto.dart';
 
+// Clave global para el navegador, permite acceder al contexto de navegación desde cualquier parte de la app
 final navigatorKey = GlobalKey<NavigatorState>();
 
-// function to listen to background changes
+// Función para manejar mensajes de Firebase en segundo plano
 Future _firebaseBackgroundMessage(RemoteMessage message) async {
-  if (message.notification != null) {}
+  if (message.notification != null) {
+    await PushNotifications.showHighPriorityNotification(
+      title: message.notification!.title ?? 'Nueva notificación',
+      body: message.notification!.body ?? '',
+      payload: jsonEncode(message.data),
+    );
+  }
 }
 
-// to handle notification on foreground on web platform
+// Función para mostrar notificaciones en primer plano en la plataforma web
 void showNotification({required String title, required String body}) {
   showDialog(
     context: navigatorKey.currentContext!,
@@ -36,30 +42,34 @@ void showNotification({required String title, required String body}) {
   );
 }
 
-//@pragma('vm:entry-point')
+// Punto de entrada principal de la aplicación
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Carga las variables de entorno
   await dotenv.load(fileName: "lib/.env");
 
   try {
+    // Inicializa Firebase
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
-    print("Firebase initialized successfully in main");
 
+    // Inicializa las notificaciones locales y configura el canal de notificaciones
     await PushNotifications.localNotiInit();
+    await PushNotifications.setupNotificationChannel();
 
-    // Configuración de Crashlytics
+    // Configura Crashlytics para capturar errores
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
 
-    // Configuración de Messaging
+    // Configura Firebase Messaging
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
     await _setupForegroundMessaging();
     await _setupInitialMessage();
 
+    // Ejecuta la aplicación con los proveedores necesarios
     runApp(
       MultiProvider(
         providers: [
@@ -71,11 +81,11 @@ Future<void> main() async {
       ),
     );
   } catch (e) {
-    print("Error initializing Firebase: $e");
-    // Considera mostrar un diálogo de error al usuario aquí
+    debugPrint("Error al inicializar Firebase: $e");
   }
 }
 
+// Configura el manejo de mensajes en primer plano
 Future<void> _setupForegroundMessaging() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     _handleForegroundMessage(message);
@@ -86,17 +96,17 @@ Future<void> _setupForegroundMessaging() async {
   });
 }
 
+// Inicializa Firebase de manera separada (útil para servicios en segundo plano)
 Future<void> initializeFirebase() async {
   try {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
-    print("Firebase initialized successfully");
   } catch (e) {
-    print("Error initializing Firebase: $e");
-    // Considera lanzar una excepción aquí si quieres que el error se propague
+    debugPrint("Error initializing Firebase: $e");
   }
 }
 
+// Configura el manejo del mensaje inicial (cuando la app se abre desde una notificación)
 Future<void> _setupInitialMessage() async {
   RemoteMessage? initialMessage =
       await FirebaseMessaging.instance.getInitialMessage();
@@ -105,6 +115,7 @@ Future<void> _setupInitialMessage() async {
   }
 }
 
+// Maneja los mensajes recibidos cuando la app está en primer plano
 void _handleForegroundMessage(RemoteMessage message) {
   String payloadData = jsonEncode(message.data);
   if (message.notification != null) {
@@ -113,7 +124,7 @@ void _handleForegroundMessage(RemoteMessage message) {
           title: message.notification!.title!,
           body: message.notification!.body!);
     } else {
-      PushNotifications.showSimpleNotification(
+      PushNotifications.showHighPriorityNotification(
           title: message.notification!.title!,
           body: message.notification!.body!,
           payload: payloadData);
@@ -125,6 +136,7 @@ void _handleForegroundMessage(RemoteMessage message) {
   }
 }
 
+// Maneja la acción de abrir la app desde una notificación cuando está en segundo plano
 void _handleMessageOpenedApp(RemoteMessage message) {
   if (message.notification != null) {
     if (navigatorKey.currentState != null) {
@@ -135,21 +147,24 @@ void _handleMessageOpenedApp(RemoteMessage message) {
   }
 }
 
+// Maneja el mensaje inicial cuando la app se abre desde una notificación
 void _handleInitialMessage(RemoteMessage message) {
   Future.delayed(const Duration(seconds: 1), () {
     navigatorKey.currentState!.pushNamed("/message", arguments: message);
   });
 }
 
+// Punto de entrada para el servicio en segundo plano
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeFirebase();
-  // ... resto de tu código onStart
 }
 
+// Lista para almacenar notificaciones pendientes
 List<Map<String, dynamic>> _pendingNotifications = [];
 
+// Procesa las notificaciones pendientes cuando el usuario se autentica
 Future<void> processPendingNotifications(String userEmail) async {
   for (var notification in _pendingNotifications) {
     await _saveNotificationToFirestore(userEmail, notification);
@@ -158,6 +173,7 @@ Future<void> processPendingNotifications(String userEmail) async {
   debugPrint('Notificaciones pendientes procesadas');
 }
 
+// Añade una nueva notificación
 Future<void> _addNotification(String message, String title) async {
   final newNotification = {
     'id': DateTime.now().millisecondsSinceEpoch.toString(),
@@ -178,6 +194,7 @@ Future<void> _addNotification(String message, String title) async {
   }
 }
 
+// Guarda una notificación en Firestore
 Future<void> _saveNotificationToFirestore(
     String userEmail, Map<String, dynamic> notification) async {
   try {
@@ -196,7 +213,6 @@ Future<void> _saveNotificationToFirestore(
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeNotifier>(
@@ -208,6 +224,7 @@ class MyApp extends StatelessWidget {
           title: 'RastreoGT',
           theme: themeNotifier.currentTheme,
           routes: {
+            // Definición de rutas de la aplicación
             '/asignacion': (context) => const AsignarPedidos(),
             '/home': (context) => const Login(),
             '/onboarding': (context) => const OnboardingScreen(),

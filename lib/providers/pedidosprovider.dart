@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class PedidosProvider extends ChangeNotifier {
-  // ...
-
   // Obtiene la lista de pedidos que coinciden con el negoname
   Future<List<DocumentSnapshot>> getPedidos(String negoname) async {
     // Obtenemos la colección de pedidos
@@ -11,9 +9,8 @@ class PedidosProvider extends ChangeNotifier {
     final pedidosCollection = firestore.collection('pedidos');
 
     // Realizamos la consulta con el filtro por negoname
-    final pedidos = await pedidosCollection
-        .where('negoname', isEqualTo: negoname)
-        .get();
+    final pedidos =
+        await pedidosCollection.where('negoname', isEqualTo: negoname).get();
 
     // Notificamos a los listeners
     notifyListeners();

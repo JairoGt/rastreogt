@@ -105,24 +105,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _enviarDatos() async {
-    if (_credentials != null) {
-      try {
-        // Reemplaza \" con "
-        String unescapedCredentials = _credentials.replaceAll(r'\"', '"');
-
-        // Decodifica el JSON sin escapar
-        var credentialsJson = jsonDecode(unescapedCredentials);
-        print("Credenciales decodificadas: $credentialsJson");
-      } catch (e) {
-        print("Error al decodificar las credenciales: $e");
-      }
-    } else {
-      print("No se encontró GOOGLE_CREDENTIALS en el archivo .env");
-    }
-
-    print("Spreadsheet ID: $_spreadsheetId");
     try {
-      final gsheets = GSheets(_credentials);
+      // Reemplaza \" con "
+      String unescapedCredentials = _credentials.replaceAll(r'\"', '"');
+
+      // Decodifica el JSON sin escapar
+      var credentialsJson = jsonDecode(unescapedCredentials);
+      final gsheets = GSheets(credentialsJson);
       final ss = await gsheets.spreadsheet(_spreadsheetId);
       var sheet = ss.worksheetByTitle('rastreogt');
       sheet ??= await ss.addWorksheet('rastreogt');
