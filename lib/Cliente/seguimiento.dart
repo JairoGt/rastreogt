@@ -201,10 +201,7 @@ class _ProcessTimelinePageState extends State<ProcessTimelinePage> {
     if (Platform.isAndroid) {
       final status = await Permission.notification.request();
       if (status.isGranted) {
-        print('Permiso de notificación concedido');
-      } else if (status.isDenied) {
-        print('Permiso de notificación denegado');
-      }
+      } else if (status.isDenied) {}
     }
   }
 

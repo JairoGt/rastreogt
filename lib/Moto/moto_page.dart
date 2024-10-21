@@ -76,10 +76,7 @@ class _MotoristaScreenState extends State<MotoristaScreen>
     var isRunning = await service.isRunning();
     if (isRunning) {
       service.invoke("stopService");
-      print("Servicio en segundo plano detenido");
-    } else {
-      print("El servicio en segundo plano ya estaba detenido");
-    }
+    } else {}
   }
 
   Stream<DocumentSnapshot> obtenerMotoristaStream(String motoristaEmail) {
@@ -268,8 +265,6 @@ class _MotoristaScreenState extends State<MotoristaScreen>
         // No hay pedidos asignados, actualizar el estado del motorista a 1 (Disponible)
         await _db.collection('motos').doc(userEmail).update({'estadoid': 1});
         stopBackgroundService();
-        print(
-            "No hay pedidos asignados. Estado del motorista actualizado a Disponible.");
         Fluttertoast.showToast(
           msg: 'No tienes pedidos asignados. Estado actualizado a Disponible.',
           toastLength: Toast.LENGTH_LONG,
@@ -295,7 +290,6 @@ class _MotoristaScreenState extends State<MotoristaScreen>
           .map((doc) => doc.data() as Map<String, dynamic>)
           .toList();
     } catch (e) {
-      print("Error en obtenerPedidosAsignados: $e");
       Fluttertoast.showToast(
         msg: 'Error al obtener pedidos asignados: $e',
         toastLength: Toast.LENGTH_LONG,
@@ -407,14 +401,9 @@ class _MotoristaScreenState extends State<MotoristaScreen>
 
           // Detener el servicio en segundo plano
           stopBackgroundService();
-          print("Servicio en segundo plano detenido");
         }
       });
-
-      print(
-          "Pedido marcado como entregado y estado del motorista actualizado si es necesario");
     } catch (error) {
-      print("Error al marcar el pedido como entregado: $error");
       Fluttertoast.showToast(
         msg: 'Error al marcar el pedido como entregado: $error',
         toastLength: Toast.LENGTH_LONG,

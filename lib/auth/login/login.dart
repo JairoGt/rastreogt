@@ -77,16 +77,9 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
     String latestVersion = _remoteConfig.getString('latest_version');
     bool forceUpdate = _remoteConfig.getBool('force_update');
 
-    print('Current version: $currentVersion');
-    print('Latest version from Remote Config: $latestVersion');
-    print('Force update: $forceUpdate');
-
     if (_isVersionGreaterThan(latestVersion, currentVersion)) {
-      print('Update needed');
       _showUpdateDialog(forceUpdate);
-    } else {
-      print('No update needed');
-    }
+    } else {}
   }
 
   bool _isVersionGreaterThan(String v1, String v2) {

@@ -65,7 +65,6 @@ void onStart(ServiceInstance service) async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("Firebase initialized successfully in background service");
 
     final FirebaseAuth auth = FirebaseAuth.instance;
     final FirebaseFirestore db = FirebaseFirestore.instance;
@@ -73,7 +72,6 @@ void onStart(ServiceInstance service) async {
     if (service is AndroidServiceInstance) {
       service.on('stopService').listen((event) async {
         await service.stopSelf();
-        print("Servicio en segundo plano detenido desde el manejador");
       });
     }
 
@@ -83,7 +81,6 @@ void onStart(ServiceInstance service) async {
       await updateMotoristaLocation(position, auth, db);
     });
   } catch (e) {
-    print("Error initializing Firebase in background service: $e");
     // Aquí podrías implementar alguna lógica para manejar el error, como reintentar la inicialización
   }
 }

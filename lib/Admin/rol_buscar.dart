@@ -328,8 +328,6 @@ class _RolePageState extends State<RolePage> {
             // Actualizar el rol y la información del negocio en el documento del usuario
             transaction.update(userDocument, data);
           });
-
-          print('Documento de negocio transferido y rol actualizado con éxito');
         } else {
           throw Exception('No se encontró el documento del negocio');
         }

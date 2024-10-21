@@ -53,7 +53,9 @@ class _BusinessConfirmationScreenState
         isLoading = false;
       });
     } catch (e) {
-      print('Error al cargar usuarios con negocios pendientes: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al obtener usuarios > $e')),
+      );
       setState(() {
         isLoading = false;
       });

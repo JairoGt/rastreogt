@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:rastreogt/Cliente/exportPDF.dart';
 import 'package:rastreogt/Cliente/seguimiento.dart';
@@ -134,32 +133,6 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
         return pedidos;
       });
     });
-  }
-
-  Future<Map<String, dynamic>> _fetchProductDetails(String orderId) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('pedidos')
-        .doc(orderId)
-        .collection('Productos')
-        .get();
-    double totalPrice = 0;
-    List<Map<String, dynamic>> products = [];
-    for (var producto in snapshot.docs) {
-      final data = producto.data();
-      for (int i = 1; i <= 5; i++) {
-        final nombreKey = 'producto$i';
-        final precioKey = 'precio$i';
-        if (data.containsKey(nombreKey) && data.containsKey(precioKey)) {
-          final nombre = data[nombreKey]?.toString() ?? '';
-          final precio = data[precioKey]?.toString() ?? '';
-          if (nombre.isNotEmpty && precio.isNotEmpty) {
-            products.add({'nombre': nombre, 'precio': double.parse(precio)});
-            totalPrice += double.parse(precio);
-          }
-        }
-      }
-    }
-    return {'products': products, 'totalPrice': totalPrice};
   }
 
   @override

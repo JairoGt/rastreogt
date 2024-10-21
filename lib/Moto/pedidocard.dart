@@ -122,9 +122,6 @@ class _PedidoCardState extends State<PedidoCard> {
         return;
       });
 
-      print(
-          "Pedido marcado como entregado y estado del motorista actualizado si es necesario");
-
       // Detener el servicio en segundo plano si no hay más pedidos activos
       User? user = _auth.currentUser;
       if (user != null && user.email != null) {
@@ -132,7 +129,6 @@ class _PedidoCardState extends State<PedidoCard> {
             await _firestore.collection('motos').doc(user.email).get();
         if (motoristaDoc.exists && motoristaDoc.get('estadoid') == 1) {
           stopBackgroundService();
-          print("Servicio en segundo plano detenido");
         }
       }
 
@@ -147,7 +143,6 @@ class _PedidoCardState extends State<PedidoCard> {
         fontSize: 16.0,
       );
     } catch (error) {
-      print("Error al marcar el pedido como entregado: $error");
       Fluttertoast.showToast(
         msg: 'Error al marcar el pedido como entregado: $error',
         toastLength: Toast.LENGTH_LONG,
