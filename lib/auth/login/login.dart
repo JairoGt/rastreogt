@@ -30,6 +30,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   // ignore: unused_field
   bool _isPrivacyPolicyAccepted = false;
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -313,11 +314,15 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                   _buildTextField(
                     'Contraseña',
                     _passwordController,
-                    true,
-                    Icon(Icons.lock_outline,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white70
-                            : const Color.fromARGB(255, 7, 1, 1)),
+                    !_isPasswordVisible,
+                    Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white70
+                          : const Color.fromARGB(255, 7, 1, 1),
+                    ),
                     TextInputType.visiblePassword,
                   ),
                   Align(
@@ -349,7 +354,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                     onPressed: () async {
                       _showLoading();
                       await AuthService().signin(
-                        email: _emailController.text,
+                        email: _emailController.text.toLowerCase(),
                         password: _passwordController.text,
                         context: context,
                       );
@@ -507,6 +512,16 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
           fillColor: Theme.of(context).brightness == Brightness.dark
               ? Colors.white.withOpacity(0.1)
               : Colors.grey[200],
+          suffixIcon: label == 'Contraseña'
+              ? IconButton(
+                  icon: icon,
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  },
+                )
+              : null,
         ),
       ),
     );

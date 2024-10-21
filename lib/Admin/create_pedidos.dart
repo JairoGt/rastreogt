@@ -50,6 +50,7 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
   String emailuser = '';
   GeoPoint ubicacion = const GeoPoint(0, 0);
   String token = '';
+  bool _isLoading = false;
 
   // Inicializa el estado del widget y llama a la función mostrarContenido y mostrarNegoid.
   @override
@@ -266,12 +267,23 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
 // Define el botón para validar el usuario.
   Widget _buildValidarButton() {
     return ElevatedButton(
-      onPressed: () {
-        dataNickname(_nicknameController.text);
-        _validarUsuario(_nicknameController.text);
-        //  ('ubi '+ubicacion);
-      },
-      child: const Text('Validar'),
+      onPressed: _isLoading
+          ? null
+          : () {
+              _validarUsuario(_nicknameController.text);
+            },
+      child: _isLoading
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            )
+          : const Text('Validar'),
     );
   }
 
@@ -383,6 +395,13 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
                     },
                   ),
                 ),
+                if (_isLoading)
+                  Container(
+                    color: Colors.black.withOpacity(0.5),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 20),
@@ -435,44 +454,69 @@ class _CrearPedidoScreenState extends State<CrearPedidoScreen>
   }
 
 // Define la función para validar el usuario.
+
   void _validarUsuario(String nickname) async {
-    final String? email = await getEmailFromNickname(nickname);
+    setState(() {
+      _isLoading = true; // Iniciar carga
+    });
 
-    if (email != null) {
-      final FirebaseFirestore firestore = FirebaseFirestore.instance;
-      final DocumentReference documentRef =
-          firestore.collection('users').doc(email);
-      final DocumentSnapshot doc = await documentRef.get();
+    try {
+      final String? email = await getEmailFromNickname(nickname);
 
-      if (doc.exists) {
-        setState(() {
-          _isUserValidated = true;
-        });
+      if (email != null) {
+        final FirebaseFirestore firestore = FirebaseFirestore.instance;
+        final DocumentReference documentRef =
+            firestore.collection('users').doc(email);
+        final DocumentSnapshot doc = await documentRef.get();
+
+        if (doc.exists) {
+          await dataNickname(nickname);
+
+          if (direccion.isNotEmpty && ubicacion != const GeoPoint(0, 0)) {
+            setState(() {
+              _isUserValidated = true;
+            });
+            _mostrarMensaje('Usuario validado correctamente');
+          } else {
+            setState(() {
+              _isUserValidated = false;
+            });
+            _mostrarMensaje(
+                'El usuario debe agregar dirección y ubicación para crear un pedido');
+          }
+        } else {
+          setState(() {
+            _isUserValidated = false;
+          });
+          _mostrarMensaje('El usuario con el email $email no existe');
+        }
       } else {
         setState(() {
           _isUserValidated = false;
         });
-        ('El usuario con el email $email no existe');
+        _mostrarMensaje('El nickname $nickname no existe');
       }
-    } else {
+    } finally {
       setState(() {
-        _isUserValidated = false;
+        _isLoading = false; // Finalizar carga
       });
-      ('El nickname $nickname no existe');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('El nickname  $nickname no existe'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          action: SnackBarAction(
-            label: 'OK',
-            onPressed: () {},
-          ),
-        ),
-      );
     }
+  }
+
+  void _mostrarMensaje(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
+    );
   }
 
 // Define la función para actualizar el listado de nombres.
