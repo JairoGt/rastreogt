@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
+import 'package:rastreogt/Cliente/exportPDF.dart';
+import 'package:rastreogt/Cliente/seguimiento.dart';
 import 'package:rastreogt/conf/export.dart';
 
 class Pedido {
@@ -136,179 +136,6 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
     });
   }
 
-  Future<void> exportarPedidosAPdf(List<Pedido> pedidos) async {
-    final pdf = pw.Document();
-    final themeColor = PdfColor.fromHex("#4a148c");
-    final accentColor = PdfColor.fromHex("#7c43bd");
-    final imageData = await rootBundle.load('assets/images/oficial2.png');
-    final image = pw.MemoryImage(imageData.buffer.asUint8List());
-
-    final pedidosConfirmados = pedidos.where((p) => p.estado == 4).toList();
-    final pedidosCancelados = pedidos.where((p) => p.estado == 5).toList();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        build: (pw.Context context) {
-          return [
-            pw.Header(
-              level: 0,
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Histórico de Pedidos',
-                    style: pw.TextStyle(
-                        fontSize: 28,
-                        fontWeight: pw.FontWeight.bold,
-                        color: themeColor),
-                  ),
-                  pw.Container(
-                    width: 50,
-                    height: 50,
-                    decoration: pw.BoxDecoration(
-                        shape: pw.BoxShape.circle, color: accentColor),
-                    child: pw.Center(child: pw.Image(image)),
-                  ),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Paragraph(
-                text: 'Resumen de pedidos realizados',
-                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
-            pw.SizedBox(height: 20),
-            _buildPedidosTable(pedidosConfirmados, 'Pedidos Confirmados'),
-            pw.SizedBox(height: 20),
-            _buildPedidosTable(pedidosCancelados, 'Pedidos Cancelados'),
-            pw.SizedBox(height: 20),
-            _buildResumenFinanciero(pedidosConfirmados, pedidosCancelados),
-          ];
-        },
-        footer: (context) {
-          return pw.Container(
-            alignment: pw.Alignment.centerRight,
-            margin: const pw.EdgeInsets.only(top: 1.0 * PdfPageFormat.cm),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text(
-                  'Página ${context.pageNumber} de ${context.pagesCount}',
-                  style: pw.TextStyle(color: PdfColors.grey),
-                ),
-                pw.SizedBox(height: 5),
-                pw.Text(
-                  'El camino hacia el éxito y el camino hacia el fracaso son exactamente el mismo camino.',
-                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
-
-  pw.Widget _buildPedidosTable(List<Pedido> pedidos, String title) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(title,
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 10),
-        pw.TableHelper.fromTextArray(
-          border: null,
-          headerStyle: pw.TextStyle(
-              color: PdfColors.white, fontWeight: pw.FontWeight.bold),
-          headerDecoration:
-              pw.BoxDecoration(color: PdfColor.fromHex("#4a148c")),
-          cellHeight: 30,
-          cellAlignments: {
-            0: pw.Alignment.centerLeft,
-            1: pw.Alignment.centerLeft,
-            2: pw.Alignment.centerRight
-          },
-          headerPadding: const pw.EdgeInsets.all(5),
-          cellPadding: const pw.EdgeInsets.all(5),
-          data: [
-            ['Número de Seguimiento', 'Fecha', 'Cantidad Total', 'Estado'],
-            ...pedidos.map((pedido) => [
-                  pedido.numeroSeguimiento,
-                  DateFormat('dd/MM/yyyy').format(pedido.fecha),
-                  'Q${pedido.cantidadTotal.toStringAsFixed(2)}',
-                  getEstadoDescripcion(pedido.estado),
-                ]),
-          ],
-        ),
-      ],
-    );
-  }
-
-  pw.Widget _buildResumenFinanciero(
-      List<Pedido> pedidosConfirmados, List<Pedido> pedidosCancelados) {
-    final totalPedidosConfirmados = pedidosConfirmados.length;
-    final montoTotalConfirmados = pedidosConfirmados.fold(
-        0.0, (sum, pedido) => sum + pedido.cantidadTotal);
-    final promedioMontoConfirmados = totalPedidosConfirmados > 0
-        ? montoTotalConfirmados / totalPedidosConfirmados
-        : 0.0;
-
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColor.fromHex("#4a148c"), width: 1),
-        borderRadius: pw.BorderRadius.circular(8),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text('Resumen de Gastos',
-              style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColor.fromHex("#4a148c"))),
-          pw.SizedBox(height: 10),
-          pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Total de Pedidos Confirmados:'),
-                pw.Text('$totalPedidosConfirmados',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-              ]),
-          pw.SizedBox(height: 5),
-          pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Monto Total Confirmados:'),
-                pw.Text('Q${montoTotalConfirmados.toStringAsFixed(2)}',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-              ]),
-          pw.SizedBox(height: 5),
-          pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Promedio por Pedido Confirmado:'),
-                pw.Text('Q${promedioMontoConfirmados.toStringAsFixed(2)}',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-              ]),
-          pw.SizedBox(height: 10),
-          pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Total de Pedidos Cancelados:'),
-                pw.Text('${pedidosCancelados.length}',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-              ]),
-        ],
-      ),
-    );
-  }
-
   Future<Map<String, dynamic>> _fetchProductDetails(String orderId) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('pedidos')
@@ -345,7 +172,7 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: () async {
               final pedidos = await _futurePedidos;
-              await exportarPedidosAPdf(pedidos);
+              await PdfExporter.exportarPedidosAPdf(pedidos);
             },
           ),
         ],
@@ -435,66 +262,18 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
                     itemCount: pedidos.length,
                     itemBuilder: (context, index) {
                       final pedido = pedidos[index];
-                      final isCancelled = pedido.estado == 5;
-                      final estadoDescripcion =
-                          getEstadoDescripcion(pedido.estado);
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0)),
-                        color: isCancelled ? Colors.red[300] : null,
-                        child: ListTile(
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Pedido #${pedido.numeroSeguimiento}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18.0),
-                                ),
+                      return InteractiveCard(
+                        pedido: pedido,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProcessTimelinePage(
+                                idPedidos: pedido.numeroSeguimiento,
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.copy),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(
-                                      text: pedido.numeroSeguimiento));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'ID de pedido copiado al portapapeles')),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 8.0),
-                              Text(
-                                  'Fecha: ${DateFormat('dd/MM/yyyy').format(pedido.fecha)}',
-                                  style: TextStyle(color: Colors.grey[700])),
-                              const SizedBox(height: 4.0),
-                              Text(
-                                  'Total: Q${pedido.cantidadTotal.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4.0),
-                              Text('Estado: $estadoDescripcion',
-                                  style: TextStyle(
-                                      color: isCancelled
-                                          ? Colors.red
-                                          : Colors.green,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
@@ -503,6 +282,120 @@ class _HistoricoPedidosScreenState extends State<HistoricoPedidosScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+String getEstadoDescripcion(int? estado) {
+  switch (estado) {
+    case 1:
+      return 'Creado';
+    case 2:
+      return 'Despachado';
+    case 3:
+      return 'En camino';
+    case 4:
+      return 'Entregado';
+    case 5:
+      return 'Cancelado';
+    default:
+      return 'Desconocido';
+  }
+}
+
+class InteractiveCard extends StatefulWidget {
+  final Pedido pedido;
+  final VoidCallback onTap;
+
+  const InteractiveCard({
+    super.key,
+    required this.pedido,
+    required this.onTap,
+  });
+
+  @override
+  _InteractiveCardState createState() => _InteractiveCardState();
+}
+
+class _InteractiveCardState extends State<InteractiveCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    // Definimos los colores para el modo claro y oscuro
+    final lightGrey = Colors.grey[100]!;
+    final darkGrey = const Color.fromARGB(162, 66, 66, 66);
+    final cardColor = isDarkMode ? darkGrey : lightGrey;
+    final isCancelled = widget.pedido.estado == 5;
+    final estadoDescripcion = getEstadoDescripcion(widget.pedido.estado);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(_isHovered ? 0.2 : 0.1),
+              blurRadius: _isHovered ? 8 : 4,
+              spreadRadius: _isHovered ? 2 : 0,
+              offset: Offset(0, _isHovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: isCancelled ? Colors.red[300] : cardColor,
+          elevation: 3,
+          borderRadius: BorderRadius.circular(12.0),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12.0),
+            onTap: widget.onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pedido #${widget.pedido.numeroSeguimiento}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18.0,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Text(
+                    'Fecha: ${DateFormat('dd/MM/yyyy').format(widget.pedido.fecha)}',
+                    style: TextStyle(
+                        color:
+                            isDarkMode ? Colors.grey[300] : Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    'Total: Q${widget.pedido.cantidadTotal.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    'Estado: $estadoDescripcion',
+                    style: TextStyle(
+                      color: isCancelled ? Colors.red : Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -53,7 +53,6 @@ const estados: { [key: number]: string } = {
   3: "En camino",
   4: "Entregado",
   5: "Cancelado",
-  // Agrega aquí los demás estados según necesites
 };
 
 exports.notificarCambioEstado = functions.firestore
@@ -73,10 +72,10 @@ exports.notificarCambioEstado = functions.firestore
 
       if (nuevoEstadoId === 5) {
         titulo = `Tu pedido ${pedidoId} ha sido cancelado`;
-        cuerpo = "Pedido cancelado copia el id de historico y busca tu pedido";
+        cuerpo = "ve a historico, haz tap para ver el motivo";
       } else {
-        titulo = `El estado de tu pedido ${pedidoId} ha cambiado`;
-        cuerpo = `Tu pedido ha sido marcado como ${nuevoEstadoNombre}`;
+        titulo = `Tu pedido ${pedidoId} se ha actualizado`;
+        cuerpo = `Ha sido marcado como ${nuevoEstadoNombre}`;
       }
 
       // Crear la notificación

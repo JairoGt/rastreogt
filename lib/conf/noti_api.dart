@@ -83,7 +83,7 @@ class PushNotifications {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.message,
       actions: <AndroidNotificationAction>[
-        AndroidNotificationAction(
+        const AndroidNotificationAction(
           'expand_action',
           'Expandir',
           showsUserInterface: true,
