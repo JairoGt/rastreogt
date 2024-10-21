@@ -9,6 +9,7 @@ import 'package:rastreogt/firebase_options.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'Admin/create_pedidos.dart';
 import 'Admin/reasignar_moto.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 // Clave global para el navegador, permite acceder al contexto de navegación desde cualquier parte de la app
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -219,6 +220,14 @@ class MyApp extends StatelessWidget {
       builder: (context, themeNotifier, child) =>
           Builder(builder: (BuildContext context) {
         return MaterialApp(
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('es', ''), // Español
+          ],
           navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'RastreoGT',
