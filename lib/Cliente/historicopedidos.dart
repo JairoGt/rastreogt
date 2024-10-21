@@ -326,7 +326,7 @@ class _InteractiveCardState extends State<InteractiveCard> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     // Definimos los colores para el modo claro y oscuro
     final lightGrey = Colors.grey[100]!;
-    final darkGrey = const Color.fromARGB(162, 66, 66, 66);
+    const darkGrey = Color.fromARGB(162, 66, 66, 66);
     final cardColor = isDarkMode ? darkGrey : lightGrey;
     final isCancelled = widget.pedido.estado == 5;
     final estadoDescripcion = getEstadoDescripcion(widget.pedido.estado);

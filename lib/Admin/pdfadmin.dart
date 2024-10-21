@@ -137,11 +137,12 @@ class PDFGenerator {
               style:
                   pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 10),
-          pw.Text('Negocio: $nombreNegocio', style: pw.TextStyle(fontSize: 16)),
+          pw.Text('Negocio: $nombreNegocio',
+              style: const pw.TextStyle(fontSize: 16)),
           if (fechaInicio != null && fechaFin != null)
             pw.Text(
               'Periodo: ${DateFormat('d/M/y').format(fechaInicio)} - ${DateFormat('d/M/y').format(fechaFin)}',
-              style: pw.TextStyle(fontSize: 14),
+              style: const pw.TextStyle(fontSize: 14),
             ),
         ],
       ),
@@ -332,9 +333,8 @@ class PDFGenerator {
             _buildTableHeader('Fecha'),
           ],
         ),
-        ...pedidos
-            .map((pedido) => _buildTableRow(pedido, totalesPedidos[pedido.id]!))
-            .toList(),
+        ...pedidos.map(
+            (pedido) => _buildTableRow(pedido, totalesPedidos[pedido.id]!)),
       ],
     );
   }

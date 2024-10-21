@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rastreogt/Admin/pdfadmin.dart';
 import 'package:rastreogt/conf/export.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class PedidosPage extends StatefulWidget {
-  const PedidosPage({Key? key}) : super(key: key);
+  const PedidosPage({super.key});
 
   @override
   _PedidosPageState createState() => _PedidosPageState();

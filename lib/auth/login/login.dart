@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rastreogt/auth/auth_service.dart';
 import 'package:rastreogt/auth/login/logingoogle.dart';
@@ -33,12 +35,14 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   bool _isPasswordVisible = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late FirebaseRemoteConfig _remoteConfig;
 
   @override
   void initState() {
     super.initState();
     initConnectivity();
     _checkPrivacyPolicyAccepted();
+    _initializeRemoteConfig();
     _checkLocationPermission();
     _connectivitySubscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
@@ -50,6 +54,99 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
+  }
+
+  Future<void> _initializeRemoteConfig() async {
+    _remoteConfig = FirebaseRemoteConfig.instance;
+    await _remoteConfig.setConfigSettings(RemoteConfigSettings(
+      fetchTimeout: const Duration(minutes: 1),
+      minimumFetchInterval:
+          Duration.zero, // Permite obtener valores inmediatamente
+    ));
+    await _remoteConfig.setDefaults({
+      "latest_version": "1.0.0",
+      "force_update": false,
+    });
+    await _remoteConfig.fetchAndActivate();
+    _checkAppVersion();
+  }
+
+  Future<void> _checkAppVersion() async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String currentVersion = packageInfo.version;
+    String latestVersion = _remoteConfig.getString('latest_version');
+    bool forceUpdate = _remoteConfig.getBool('force_update');
+
+    print('Current version: $currentVersion');
+    print('Latest version from Remote Config: $latestVersion');
+    print('Force update: $forceUpdate');
+
+    if (_isVersionGreaterThan(latestVersion, currentVersion)) {
+      print('Update needed');
+      _showUpdateDialog(forceUpdate);
+    } else {
+      print('No update needed');
+    }
+  }
+
+  bool _isVersionGreaterThan(String v1, String v2) {
+    List<int> v1Parts = v1.split('.').map(int.parse).toList();
+    List<int> v2Parts = v2.split('.').map(int.parse).toList();
+
+    for (int i = 0; i < v1Parts.length && i < v2Parts.length; i++) {
+      if (v1Parts[i] > v2Parts[i]) {
+        return true;
+      } else if (v1Parts[i] < v2Parts[i]) {
+        return false;
+      }
+    }
+
+    return v1Parts.length > v2Parts.length;
+  }
+
+  void _showUpdateDialog(bool forceUpdate) {
+    showDialog(
+      context: context,
+      barrierDismissible: !forceUpdate,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Actualización disponible',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          content: Text(
+            forceUpdate
+                ? 'Es necesario actualizar la aplicación para continuar.'
+                : 'Hay una nueva versión de la aplicación disponible. ¿Deseas actualizar ahora?',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: <Widget>[
+            if (!forceUpdate)
+              TextButton(
+                child: Text('Más tarde',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.normal)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            TextButton(
+              child: Text('Actualizar',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                // Aquí deberías abrir la tienda de aplicaciones correspondiente
+                launchUrl(Uri.parse(
+                    'https://play.google.com/store/apps/details?id=com.misterjd.rastreogt'));
+                // Para iOS: launchUrl(Uri.parse('https://apps.apple.com/app/id{tuAppId}'));
+                if (forceUpdate) {
+                  SystemNavigator
+                      .pop(); // Cierra la app si la actualización es forzada
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _checkLocationPermission() async {
